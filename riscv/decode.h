@@ -145,7 +145,6 @@ public:
 
   void set_avail(size_t i, uint64_t cycle)
   {
-    //For vec the counter for the array would be decremented and the cycle updated when it reaches zero. Mayber return bool
     if (!zero_reg || i != 0)
       avail_cycle[i] = cycle;
   }
@@ -173,6 +172,7 @@ public:
   {
     return data[i];
   }
+
 private:
   T data[N];
   uint64_t avail_cycle[N]={0};
@@ -188,6 +188,7 @@ private:
         if(STATE.XPR.get_avail_cycle(reg)>P_.get_current_cycle()) \
         { \
             STATE.raw=true; \
+            STATE.pending_int_regs->push_back(reg); \
         } \
         STATE.XPR[reg]; \
     })
@@ -196,6 +197,7 @@ private:
         if(STATE.FPR.get_avail_cycle(reg)>P_.get_current_cycle()) \
         { \
             STATE.raw=true; \
+            STATE.pending_float_regs->push_back(reg); \
         } \
         STATE.FPR[reg]; \
     })
@@ -264,6 +266,7 @@ private:
     })
 
 #define WRITE_FRD(value) WRITE_FREG(insn.rd(), value)
+
 #define SHAMT (insn.i_imm() & 0x3F)
 #define BRANCH_TARGET (pc + insn.sb_imm())
 #define JUMP_TARGET (pc + insn.uj_imm())

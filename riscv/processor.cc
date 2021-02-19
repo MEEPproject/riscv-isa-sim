@@ -40,6 +40,9 @@ processor_t::processor_t(const char* isa, const char* priv, const char* varch,
       disassembler->add_insn(disasm_insn);
 
   reset();
+  get_state()->pending_int_regs=new std::list<size_t>();
+  get_state()->pending_float_regs=new std::list<size_t>();
+  get_state()->pending_vector_regs=new std::list<size_t>();
 }
 
 processor_t::~processor_t()
@@ -55,6 +58,9 @@ processor_t::~processor_t()
 
   delete mmu;
   delete disassembler;
+  delete get_state()->pending_int_regs;
+  delete get_state()->pending_float_regs;
+  delete get_state()->pending_vector_regs;
 }
 
 static void bad_isa_string(const char* isa)
@@ -230,10 +236,12 @@ void state_t::reset(reg_t max_isa)
 
 void vectorUnit_t::reset(){
   free(reg_file);
+  free(dummy_reg);
   VLEN = get_vlen();
   ELEN = get_elen();
   SLEN = get_slen(); // registers are simply concatenated
   reg_file = malloc(NVPR * (VLEN/8));
+  dummy_reg=malloc(VLEN/8);
 
   vtype = 0;
   set_vl(0, 0, 0, -1); // default to illegal configuration
@@ -277,6 +285,7 @@ void vectorUnit_t::check_raw(reg_t vReg)
   if(get_avail_cycle(vReg)>p->get_current_cycle())
   {
     p->get_state()->raw=true;
+    p->get_state()->pending_vector_regs->push_back(vReg);
   }
 }
 

@@ -170,6 +170,7 @@ class vectorUnit_t {
   public:
     processor_t* p;
     void *reg_file;
+    void *dummy_reg;
     char reg_referenced[NVPR];
     int setvl_count;
     reg_t reg_mask, vlmax, vmlen;
@@ -192,7 +193,6 @@ class vectorUnit_t {
 	n ^= elts_per_reg - 1;
 #endif
         reg_referenced[vReg] = 1;
-
         T *regStart = (T*)((char*)reg_file + vReg * (VLEN >> 3));
 
         check_raw(vReg);
@@ -217,11 +217,14 @@ class vectorUnit_t {
 
     vectorUnit_t(){
       reg_file = 0;
+      dummy_reg=0;
     }
 
     ~vectorUnit_t(){
       free(reg_file);
+      free(dummy_reg);
       reg_file = 0;
+      dummy_reg=0;
     }
 
     reg_t set_vl(int rd, int rs1, reg_t reqVL, reg_t newType);
@@ -314,6 +317,9 @@ struct state_t
   bool serialized; // whether timer CSRs are in a well-defined state
 
   bool raw=false;
+  std::list<size_t> * pending_int_regs;
+  std::list<size_t> * pending_float_regs;
+  std::list<size_t> * pending_vector_regs;
 
   // When true, execute a single instruction and then enter debug mode.  This
   // can only be set by executing dret.
@@ -545,6 +551,7 @@ private:
 
   std::list<std::shared_ptr<spike_model::L2Request>> pending_misses;
   uint64_t current_cycle;
+
 
 public:
   vectorUnit_t VU;

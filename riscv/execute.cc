@@ -137,16 +137,10 @@ bool processor_t::step(size_t n)
             case PC_SERIALIZE_WFI: n = ++instret; break; \
             default: abort(); \
         } \
-        if(!get_state()->raw) \
-        { \
             pc = state.pc; \
-        }\
             break; \
     } else { \
-        if(!get_state()->raw) \
-        { \
             state.pc = pc; \
-        } \
             instret++; \
     } 
 
@@ -279,10 +273,7 @@ bool processor_t::step(size_t n)
       n = instret;
     }
 
-    if(!get_state()->raw)
-    {
-        state.minstret += instret;
-    }
+    state.minstret += instret;
     n -= instret;
   }
   bool res=!get_state()->raw;

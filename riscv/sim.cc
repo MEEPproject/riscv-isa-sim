@@ -132,23 +132,35 @@ bool sim_t::simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::s
 
 bool sim_t::ack_register(const std::shared_ptr<spike_model::L2Request> & req, uint64_t timestamp)
 {
-    bool res=false;
+    bool ready;
     switch(req->getRegType())
     {
         case spike_model::L2Request::RegType::INTEGER:
-            res=procs[req->getCoreId()]->get_state()->XPR.ack_for_reg(req->getRegId(), timestamp);
+            ready=procs[req->getCoreId()]->get_state()->XPR.ack_for_reg(req->getRegId(), timestamp);
+            if(ready)
+            {
+                procs[req->getCoreId()]->get_state()->pending_int_regs->remove(req->getRegId());
+            }
             break;
         case spike_model::L2Request::RegType::FLOAT:
-            res=procs[req->getCoreId()]->get_state()->FPR.ack_for_reg(req->getRegId(), timestamp);
+            ready=procs[req->getCoreId()]->get_state()->FPR.ack_for_reg(req->getRegId(), timestamp);
+            if(ready)
+            {
+                procs[req->getCoreId()]->get_state()->pending_float_regs->remove(req->getRegId());
+            }
             break;
         case spike_model::L2Request::RegType::VECTOR:
-            res=procs[req->getCoreId()]->VU.ack_for_reg(req->getRegId(), timestamp);
+            ready=procs[req->getCoreId()]->VU.ack_for_reg(req->getRegId(), timestamp);
+            if(ready)
+            {
+                procs[req->getCoreId()]->get_state()->pending_vector_regs->remove(req->getRegId());
+            }
             break;
         default:
             std::cout << "Unknown register kind!\n";
             break;
     }
-    return res;
+    return procs[req->getCoreId()]->get_state()->pending_int_regs->size()==0 && procs[req->getCoreId()]->get_state()->pending_float_regs->size()==0 && procs[req->getCoreId()]->get_state()->pending_vector_regs->size()==0;
 }
 
 
