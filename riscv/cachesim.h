@@ -36,6 +36,8 @@ class cache_sim_t
 
   static cache_sim_t* construct(const char* config, const char* name);
 
+  uint64_t get_victim();
+
  protected:
   static const uint64_t VALID = 1ULL << 63;
   static const uint64_t DIRTY = 1ULL << 62;
@@ -63,6 +65,7 @@ class cache_sim_t
 
   std::string name;
   bool log;
+  uint64_t last_victim=0;
 
   void init();
 };
@@ -113,9 +116,10 @@ class icache_sim_t : public cache_memtracer_t
   {
     return type == FETCH;
   }
-  bool trace(uint64_t addr, size_t bytes, access_type type, bool& hit)
+  bool trace(uint64_t addr, size_t bytes, access_type type, bool& hit, uint64_t& victim)
   {
     bool res=false;
+    victim=0;
     if (type == FETCH)
     {
         res=true;
@@ -134,13 +138,15 @@ class dcache_sim_t : public cache_memtracer_t
     return type == LOAD || type == STORE;
   }
   
-  bool trace(uint64_t addr, size_t bytes, access_type type, bool& hit)
+  bool trace(uint64_t addr, size_t bytes, access_type type, bool& hit, uint64_t& victim)
   {
     bool res=false;
+    victim=0;
     if (type == LOAD || type == STORE)
     {
         res=true;
         hit=cache->access(addr, bytes, type == STORE);
+        victim=cache->get_victim();
     }
     return res;
   }

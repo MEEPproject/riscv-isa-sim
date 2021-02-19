@@ -110,10 +110,15 @@ void mmu_t::load_slow_path(reg_t addr, reg_t len, uint8_t* bytes)
     if (tracer.interested_in_range(paddr, paddr + PGSIZE, LOAD))
     {
       bool hit=false;
-      bool traced=tracer.trace(paddr, len, LOAD, hit);
+      uint64_t victim=0;
+      bool traced=tracer.trace(paddr, len, LOAD, hit, victim);
       if(log_misses && traced && !hit)
       {
         log_miss(paddr, len, spike_model::L2Request::AccessType::LOAD);
+        if(victim!=0)
+        {
+            log_miss(paddr, len, spike_model::L2Request::AccessType::WRITEBACK);
+        }
       }
     }
     else
@@ -146,10 +151,15 @@ void mmu_t::store_slow_path(reg_t addr, reg_t len, const uint8_t* bytes)
     if (tracer.interested_in_range(paddr, paddr + PGSIZE, STORE))
     {
       bool hit=false;
-      bool traced=tracer.trace(paddr, len, STORE, hit);
+      uint64_t victim=0;
+      bool traced=tracer.trace(paddr, len, STORE, hit, victim);
       if(log_misses && traced && !hit)
       {
         log_miss(paddr, len, spike_model::L2Request::AccessType::STORE);
+        if(victim!=0)
+        {
+            log_miss(paddr, len, spike_model::L2Request::AccessType::WRITEBACK);
+        }
       }
     }
     else

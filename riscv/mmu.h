@@ -293,7 +293,8 @@ public:
     if (tracer.interested_in_range(paddr, paddr + 1, FETCH)) {
       entry->tag = -1;
       bool hit=false;
-      bool traced=tracer.trace(paddr, length, FETCH, hit);
+      uint64_t victim=0; //INSTRUCTION CACHE DOES NOT WRITEBACK
+      bool traced=tracer.trace(paddr, length, FETCH, hit, victim);
       if(log_misses && traced && !hit)
       {
         log_miss(paddr, length, spike_model::L2Request::AccessType::FETCH);
@@ -342,6 +343,7 @@ public:
   void clear_misses()
   {
     has_fetch_miss=false;
+    num_writebacks=0;
     misses_last_inst.clear();
   }
 
@@ -357,7 +359,7 @@ public:
   
   size_t num_pending_data_misses()
   {
-    unsigned long res=misses_last_inst.size();
+    unsigned long res=misses_last_inst.size()-num_writebacks;
     if(has_fetch_miss)
     {
         res=res-1;
@@ -471,11 +473,17 @@ private:
     {
         has_fetch_miss=true;
     }
+    if(type==spike_model::L2Request::AccessType::WRITEBACK)
+    {
+        num_writebacks++;
+    }
   }
 
 
   bool log_instructions=false;
   bool log_misses=false;
+
+  uint16_t num_writebacks=0;
 };
 
 struct vm_info {
