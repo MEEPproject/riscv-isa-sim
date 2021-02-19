@@ -1,6 +1,6 @@
 // vaadd: Averaging adds of integers
 VI_CHECK_SSS(false);
-VRM xrm = P.VU.get_vround_mode();
+VRM xrm = P_.VU.get_vround_mode();
 VI_VI_LOOP
 ({
   int64_t result = simm5 + vs2;

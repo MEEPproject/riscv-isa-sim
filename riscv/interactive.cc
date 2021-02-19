@@ -246,19 +246,19 @@ void sim_t::interactive_vreg(const std::string& cmd, const std::vector<std::stri
       uint64_t val;
       switch(elen){
         case 8:
-          val = P.VU.elt<uint64_t>(r, e);
+          val = P_.VU.elt<uint64_t>(r, e);
           fprintf(stderr, "[%d]: 0x%016" PRIx64 "  ", e, val);
           break;
         case 4:
-          val = P.VU.elt<uint32_t>(r, e);
+          val = P_.VU.elt<uint32_t>(r, e);
           fprintf(stderr, "[%d]: 0x%08" PRIx32 "  ", e, (uint32_t)val);
           break;
         case 2:
-          val = P.VU.elt<uint16_t>(r, e);
+          val = P_.VU.elt<uint16_t>(r, e);
           fprintf(stderr, "[%d]: 0x%08" PRIx16 "  ", e, (uint16_t)val);
           break;
         case 1:
-          val = P.VU.elt<uint8_t>(r, e);
+          val = P_.VU.elt<uint8_t>(r, e);
           fprintf(stderr, "[%d]: 0x%08" PRIx8 "  ", e, (uint8_t)val);
           break;
       }

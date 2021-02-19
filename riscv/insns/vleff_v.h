@@ -1,5 +1,5 @@
 // vle.v and vlseg[2-8]e.v
-reg_t sew = P.VU.vsew;
+reg_t sew = P_.VU.vsew;
 
 if (sew == e8) {
   VI_LDST_FF(int, 8);

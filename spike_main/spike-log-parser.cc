@@ -27,6 +27,7 @@ int main(int argc, char** argv)
   parser.option(0, "isa", 1, [&](const char* s){isa = s;});
   parser.parse(argv);
 
+
   processor_t p(isa, DEFAULT_PRIV, DEFAULT_VARCH, 0, 0);
   if (extension) {
     p.register_extension(extension());
@@ -42,6 +43,7 @@ int main(int argc, char** argv)
       string op = m[1].str();
       uint32_t bit_num = op.size() * 4;
       uint64_t opcode = strtoull(op.c_str(), nullptr, 16);
+          printf("HI\n");
 
       if (bit_num<64){
           opcode = opcode << (64-bit_num) >> (64-bit_num);

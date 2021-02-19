@@ -36,7 +36,7 @@ class context_t
   void (*func)(void*);
   void* arg;
 #ifdef USE_UCONTEXT
-  std::unique_ptr<ucontext_t> context;
+  std::shared_ptr<ucontext_t> context;
 #ifndef GLIBC_64BIT_PTR_BUG
   static void wrapper(context_t*);
 #else

@@ -12,13 +12,17 @@
 #include "memtracer.h"
 #include "byteorder.h"
 #include <stdlib.h>
-#include <vector>
+#include <list>
+
+#include <queue>
+#include "L2Request.hpp"
 
 // virtual memory configuration
 #define PGSHIFT 12
 const reg_t PGSIZE = 1 << PGSHIFT;
 const reg_t PGMASK = ~(PGSIZE-1);
 #define MAX_PADDR_BITS 56 // imposed by Sv39 / Sv48
+
 
 struct insn_fetch_t
 {
@@ -80,12 +84,20 @@ public:
 #endif
   }
 
+//BORJA: Extended for sparta
 #ifndef RISCV_ENABLE_COMMITLOG
-# define READ_MEM(addr, size) ({})
+# define READ_MEM(addr, size) ({ \
+    commit_log_mem_t access; \
+    access.addr = addr; \
+    access.size = size; \
+  })
 #else
 # define READ_MEM(addr, size) ({ \
     proc->state.log_mem_read.addr = addr; \
     proc->state.log_mem_read.size = size; \
+    commit_log_mem_t access; \
+    access.addr = addr; \
+    access.size = size; \
   })
 #endif
 
@@ -128,13 +140,22 @@ public:
   load_func(int32)
   load_func(int64)
 
+
+//BORJA: Extended for sparta
 #ifndef RISCV_ENABLE_COMMITLOG
-# define WRITE_MEM(addr, value, size) ({})
+# define WRITE_MEM(addr, value, size) ({ \
+    commit_log_mem_t access; \
+    access.addr = addr; \
+    access.size = size; \
+  })
 #else
 # define WRITE_MEM(addr, val, size) ({ \
     proc->state.log_mem_write.addr = addr; \
     proc->state.log_mem_write.value = val; \
     proc->state.log_mem_write.size = size; \
+    commit_log_mem_t access; \
+    access.addr = addr; \
+    access.size = size; \
   })
 #endif
 
@@ -271,7 +292,12 @@ public:
     reg_t paddr = tlb_entry.target_offset + addr;;
     if (tracer.interested_in_range(paddr, paddr + 1, FETCH)) {
       entry->tag = -1;
-      tracer.trace(paddr, length, FETCH);
+      bool hit=false;
+      bool traced=tracer.trace(paddr, length, FETCH, hit);
+      if(log_misses && traced && !hit)
+      {
+        log_miss(paddr, length, spike_model::L2Request::AccessType::FETCH);
+      }
     }
     return entry;
   }
@@ -312,6 +338,44 @@ public:
     return 0;
 #endif
   }
+
+  void clear_misses()
+  {
+    has_fetch_miss=false;
+    misses_last_inst.clear();
+  }
+
+  std::list<std::shared_ptr<spike_model::L2Request>>& get_misses()
+  {
+    return misses_last_inst;
+  }
+
+  size_t num_pending_misses()
+  {
+    return misses_last_inst.size();
+  }
+  
+  size_t num_pending_data_misses()
+  {
+    unsigned long res=misses_last_inst.size();
+    if(has_fetch_miss)
+    {
+        res=res-1;
+    }
+    return res;
+  }
+
+  void enable_instruction_log()
+  {
+    log_instructions=true;
+  }
+
+  void enable_miss_log()
+  {
+    log_misses=true;
+  }
+  
+  void set_misses_dest_reg(uint8_t reg, spike_model::L2Request::RegType t);
 
 private:
   simif_t* sim;
@@ -396,6 +460,22 @@ private:
   trigger_matched_t *matched_trigger;
 
   friend class processor_t;
+  
+  std::list<std::shared_ptr<spike_model::L2Request>> misses_last_inst;
+  bool has_fetch_miss=false;
+  
+  void log_miss(uint64_t addr, size_t bytes, spike_model::L2Request::AccessType type)
+  {
+    misses_last_inst.push_back(std::make_shared<spike_model::L2Request> (addr, bytes, type, proc->get_current_cycle(), proc->get_id()));
+    if(type==spike_model::L2Request::AccessType::FETCH)
+    {
+        has_fetch_miss=true;
+    }
+  }
+
+
+  bool log_instructions=false;
+  bool log_misses=false;
 };
 
 struct vm_info {

@@ -1,5 +1,5 @@
 // vsw.v and vsseg[2-8]w.v
-reg_t sew = P.VU.vsew;
+reg_t sew = P_.VU.vsew;
 
 if (sew == e8) {
   VI_ST(0, (i * nf + fn), uint8, 1);

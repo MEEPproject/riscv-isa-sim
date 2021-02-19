@@ -20,11 +20,12 @@
 #undef STATE
 #define STATE state
 
+
 processor_t::processor_t(const char* isa, const char* priv, const char* varch,
                          simif_t* sim, uint32_t id, bool halt_on_reset)
   : debug(false), halt_request(false), sim(sim), ext(NULL), id(id), xlen(0),
   histogram_enabled(false), log_commits_enabled(false),
-  halt_on_reset(halt_on_reset), last_pc(1), executions(1)
+  halt_on_reset(halt_on_reset), last_pc(1), executions(1) //BORJA
 {
   VU.p = this;
   parse_isa_string(isa);
@@ -467,17 +468,23 @@ void processor_t::take_trap(trap_t& t, reg_t epc)
 void processor_t::disasm(insn_t insn)
 {
   uint64_t bits = insn.bits() & ((1ULL << (8 * insn_length(insn.bits()))) - 1);
+  //printf("%d || %d\n", last_pc != state.pc, last_bits != bits);
   if (last_pc != state.pc || last_bits != bits) {
     if (executions != 1) {
       fprintf(stderr, "core %3d: Executed %" PRIx64 " times\n", id, executions);
     }
+    uint8_t opcode=(uint8_t)insn.bits();
+    opcode <<=1;
+    opcode >>=1;
 
     fprintf(stderr, "core %3d: 0x%016" PRIx64 " (0x%08" PRIx64 ") %s\n",
             id, state.pc, bits, disassembler->disassemble(insn).c_str());
+
     last_pc = state.pc;
     last_bits = bits;
     executions = 1;
   } else {
+    //printf("OUCH\n");
     executions++;
   }
 }
@@ -1078,3 +1085,9 @@ void processor_t::trigger_updated()
     }
   }
 }
+
+uint64_t processor_t::get_current_cycle()
+{
+  return current_cycle;
+}
+

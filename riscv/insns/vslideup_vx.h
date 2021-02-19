@@ -1,13 +1,13 @@
 //vslideup.vx vd, vs2, rs1
-require((insn.rs2() & (P.VU.vlmul - 1)) == 0);
-require((insn.rd() & (P.VU.vlmul - 1)) == 0);
+require((insn.rs2() & (P_.VU.vlmul - 1)) == 0);
+require((insn.rd() & (P_.VU.vlmul - 1)) == 0);
 require(insn.rd() != insn.rs2());
 if (insn.v_vm() == 0)
   require(insn.rd() != 0);
 
 const reg_t offset = RS1;
 VI_LOOP_BASE
-if (P.VU.vstart < offset && i < offset)
+if (P_.VU.vstart < offset && i < offset)
   continue;
 
 switch (sew) {

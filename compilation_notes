@@ -1,0 +1,13 @@
+
+- SPIKE_MODEL_SRC must be set to the path for the sources of the spike model
+- SPARTA_PATH must be set to the path for Sparta
+- We MUST compile using the script compile_spike_sparta.sh, which must be moved to /build
+
+- Added an include to the Spike model in Makefile.in
+- Added the corresponding Spike model files for compilation in /riscv/riscv.mk.in
+- An INTERLEAVE lower than 3 makes spike hang. This is sort of known by the developpers. Should not worry us too much actually.
+- In decode.h had to replace "#define P (*p)" with "#define P_ (*p)" (Conflict with boost)
+    Used in:
+        ../riscv/interactive.cc
+        ../riscv/decode.h
+        Several in insns folder (find ../riscv/insns/ -type f -exec sed -i "s/P\./P_\./g" {} \;)

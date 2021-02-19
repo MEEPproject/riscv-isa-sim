@@ -694,13 +694,16 @@ icache.h: mmu.h
 	mv $@.tmp $@
 
 insn_list.h: $(src_dir)/riscv/riscv.mk.in
-	for insn in $(foreach insn,$(riscv_insn_list),$(subst .,_,$(insn))) ; do \
+	\
+    for insn in $(foreach insn,$(riscv_insn_list),$(subst .,_,$(insn))) ; do \
 		printf 'DEFINE_INSN(%s)\n' "$${insn}" ; \
 	done > $@.tmp
 	mv $@.tmp $@
 
 $(riscv_gen_srcs): %.cc: insns/%.h insn_template.cc
 	sed 's/NAME/$(subst .cc,,$@)/' $(src_dir)/riscv/insn_template.cc | sed 's/OPCODE/$(call get_opcode,$(src_dir)/riscv/encoding.h,$(subst .cc,,$@))/' > $@
+
+$(gen_sparta_connection): %.cc
 
 riscv_junk = \
 	$(riscv_gen_srcs) \

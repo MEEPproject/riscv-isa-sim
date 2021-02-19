@@ -1,5 +1,5 @@
 // vlse.v and vlsseg[2-8]e.v
-reg_t sew = P.VU.vsew;
+reg_t sew = P_.VU.vsew;
 
 if (sew == e8) {
   VI_LD(i * RS2, fn, int8, 1);

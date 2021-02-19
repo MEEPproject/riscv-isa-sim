@@ -108,7 +108,14 @@ void mmu_t::load_slow_path(reg_t addr, reg_t len, uint8_t* bytes)
   if (auto host_addr = sim->addr_to_mem(paddr)) {
     memcpy(bytes, host_addr, len);
     if (tracer.interested_in_range(paddr, paddr + PGSIZE, LOAD))
-      tracer.trace(paddr, len, LOAD);
+    {
+      bool hit=false;
+      bool traced=tracer.trace(paddr, len, LOAD, hit);
+      if(log_misses && traced && !hit)
+      {
+        log_miss(paddr, len, spike_model::L2Request::AccessType::LOAD);
+      }
+    }
     else
       refill_tlb(addr, paddr, host_addr, LOAD);
   } else if (!sim->mmio_load(paddr, len, bytes)) {
@@ -137,7 +144,14 @@ void mmu_t::store_slow_path(reg_t addr, reg_t len, const uint8_t* bytes)
   if (auto host_addr = sim->addr_to_mem(paddr)) {
     memcpy(host_addr, bytes, len);
     if (tracer.interested_in_range(paddr, paddr + PGSIZE, STORE))
-      tracer.trace(paddr, len, STORE);
+    {
+      bool hit=false;
+      bool traced=tracer.trace(paddr, len, STORE, hit);
+      if(log_misses && traced && !hit)
+      {
+        log_miss(paddr, len, spike_model::L2Request::AccessType::STORE);
+      }
+    }
     else
       refill_tlb(addr, paddr, host_addr, STORE);
   } else if (!sim->mmio_store(paddr, len, bytes)) {
@@ -336,4 +350,12 @@ void mmu_t::register_memtracer(memtracer_t* t)
 {
   flush_tlb();
   tracer.hook(t);
+}
+
+void mmu_t::set_misses_dest_reg(uint8_t reg, spike_model::L2Request::RegType t)
+{
+  for(std::shared_ptr<spike_model::L2Request> miss: misses_last_inst)
+  {
+    miss->setRegId(reg, t);
+  }
 }

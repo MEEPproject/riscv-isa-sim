@@ -1,6 +1,6 @@
 // vlxe.v and vlxseg[2-8]e.v
-reg_t sew = P.VU.vsew;
-VI_DUPLICATE_VREG(insn.rs2(), P.VU.vlmax);
+reg_t sew = P_.VU.vsew;
+VI_DUPLICATE_VREG(insn.rs2(), P_.VU.vlmax);
 if (sew == e8) {
   VI_LD_INDEX(index[i], fn, int8, 1);
 } else if (sew == e16) {

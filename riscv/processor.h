@@ -2,15 +2,22 @@
 #ifndef _RISCV_PROCESSOR_H
 #define _RISCV_PROCESSOR_H
 
-#include "decode.h"
-#include "config.h"
-#include "devices.h"
-#include "trap.h"
 #include <string>
 #include <vector>
 #include <map>
 #include <cassert>
 #include "debug_rom_defines.h"
+#include <queue> //BORJA
+#include <memory>
+#include <unordered_map>
+
+#include "decode.h"
+#include "config.h"
+#include "devices.h"
+#include "trap.h"
+
+#include "L2Request.hpp"
+#include <list>
 
 class processor_t;
 class mmu_t;
@@ -19,6 +26,8 @@ class simif_t;
 class trap_t;
 class extension_t;
 class disassembler_t;
+
+//struct insn_fetch_t;//BORJA
 
 struct insn_desc_t
 {
@@ -261,6 +270,8 @@ struct state_t
   uint32_t frm;
   bool serialized; // whether timer CSRs are in a well-defined state
 
+  bool raw=false;
+
   // When true, execute a single instruction and then enter debug mode.  This
   // can only be set by executing dret.
   enum {
@@ -307,7 +318,7 @@ public:
   void set_log_commits(bool value);
   bool get_log_commits() { return log_commits_enabled; }
   void reset();
-  void step(size_t n); // run for n cycles
+  bool step(size_t n); // run for n cycles
   void set_csr(int which, reg_t val);
   reg_t get_csr(int which);
   mmu_t* get_mmu() { return mmu; }
@@ -433,13 +444,22 @@ public:
 
   void trigger_updated();
 
+  bool miss_log_enabled() {return log_misses;} //BORJA
+
+  void enable_miss_log() {log_misses=true;}
+
+  void set_current_cycle(uint64_t c){current_cycle=c;};
+  uint64_t get_current_cycle();
+
+  uint16_t get_id() {return id;}
+
 private:
   simif_t* sim;
   mmu_t* mmu; // main memory is always accessed via the mmu
   extension_t* ext;
   disassembler_t* disassembler;
   state_t state;
-  uint32_t id;
+  uint16_t id;
   unsigned max_xlen;
   unsigned xlen;
   reg_t max_isa;
@@ -475,9 +495,19 @@ private:
 
   // Track repeated executions for processor_t::disasm()
   uint64_t last_pc, last_bits, executions;
+ 
+  bool finished=false; //BORJA
+
+  bool log_misses=false;
+  bool missed_on_l1=false;
+
+  std::list<std::shared_ptr<spike_model::L2Request>> pending_misses;
+  uint64_t current_cycle;
+
 public:
   vectorUnit_t VU;
 };
+
 
 reg_t illegal_instruction(processor_t* p, insn_t insn, reg_t pc);
 

@@ -171,12 +171,10 @@ void htif_t::clear_chunk(addr_t taddr, size_t len)
 int htif_t::run()
 {
   start();
-
   auto enq_func = [](std::queue<reg_t>* q, uint64_t x) { q->push(x); };
   std::queue<reg_t> fromhost_queue;
   std::function<void(reg_t)> fromhost_callback =
     std::bind(enq_func, &fromhost_queue, std::placeholders::_1);
-
   if (tohost_addr == 0) {
     while (true)
       idle();
@@ -200,6 +198,7 @@ int htif_t::run()
     }
   }
 
+  printf("Stopping with exit code %d\n", exitcode);
   stop();
 
   return exit_code();
@@ -211,7 +210,7 @@ bool htif_t::done()
 }
 
 int htif_t::exit_code()
-{
+{  
   return exitcode >> 1;
 }
 

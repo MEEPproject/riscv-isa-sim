@@ -1,10 +1,10 @@
 // vfncvt.f.f.v vd, vs2, vm
 VI_CHECK_SDS(false);
-if (P.VU.vsew == e32)
+if (P_.VU.vsew == e32)
   require(p->supports_extension('D'));
 
 VI_VFP_LOOP_BASE
-  auto vs2 = P.VU.elt<float64_t>(rs2_num, i);
-  P.VU.elt<float32_t>(rd_num, i) = f64_to_f32(vs2);
+  auto vs2 = P_.VU.elt<float64_t>(rs2_num, i);
+  P_.VU.elt<float32_t>(rd_num, i) = f64_to_f32(vs2);
   set_fp_exceptions;
 VI_VFP_LOOP_END

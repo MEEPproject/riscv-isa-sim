@@ -107,9 +107,11 @@ void syscall_t::handle_syscall(command_t cmd)
   if (cmd.payload() & 1) // test pass/fail
   {
     htif->exitcode = cmd.payload();
-    if (htif->exit_code())
-      std::cerr << "*** FAILED *** (tohost = " << htif->exit_code() << ")" << std::endl;
-    return;
+    if (htif->exit_code())//BORJA: modified to enable threads to execute different numbers of instructions
+    {
+      printf("Device %d finished with %d\n", cmd.device(), htif->exit_code());
+      //htif->exitcode=0;
+    }
   }
   else // proxied system call
     dispatch(cmd.payload());
@@ -119,6 +121,7 @@ void syscall_t::handle_syscall(command_t cmd)
 
 reg_t syscall_t::sys_exit(reg_t code, reg_t a1, reg_t a2, reg_t a3, reg_t a4, reg_t a5, reg_t a6)
 {
+  printf("here11?\n");
   htif->exitcode = code << 1 | 1;
   return 0;
 }

@@ -3,16 +3,19 @@
 #ifndef _RISCV_SIM_H
 #define _RISCV_SIM_H
 
-#include "processor.h"
-#include "devices.h"
-#include "debug_module.h"
-#include "simif.h"
 #include <fesvr/htif.h>
 #include <fesvr/context.h>
 #include <vector>
 #include <string>
 #include <memory>
 #include <sys/types.h>
+#include <queue>//BORJA
+
+#include "processor.h"
+#include "devices.h"
+#include "debug_module.h"
+#include "simif.h"
+#include "L2Request.hpp"
 
 class mmu_t;
 class remote_bitbang_t;
@@ -21,6 +24,7 @@ class remote_bitbang_t;
 class sim_t : public htif_t, public simif_t
 {
 public:
+
   sim_t(const char* isa, const char* priv, const char* varch, size_t _nprocs,
         bool halted,
         reg_t start_pc, std::vector<std::pair<reg_t, mem_t*>> mems,
@@ -49,6 +53,12 @@ public:
   // Callback for processors to let the simulation know they were reset.
   void proc_reset(unsigned id);
 
+  void prepare();
+
+  bool simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::shared_ptr<spike_model::L2Request>>& l1Misses);
+
+  void advance_clock(uint64_t);
+  bool ack_register(const spike_model::L2Request & req, uint64_t timestamp);
 private:
   std::vector<std::pair<reg_t, mem_t*>> mems;
   std::vector<std::pair<reg_t, abstract_device_t*>> plugin_devices;
@@ -60,9 +70,12 @@ private:
   std::unique_ptr<clint_t> clint;
   bus_t bus;
 
+
   processor_t* get_core(const std::string& i);
   void step(size_t n); // step through simulation
-  static const size_t INTERLEAVE = 5000;
+  
+  bool my_step_one(size_t core);
+  static const size_t INTERLEAVE =5000;
   static const size_t INSNS_PER_RTC_TICK = 100; // 10 MHz clock for 1 BIPS core
   static const size_t CPU_HZ = 1000000000; // 1GHz CPU
   size_t current_step;
@@ -111,6 +124,7 @@ private:
 
   // htif
   friend void sim_thread_main(void*);
+  friend void htif_run_launcher(void* arg);
   void main();
 
   context_t* host;
@@ -121,6 +135,8 @@ private:
   void write_chunk(addr_t taddr, size_t len, const void* src);
   size_t chunk_align() { return 8; }
   size_t chunk_max_size() { return 8; }
+  
+  uint64_t current_cycle=0;
 
 public:
   // Initialize this after procs, because in debug_module_t::reset() we

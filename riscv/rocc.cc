@@ -3,6 +3,7 @@
 #include "rocc.h"
 #include "trap.h"
 #include <cstdlib>
+#include "mmu.h"
 
 #define customX(n) \
   static reg_t c##n(processor_t* p, insn_t insn, reg_t pc) \

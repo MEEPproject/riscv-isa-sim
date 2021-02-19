@@ -13,6 +13,7 @@
 #include <string>
 #include <memory>
 #include "../VERSION"
+//#include <spike.h>//BORJA
 
 static void help(int exit_code = 1)
 {
@@ -101,7 +102,8 @@ static std::vector<std::pair<reg_t, mem_t*>> make_mems(const char* arg)
   return res;
 }
 
-int main(int argc, char** argv)
+
+int main(int argc, char** argv)//BORJA
 {
   bool debug = false;
   bool halted = false;
@@ -113,8 +115,10 @@ int main(int argc, char** argv)
   reg_t start_pc = reg_t(-1);
   std::vector<std::pair<reg_t, mem_t*>> mems;
   std::vector<std::pair<reg_t, abstract_device_t*>> plugin_devices;
-  std::unique_ptr<icache_sim_t> ic;
-  std::unique_ptr<dcache_sim_t> dc;
+  //std::unique_ptr<icache_sim_t> ic;
+  //std::unique_ptr<dcache_sim_t> dc;
+  const char * ic_conf=NULL;
+  const char * dc_conf=NULL;
   std::unique_ptr<cache_sim_t> l2;
   bool log_cache = false;
   bool log_commits = false;
@@ -204,8 +208,10 @@ int main(int argc, char** argv)
   parser.option(0, "rbb-port", 1, [&](const char* s){use_rbb = true; rbb_port = atoi(s);});
   parser.option(0, "pc", 1, [&](const char* s){start_pc = strtoull(s, 0, 0);});
   parser.option(0, "hartids", 1, hartids_parser);
-  parser.option(0, "ic", 1, [&](const char* s){ic.reset(new icache_sim_t(s));});
-  parser.option(0, "dc", 1, [&](const char* s){dc.reset(new dcache_sim_t(s));});
+  //parser.option(0, "ic", 1, [&](const char* s){ic.reset(new icache_sim_t(s));});
+  //parser.option(0, "dc", 1, [&](const char* s){dc.reset(new dcache_sim_t(s));});
+  parser.option(0, "ic", 1, [&](const char* s){ic_conf=s;});
+  parser.option(0, "dc", 1, [&](const char* s){dc_conf=s;});
   parser.option(0, "l2", 1, [&](const char* s){l2.reset(cache_sim_t::construct(s, "L2$"));});
   parser.option(0, "log-cache-miss", 0, [&](const char* s){log_cache = true;});
   parser.option(0, "isa", 1, [&](const char* s){isa = s;});
@@ -234,8 +240,6 @@ int main(int argc, char** argv)
       [&](const char* s){dm_config.abstract_rti = atoi(s);});
   parser.option(0, "dm-no-hasel", 0,
       [&](const char* s){dm_config.support_hasel = false;});
-  parser.option(0, "dm-no-abstract-csr", 0,
-      [&](const char* s){dm_config.support_abstract_csr_access = false;});
   parser.option(0, "dm-no-halt-groups", 0,
       [&](const char* s){dm_config.support_haltgroups = false;});
   parser.option(0, "log-commits", 0, [&](const char* s){log_commits = true;});
@@ -247,6 +251,7 @@ int main(int argc, char** argv)
 
   if (!*argv1)
     help();
+
 
   sim_t s(isa, priv, varch, nprocs, halted, start_pc, mems, plugin_devices, htif_args,
       std::move(hartids), dm_config);
@@ -264,14 +269,29 @@ int main(int argc, char** argv)
     return 0;
   }
 
-  if (ic && l2) ic->set_miss_handler(&*l2);
-  if (dc && l2) dc->set_miss_handler(&*l2);
-  if (ic) ic->set_log(log_cache);
-  if (dc) dc->set_log(log_cache);
+  icache_sim_t * ics[nprocs];
+  dcache_sim_t * dcs[nprocs];
+  
   for (size_t i = 0; i < nprocs; i++)
   {
-    if (ic) s.get_core(i)->get_mmu()->register_memtracer(&*ic);
-    if (dc) s.get_core(i)->get_mmu()->register_memtracer(&*dc);
+    if (ic_conf!=NULL)
+    {
+        icache_sim_t * ic;
+        ic=new icache_sim_t(ic_conf);
+        if(l2) ic->set_miss_handler(&*l2);
+        ic->set_log(log_cache);
+        s.get_core(i)->get_mmu()->register_memtracer(ic);
+        ics[i]=ic;
+    }
+    if (dc_conf!=NULL)
+    {
+        dcache_sim_t * dc;
+        dc=new dcache_sim_t(dc_conf);
+        if(l2) dc->set_miss_handler(&*l2);
+        dc->set_log(log_cache);
+        s.get_core(i)->get_mmu()->register_memtracer(dc);
+        dcs[i]=dc;
+    }
     if (extension) s.get_core(i)->register_extension(extension());
   }
 
@@ -281,6 +301,13 @@ int main(int argc, char** argv)
   s.set_log_commits(log_commits);
 
   auto return_code = s.run();
+
+  for(size_t i = 0; i < nprocs; i++)
+  {
+    std::cout << "--------CORE " << i << "--------\n";
+    if (ic_conf!=NULL) delete ics[i];
+    if (dc_conf!=NULL) delete dcs[i];
+  }
 
   for (auto& mem : mems)
     delete mem.second;

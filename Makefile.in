@@ -35,6 +35,8 @@ default : all
 project_name := @PACKAGE_TARNAME@
 src_dir      := @srcdir@
 scripts_dir  := $(src_dir)/scripts
+sparta_spike_model_path  := $(SPIKE_MODEL_SRC) #/home/bscuser/simulation/map/sparta/example/SpikeModel/src
+sparta_path := $(SPARTA_PATH)
 
 HAVE_INT128 := @HAVE_INT128@
 
@@ -67,7 +69,7 @@ install_exes_dir := $(INSTALLDIR)/bin
 sprojs         := @subprojects@
 sprojs_enabled := @subprojects_enabled@
 
-sprojs_include := -I. -I$(src_dir) $(addprefix -I$(src_dir)/, $(sprojs_enabled))
+sprojs_include := -I. -I$(src_dir) $(addprefix -I$(src_dir)/, $(sprojs_enabled)) -I$(sparta_spike_model_path) -I$(sparta_path)
 VPATH := $(addprefix $(src_dir)/, $(sprojs_enabled))
 
 #-------------------------------------------------------------------------
@@ -80,7 +82,7 @@ VPATH := $(addprefix $(src_dir)/, $(sprojs_enabled))
 
 CC            := @CC@
 CXX           := @CXX@
-CFLAGS        += @CFLAGS@ -DPREFIX=\"$(prefix)\"
+CFLAGS        += @CFLAGS@ -DPREFIX=\"$(prefix)\" -fPIC
 CPPFLAGS      += @CPPFLAGS@
 CXXFLAGS      += @CXXFLAGS@ -DPREFIX=\"$(prefix)\"
 COMPILE       := $(CXX) -MMD -MP $(CPPFLAGS) $(CXXFLAGS) \

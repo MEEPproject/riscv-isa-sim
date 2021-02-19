@@ -1,9 +1,10 @@
 // See LICENSE for license details.
 
 #include "processor.h"
-#include "mmu.h"
 #include <cassert>
+#include <bitset>
 
+#include "mmu.h"
 
 static void commit_log_stash_privilege(processor_t* p)
 {
@@ -97,6 +98,7 @@ static reg_t execute_insn(processor_t* p, reg_t pc, insn_fetch_t fetch)
     }
     p->update_histogram(pc);
   }
+
   return npc;
 }
 
@@ -106,7 +108,7 @@ bool processor_t::slow_path()
 }
 
 // fetch/decode/execute loop
-void processor_t::step(size_t n)
+bool processor_t::step(size_t n)
 {
   if (!state.debug_mode) {
     if (halt_request) {
@@ -116,8 +118,14 @@ void processor_t::step(size_t n)
       enter_debug_mode(DCSR_CAUSE_HALT);
     }
   }
+  
+  if(get_mmu()->num_pending_misses()>0)
+  {
+    get_mmu()->clear_misses();
+    missed_on_l1=false;
+  }
 
-  while (n > 0) {
+  while (n > 0 && !missed_on_l1) {
     size_t instret = 0;
     reg_t pc = state.pc;
     mmu_t* _mmu = mmu;
@@ -143,7 +151,7 @@ void processor_t::step(size_t n)
 
       if (unlikely(slow_path()))
       {
-        while (instret < n)
+        while (instret < n && !missed_on_l1)
         {
           if (unlikely(!state.serialized && state.single_step == state.STEP_STEPPED)) {
             state.single_step = state.STEP_NONE;
@@ -160,12 +168,14 @@ void processor_t::step(size_t n)
 
           insn_fetch_t fetch = mmu->load_insn(pc);
           if (debug && !state.serialized)
+          {
             disasm(fetch.insn);
+          }
           pc = execute_insn(this, pc, fetch);
           advance_pc();
         }
       }
-      else while (instret < n)
+      else while (instret < n && !missed_on_l1)
       {
         // This code uses a modified Duff's Device to improve the performance
         // of executing instructions. While typical Duff's Devices are used
@@ -267,4 +277,7 @@ void processor_t::step(size_t n)
     state.minstret += instret;
     n -= instret;
   }
+  bool res=!get_state()->raw;
+  get_state()->raw=false;
+  return res;
 }

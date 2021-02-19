@@ -1,7 +1,7 @@
 // vsxe.v and vsxseg[2-8]e.v
-reg_t sew = P.VU.vsew;
+reg_t sew = P_.VU.vsew;
 require(sew >= e8 && sew <= e64);
-VI_DUPLICATE_VREG(insn.rs2(), P.VU.vlmax);
+VI_DUPLICATE_VREG(insn.rs2(), P_.VU.vlmax);
 if (sew == e8) {
   VI_ST_INDEX(index[i], fn, uint8, 1);
 } else if (sew == e16) {

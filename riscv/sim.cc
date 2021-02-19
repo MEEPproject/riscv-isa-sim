@@ -15,6 +15,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <sys/types.h>
+#include <thread>
 
 volatile bool ctrlc_pressed = false;
 static void handle_signal(int sig)
@@ -31,7 +32,8 @@ sim_t::sim_t(const char* isa, const char* priv, const char* varch,
              std::vector<std::pair<reg_t, abstract_device_t*>> plugin_devices,
              const std::vector<std::string>& args,
              std::vector<int> const hartids,
-             const debug_module_config_t &dm_config)
+             const debug_module_config_t &dm_config
+             )
   : htif_t(args), mems(mems), plugin_devices(plugin_devices),
     procs(std::max(nprocs, size_t(1))), start_pc(start_pc), current_step(0),
     current_proc(0), debug(false), histogram_enabled(false),
@@ -50,9 +52,10 @@ sim_t::sim_t(const char* isa, const char* priv, const char* varch,
 
   debug_mmu = new mmu_t(this, NULL);
 
+
   if (hartids.size() == 0) {
     for (size_t i = 0; i < procs.size(); i++) {
-      procs[i] = new processor_t(isa, priv, varch, this, i, halted);
+      procs[i] = new processor_t(isa, priv, varch, this, i, halted);//BORJA
     }
   }
   else {
@@ -67,6 +70,7 @@ sim_t::sim_t(const char* isa, const char* priv, const char* varch,
 
   clint.reset(new clint_t(procs));
   bus.add_device(CLINT_BASE, clint.get());
+  printf("Created\n");
 }
 
 sim_t::~sim_t()
@@ -86,24 +90,126 @@ void sim_t::main()
   if (!debug && log)
     set_procs_debug(true);
 
+  printf("Entering the loop\n");
+
   while (!done())
   {
     if (debug || ctrlc_pressed)
       interactive();
     else
+    {
       step(INTERLEAVE);
+      //for(size_t i=0;i<procs.size();i++)
+        //my_step_one(i);
+    }
     if (remote_bitbang) {
       remote_bitbang->tick();
     }
   }
+
+  printf("Exited the loop\n");
+
+}
+
+bool sim_t::simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::shared_ptr<spike_model::L2Request>>& l1Misses)
+{
+    bool res=false;
+    if(!done())
+    {
+        procs[core]->set_current_cycle(current_cycle);
+        res=my_step_one(core);
+        l1Misses=procs[core]->get_mmu()->get_misses();
+        //printf("Got %lu misses here\n", l1Misses.size());
+    }
+    else
+    {
+        res=true;
+        l1Misses.push_back(std::make_shared<spike_model::L2Request>(0, 0, spike_model::L2Request::AccessType::FINISH, current_cycle, core));
+    }
+    return res;
+}
+
+
+bool sim_t::ack_register(const spike_model::L2Request & req, uint64_t timestamp)
+{
+    bool res=false;
+    switch(req.getRegType())
+    {
+        case spike_model::L2Request::RegType::INTEGER:
+            res=procs[req.getCoreId()]->get_state()->XPR.ack_for_reg(req.getRegId(), timestamp);
+            break;
+        case spike_model::L2Request::RegType::FLOAT:
+            res=procs[req.getCoreId()]->get_state()->FPR.ack_for_reg(req.getRegId(), timestamp);
+            break;
+        case spike_model::L2Request::RegType::VECTOR:
+            
+            break;
+        default:
+            std::cout << "Unknown register kind!\n";
+            break;
+    }
+    return res;
+}
+
+
+void htif_run_launcher(void* arg)
+{
+    ((sim_t*)arg)->htif_t::run();
+}
+
+void sim_t::prepare()
+{
+  target = *context_t::current();
+
+  host=new context_t();
+  host->init(htif_run_launcher, this);
+
+  for(unsigned int i=0; i<procs.size();i++)
+  {
+      procs[i]->enable_miss_log();
+      procs[i]->get_mmu()->enable_miss_log();
+  }
+ 
+  host->switch_to();
 }
 
 int sim_t::run()
 {
   host = context_t::current();
   target.init(sim_thread_main, this);
-  return htif_t::run();
+
+  int res=htif_t::run();
+
+  return res;
 }
+
+
+
+bool sim_t::my_step_one(size_t core)
+{
+    //printf("Stepping for %lu\n", core);
+    bool res=procs[core]->step(1);
+
+ //   printf("Got raw=%d\n", res);
+
+    current_step += 1;
+    if (current_step == INTERLEAVE*procs.size())
+    {
+      current_step = 0;
+      //if (++current_proc == procs.size()) {
+      //  current_proc = 0;
+      //  clint->increment(INTERLEAVE / INSNS_PER_RTC_TICK);
+      //}
+
+      if(!done())
+      {
+        host->switch_to();
+      }
+    }
+    procs[core]->get_mmu()->yield_load_reservation();
+    return res;
+}
+
 
 void sim_t::step(size_t n)
 {
@@ -113,16 +219,20 @@ void sim_t::step(size_t n)
     procs[current_proc]->step(steps);
 
     current_step += steps;
+
     if (current_step == INTERLEAVE)
     {
       current_step = 0;
       procs[current_proc]->get_mmu()->yield_load_reservation();
       if (++current_proc == procs.size()) {
         current_proc = 0;
-        clint->increment(INTERLEAVE / INSNS_PER_RTC_TICK);
+        clint->increment(INTERLEAVE / INSNS_PER_RTC_TICK); //BORJA: Untouched from original. We should be careful with this.
       }
-
-      host->switch_to();
+        
+      if(!done())//If a core finishes, the rest still need to be serviced. This guard is necessary when running as a thread (SPARTA)
+      {
+        host->switch_to();
+      }
     }
   }
 }

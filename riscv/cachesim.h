@@ -9,6 +9,9 @@
 #include <map>
 #include <cstdint>
 
+#include <queue>
+#include <memory>
+
 class lfsr_t
 {
  public:
@@ -26,7 +29,7 @@ class cache_sim_t
   cache_sim_t(const cache_sim_t& rhs);
   virtual ~cache_sim_t();
 
-  void access(uint64_t addr, size_t bytes, bool store);
+  bool access(uint64_t addr, size_t bytes, bool store);
   void print_stats();
   void set_miss_handler(cache_sim_t* mh) { miss_handler = mh; }
   void set_log(bool _log) { log = _log; }
@@ -75,6 +78,7 @@ class fa_cache_sim_t : public cache_sim_t
   std::map<uint64_t, uint64_t> tags;
 };
 
+
 class cache_memtracer_t : public memtracer_t
 {
  public:
@@ -95,8 +99,10 @@ class cache_memtracer_t : public memtracer_t
     cache->set_log(log);
   }
 
+
  protected:
   cache_sim_t* cache;
+
 };
 
 class icache_sim_t : public cache_memtracer_t
@@ -107,9 +113,15 @@ class icache_sim_t : public cache_memtracer_t
   {
     return type == FETCH;
   }
-  void trace(uint64_t addr, size_t bytes, access_type type)
+  bool trace(uint64_t addr, size_t bytes, access_type type, bool& hit)
   {
-    if (type == FETCH) cache->access(addr, bytes, false);
+    bool res=false;
+    if (type == FETCH)
+    {
+        res=true;
+        hit=cache->access(addr, bytes, false);
+    }
+    return res;
   }
 };
 
@@ -121,9 +133,16 @@ class dcache_sim_t : public cache_memtracer_t
   {
     return type == LOAD || type == STORE;
   }
-  void trace(uint64_t addr, size_t bytes, access_type type)
+  
+  bool trace(uint64_t addr, size_t bytes, access_type type, bool& hit)
   {
-    if (type == LOAD || type == STORE) cache->access(addr, bytes, type == STORE);
+    bool res=false;
+    if (type == LOAD || type == STORE)
+    {
+        res=true;
+        hit=cache->access(addr, bytes, type == STORE);
+    }
+    return res;
   }
 };
 

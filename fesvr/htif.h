@@ -47,11 +47,14 @@ class htif_t : public chunked_memif_t
   // range to memory, because it has already been loaded through a sideband
   virtual bool is_address_preloaded(addr_t taddr, size_t len) { return false; }
 
+  void notify_completion(){cores_still_running=false;}
+
  private:
   void parse_arguments(int argc, char ** argv);
   void register_devices();
   void usage(const char * program_name);
 
+  bool cores_still_running=true;
   memif_t mem;
   reg_t entry;
   bool writezeros;
