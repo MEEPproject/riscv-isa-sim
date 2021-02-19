@@ -22,16 +22,16 @@ namespace spike_model
     Creates a fully functional wrapped instance of spike that waits for single instruction 
     simulation requests on individual cores.
     */
-    SpikeWrapper::SpikeWrapper(sparta::TreeNode *node, const SpikeWrapperParameterSet *p) :
-            sparta::Unit(node),
-            p_(p->p),
-            ic_(p->ic),
-            dc_(p->dc),
-            isa_(p->isa),
-            cmd_(p->cmd),
-            varch_(p->varch),
+    SpikeWrapper::SpikeWrapper(std::string p, std::string ic, std::string dc, std::string isa, std::string cmd, std::string varch) :
+            p_(p),
+            ic_(ic),
+            dc_(dc),
+            isa_(isa),
+            cmd_(cmd),
+            varch_(varch),
             running_cores(std::stoul(p_))
     {
+        //TODO: REFACTOR
         sparta_assert(cmd_!="", "An application to simulate must be provided.");
 
         std::stringstream str_stream_cores;
@@ -56,6 +56,8 @@ namespace spike_model
 
         std::vector<std::string> cmd_tokens;
         boost::split(cmd_tokens, cmd_, boost::is_any_of(" "), boost::token_compress_on);
+
+        std::cout << "The cmd is " << cmd << "\n";
     
         std::vector<std::string> args={"spike", param_num_cores, param_isa, param_ic, param_dc, param_varch};
 
@@ -67,7 +69,6 @@ namespace spike_model
         //spike.setupForInstructionLogging(args);
         setup(args); 
     }
-    
 
     void SpikeWrapper::setup(std::vector<std::string> args)
     {
@@ -77,8 +78,11 @@ namespace spike_model
         {
             argv[i]=args[i].c_str();
         }
+        printf("1\n");
         start_spike(argc, argv);
+        printf("2\n");
         simulation->prepare();
+        printf("3\n");
     }
 
 
@@ -196,7 +200,6 @@ namespace spike_model
     */
     void SpikeWrapper::start_spike(int argc, const char** argv)
     {
-        printf("Am I silly??????\n");
         bool debug = false;
         bool halted = false;
         bool histogram = false;

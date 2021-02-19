@@ -29,33 +29,14 @@
 
 namespace spike_model
 {
-    class SpikeWrapper : public sparta::Unit
+    class SpikeWrapper
     {
         public:
-            class SpikeWrapperParameterSet : public sparta::ParameterSet
-            {
-            public:
-                //! Constructor for NoCParameterSet
-                SpikeWrapperParameterSet(sparta::TreeNode* n):
-                    sparta::ParameterSet(n)
-                {
-                }
 
-                PARAMETER(std::string, p, "1", "The number of cores this l2 is connected to")
-                PARAMETER(std::string, ic, "64:8:64", "The icache configuration")
-                PARAMETER(std::string, dc, "64:8:64", "The dcache configuration")
-                PARAMETER(std::string, isa, "RV64IMAFDCV", "The isa to use")
-                PARAMETER(std::string, cmd, "", "The command to simulate")
-                PARAMETER(std::string, varch, "v128:e64:s128", "The varch to use")
-            };
-
-            SpikeWrapper(sparta::TreeNode* node, const SpikeWrapperParameterSet* p);
+            SpikeWrapper(std::string p, std::string ic, std::string dc, std::string isa, std::string cmd, std::string varch);
 
             ~SpikeWrapper() 
             {
-                debug_logger_ << getContainer()->getLocation()
-                              << ": "
-                              << std::endl;
                 
                 for(unsigned i=0;i<ics.size();i++)
                 {
