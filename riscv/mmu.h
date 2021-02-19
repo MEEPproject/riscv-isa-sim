@@ -64,6 +64,7 @@ public:
 
   inline reg_t misaligned_load(reg_t addr, size_t size)
   {
+    printf("******\n");
 #ifdef RISCV_ENABLE_MISALIGNED
     reg_t res = 0;
     for (size_t i = 0; i < size; i++)
@@ -221,6 +222,7 @@ public:
     if (unlikely(addr & (sizeof(float128_t)-1)))
       throw trap_load_address_misaligned(addr);
 #endif
+    printf("--------\n");
     return (float128_t){load_uint64(addr), load_uint64(addr + 8)};
   }
 
