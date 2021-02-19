@@ -16,7 +16,7 @@
 #include "devices.h"
 #include "trap.h"
 
-#include "L2Request.hpp"
+#include "Request.hpp"
 #include <list>
 #include <set>
 
@@ -501,8 +501,9 @@ public:
 
   uint16_t get_id() {return id;}
 
-private:
   simif_t* sim;
+private:
+  
   mmu_t* mmu; // main memory is always accessed via the mmu
   extension_t* ext;
   disassembler_t* disassembler;
@@ -546,7 +547,7 @@ private:
  
   bool log_misses=false;
 
-  std::list<std::shared_ptr<spike_model::L2Request>> pending_misses;
+  std::list<std::shared_ptr<spike_model::Request>> pending_misses;
   uint64_t current_cycle;
 
 

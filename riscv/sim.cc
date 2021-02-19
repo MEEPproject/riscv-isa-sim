@@ -77,6 +77,7 @@ sim_t::~sim_t()
 {
   for (size_t i = 0; i < procs.size(); i++)
     delete procs[i];
+  printf("Spent %lu nanos in the region of interest\n", timer);
   delete debug_mmu;
 }
 
@@ -106,8 +107,10 @@ void sim_t::main()
 
 }
 
-bool sim_t::simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::shared_ptr<spike_model::L2Request>>& l1Misses)
+bool sim_t::simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::shared_ptr<spike_model::Request>>& l1Misses)
 {
+    //struct timeval st, et;
+    //gettimeofday(&st,NULL);
     bool res=false;
     if(!done())
     {
@@ -119,18 +122,23 @@ bool sim_t::simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::s
     else
     {
         res=true;
-        l1Misses.push_back(std::make_shared<spike_model::L2Request>(0, spike_model::L2Request::AccessType::FINISH, 0, current_cycle, core));
+        l1Misses.push_back(std::make_shared<spike_model::Request>(0, spike_model::Request::AccessType::FINISH, 0, current_cycle, core));
     }
+    //gettimeofday(&et,NULL);
+
+    //uint64_t elapsed = ((et.tv_sec - st.tv_sec) * 1000000) + (et.tv_usec - st.tv_usec);
+    //timer+=elapsed;
+
     return res;
 }
 
 
-bool sim_t::ack_register(const std::shared_ptr<spike_model::L2Request> & req, uint64_t timestamp)
+bool sim_t::ack_register(const std::shared_ptr<spike_model::Request> & req, uint64_t timestamp)
 {
     bool ready;
     switch(req->getDestinationRegType())
     {
-        case spike_model::L2Request::RegType::INTEGER:
+        case spike_model::Request::RegType::INTEGER:
             ready=procs[req->getCoreId()]->get_state()->XPR.ack_for_reg(req->getDestinationRegId(), timestamp);
             // If all the requests for the register (vector instructions might require many) have been serviced, it is no longer pending
             if(ready)
@@ -138,7 +146,7 @@ bool sim_t::ack_register(const std::shared_ptr<spike_model::L2Request> & req, ui
                 procs[req->getCoreId()]->get_state()->pending_int_regs->erase(req->getDestinationRegId());
             }
             break;
-        case spike_model::L2Request::RegType::FLOAT:
+        case spike_model::Request::RegType::FLOAT:
             ready=procs[req->getCoreId()]->get_state()->FPR.ack_for_reg(req->getDestinationRegId(), timestamp);
             // If all the requests for the register (vector instructions might require many) have been serviced, it is no longer pending
             if(ready)
@@ -146,7 +154,7 @@ bool sim_t::ack_register(const std::shared_ptr<spike_model::L2Request> & req, ui
                 procs[req->getCoreId()]->get_state()->pending_float_regs->erase(req->getDestinationRegId());
             }
             break;
-        case spike_model::L2Request::RegType::VECTOR:
+        case spike_model::Request::RegType::VECTOR:
             ready=procs[req->getCoreId()]->VU.ack_for_reg(req->getDestinationRegId(), timestamp);
             // If all the requests for the register (vector instructions might require many) have been serviced, it is no longer pending
             if(ready)

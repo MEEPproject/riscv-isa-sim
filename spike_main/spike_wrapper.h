@@ -25,7 +25,7 @@
 #include "sparta/utils/SpartaSharedPointer.hpp"
 
 #include <memory>
-#include "L2Request.hpp"
+#include "Request.hpp"
 
 
 namespace spike_model
@@ -81,8 +81,8 @@ namespace spike_model
 
             void setup(std::vector<std::string> args);
 
-            bool simulateOne(uint16_t core, uint64_t current_cycle, std::list<std::shared_ptr<spike_model::L2Request>>& l1Misses);
-            bool ackRegister(const std::shared_ptr<spike_model::L2Request> & req, uint64_t timestamp);
+            bool simulateOne(uint16_t core, uint64_t current_cycle, std::list<std::shared_ptr<spike_model::Request>>& l1Misses);
+            bool ackRegister(const std::shared_ptr<spike_model::Request> & req, uint64_t timestamp);
 
             void l2AckForCore(uint16_t core, uint64_t timestamp);
     };

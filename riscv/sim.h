@@ -15,7 +15,8 @@
 #include "devices.h"
 #include "debug_module.h"
 #include "simif.h"
-#include "L2Request.hpp"
+#include "Request.hpp"
+#include <stdint.h>
 
 class mmu_t;
 class remote_bitbang_t;
@@ -55,10 +56,10 @@ public:
 
   void prepare();
 
-  bool simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::shared_ptr<spike_model::L2Request>>& l1Misses);
+  bool simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::shared_ptr<spike_model::Request>>& l1Misses);
 
   void advance_clock(uint64_t);
-  bool ack_register(const std::shared_ptr<spike_model::L2Request> & req, uint64_t timestamp);
+  bool ack_register(const std::shared_ptr<spike_model::Request> & req, uint64_t timestamp);
 private:
   std::vector<std::pair<reg_t, mem_t*>> mems;
   std::vector<std::pair<reg_t, abstract_device_t*>> plugin_devices;
@@ -137,6 +138,7 @@ private:
   size_t chunk_max_size() { return 8; }
   
   uint64_t current_cycle=0;
+
 
 public:
   // Initialize this after procs, because in debug_module_t::reset() we

@@ -15,7 +15,7 @@
 #include <list>
 
 #include <queue>
-#include "L2Request.hpp"
+#include "Request.hpp"
 
 // virtual memory configuration
 #define PGSHIFT 12
@@ -297,7 +297,7 @@ public:
       bool traced=tracer.trace(paddr, length, FETCH, hit, victim);
       if(log_misses && traced && !hit)
       {
-        log_miss(paddr, length, spike_model::L2Request::AccessType::FETCH);
+        log_miss(paddr, length, spike_model::Request::AccessType::FETCH);
       }
     }
     return entry;
@@ -347,7 +347,7 @@ public:
     misses_last_inst.clear();
   }
 
-  std::list<std::shared_ptr<spike_model::L2Request>>& get_misses()
+  std::list<std::shared_ptr<spike_model::Request>>& get_misses()
   {
     return misses_last_inst;
   }
@@ -377,7 +377,7 @@ public:
     log_misses=true;
   }
   
-  void set_misses_dest_reg(uint8_t reg, spike_model::L2Request::RegType t);
+  void set_misses_dest_reg(uint8_t reg, spike_model::Request::RegType t);
 
 private:
   simif_t* sim;
@@ -463,17 +463,17 @@ private:
 
   friend class processor_t;
   
-  std::list<std::shared_ptr<spike_model::L2Request>> misses_last_inst;
+  std::list<std::shared_ptr<spike_model::Request>> misses_last_inst;
   bool has_fetch_miss=false;
   
-  void log_miss(uint64_t addr, size_t bytes, spike_model::L2Request::AccessType type)
+  void log_miss(uint64_t addr, size_t bytes, spike_model::Request::AccessType type)
   {
-    misses_last_inst.push_back(std::make_shared<spike_model::L2Request> (addr, type, proc->state.pc, proc->get_current_cycle(), proc->get_id()));
-    if(type==spike_model::L2Request::AccessType::FETCH)
+    misses_last_inst.push_back(std::make_shared<spike_model::Request> (addr, type, proc->state.pc, proc->get_current_cycle(), proc->get_id()));
+    if(type==spike_model::Request::AccessType::FETCH)
     {
         has_fetch_miss=true;
     }
-    if(type==spike_model::L2Request::AccessType::WRITEBACK)
+    if(type==spike_model::Request::AccessType::WRITEBACK)
     {
         num_writebacks++;
     }
