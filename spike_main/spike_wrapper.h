@@ -46,6 +46,7 @@ namespace spike_model
                 PARAMETER(std::string, dc, "64:8:64", "The dcache configuration")
                 PARAMETER(std::string, isa, "RV64IMAFDCV", "The isa to use")
                 PARAMETER(std::string, cmd, "", "The command to simulate")
+                PARAMETER(std::string, varch, "v128:e64:s128", "The varch to use")
             };
 
             /*!
@@ -79,6 +80,7 @@ namespace spike_model
             std::string dc_;
             std::string isa_;
             std::string cmd_;
+            std::string varch_;
 
             std::shared_ptr<sim_t> simulation;        
 

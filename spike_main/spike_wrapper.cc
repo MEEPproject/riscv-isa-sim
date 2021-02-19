@@ -25,6 +25,7 @@ namespace spike_model
             dc_(p->dc),
             isa_(p->isa),
             cmd_(p->cmd),
+            varch_(p->varch),
             running_cores(std::stoul(p_))
     {
         sparta_assert(cmd_!="", "An application to simulate must be provided.");
@@ -44,11 +45,15 @@ namespace spike_model
         std::stringstream str_stream_dc;
         str_stream_dc << "--dc=" << dc_;
         std::string param_dc = str_stream_dc.str();
+        
+        std::stringstream str_stream_varch;
+        str_stream_varch << "--varch=" << varch_;
+        std::string param_varch = str_stream_varch.str();
 
         std::vector<std::string> cmd_tokens;
         boost::split(cmd_tokens, cmd_, boost::is_any_of(" "), boost::token_compress_on);
     
-        std::vector<std::string> args={"spike", param_num_cores, param_isa, param_ic, param_dc};
+        std::vector<std::string> args={"spike", param_num_cores, param_isa, param_ic, param_dc, param_varch};
 
         args.insert(args.end(), cmd_tokens.begin(), cmd_tokens.end());
 
