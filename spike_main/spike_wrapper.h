@@ -49,11 +49,6 @@ namespace spike_model
                 PARAMETER(std::string, varch, "v128:e64:s128", "The varch to use")
             };
 
-            /*!
-             * \brief Constructor for NoC
-             * \note  node parameter is the node that represent the NoC and
-             *        p is the NoC parameter set
-             */
             SpikeWrapper(sparta::TreeNode* node, const SpikeWrapperParameterSet* p);
 
             ~SpikeWrapper() 
@@ -86,8 +81,6 @@ namespace spike_model
 
             void start_spike(int argc, const char** argv);
             
-            void setup(std::vector<std::string> args);
-
             uint32_t running_cores;
 
 
@@ -100,7 +93,7 @@ namespace spike_model
 
 //            SpikeWrapper(const SpikeWrapper &s);
 
-            void setupForMissLogging(std::vector<std::string> args);
+            void setup(std::vector<std::string> args);
 
             bool simulateOne(uint16_t core, uint64_t current_cycle, std::list<std::shared_ptr<spike_model::L2Request>>& l1Misses);
             bool ackRegister(const std::shared_ptr<spike_model::L2Request> & req, uint64_t timestamp);

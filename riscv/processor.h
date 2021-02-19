@@ -27,8 +27,6 @@ class trap_t;
 class extension_t;
 class disassembler_t;
 
-//struct insn_fetch_t;//BORJA
-
 struct insn_desc_t
 {
   insn_bits_t match;
@@ -545,8 +543,6 @@ private:
   // Track repeated executions for processor_t::disasm()
   uint64_t last_pc, last_bits, executions;
  
-  bool finished=false; //BORJA
-
   bool log_misses=false;
 
   std::list<std::shared_ptr<spike_model::L2Request>> pending_misses;

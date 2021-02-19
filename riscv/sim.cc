@@ -55,7 +55,7 @@ sim_t::sim_t(const char* isa, const char* priv, const char* varch,
 
   if (hartids.size() == 0) {
     for (size_t i = 0; i < procs.size(); i++) {
-      procs[i] = new processor_t(isa, priv, varch, this, i, halted);//BORJA
+      procs[i] = new processor_t(isa, priv, varch, this, i, halted);
     }
   }
   else {
@@ -90,8 +90,6 @@ void sim_t::main()
   if (!debug && log)
     set_procs_debug(true);
 
-  printf("Entering the loop\n");
-
   while (!done())
   {
     if (debug || ctrlc_pressed)
@@ -99,15 +97,12 @@ void sim_t::main()
     else
     {
       step(INTERLEAVE);
-      //for(size_t i=0;i<procs.size();i++)
-        //my_step_one(i);
     }
     if (remote_bitbang) {
       remote_bitbang->tick();
     }
   }
 
-  printf("Exited the loop\n");
 
 }
 
@@ -137,6 +132,7 @@ bool sim_t::ack_register(const std::shared_ptr<spike_model::L2Request> & req, ui
     {
         case spike_model::L2Request::RegType::INTEGER:
             ready=procs[req->getCoreId()]->get_state()->XPR.ack_for_reg(req->getRegId(), timestamp);
+            // If all the requests for the register (vector instructions might require many) have been serviced, it is no longer pending
             if(ready)
             {
                 procs[req->getCoreId()]->get_state()->pending_int_regs->remove(req->getRegId());
@@ -144,6 +140,7 @@ bool sim_t::ack_register(const std::shared_ptr<spike_model::L2Request> & req, ui
             break;
         case spike_model::L2Request::RegType::FLOAT:
             ready=procs[req->getCoreId()]->get_state()->FPR.ack_for_reg(req->getRegId(), timestamp);
+            // If all the requests for the register (vector instructions might require many) have been serviced, it is no longer pending
             if(ready)
             {
                 procs[req->getCoreId()]->get_state()->pending_float_regs->remove(req->getRegId());
@@ -151,6 +148,7 @@ bool sim_t::ack_register(const std::shared_ptr<spike_model::L2Request> & req, ui
             break;
         case spike_model::L2Request::RegType::VECTOR:
             ready=procs[req->getCoreId()]->VU.ack_for_reg(req->getRegId(), timestamp);
+            // If all the requests for the register (vector instructions might require many) have been serviced, it is no longer pending
             if(ready)
             {
                 procs[req->getCoreId()]->get_state()->pending_vector_regs->remove(req->getRegId());
@@ -160,6 +158,7 @@ bool sim_t::ack_register(const std::shared_ptr<spike_model::L2Request> & req, ui
             std::cout << "Unknown register kind!\n";
             break;
     }
+    //Simulation can resumen if there are no pending registers.
     return procs[req->getCoreId()]->get_state()->pending_int_regs->size()==0 && procs[req->getCoreId()]->get_state()->pending_float_regs->size()==0 && procs[req->getCoreId()]->get_state()->pending_vector_regs->size()==0;
 }
 
@@ -169,6 +168,12 @@ void htif_run_launcher(void* arg)
     ((sim_t*)arg)->htif_t::run();
 }
 
+/*
+Prepares the wrapped spike to wait for simulate requests. This is
+basically the opposite of the run function, in the sense that the 
+work that is done by each of the two threads is reversed. When
+executing in this mode, Spike debug mode is likely to not work.
+*/
 void sim_t::prepare()
 {
   target = *context_t::current();
@@ -196,22 +201,17 @@ int sim_t::run()
 }
 
 
-
+/*
+Simulates a single instruction in the specified core.
+*/
 bool sim_t::my_step_one(size_t core)
 {
-    //printf("Stepping for %lu\n", core);
     bool res=procs[core]->step(1);
-
- //   printf("Got raw=%d\n", res);
 
     current_step += 1;
     if (current_step == INTERLEAVE*procs.size())
     {
       current_step = 0;
-      //if (++current_proc == procs.size()) {
-      //  current_proc = 0;
-      //  clint->increment(INTERLEAVE / INSNS_PER_RTC_TICK);
-      //}
 
       if(!done())
       {
@@ -238,10 +238,10 @@ void sim_t::step(size_t n)
       procs[current_proc]->get_mmu()->yield_load_reservation();
       if (++current_proc == procs.size()) {
         current_proc = 0;
-        clint->increment(INTERLEAVE / INSNS_PER_RTC_TICK); //BORJA: Untouched from original. We should be careful with this.
+        clint->increment(INTERLEAVE / INSNS_PER_RTC_TICK);
       }
         
-      if(!done())//If a core finishes, the rest still need to be serviced. This guard is necessary when running as a thread (SPARTA)
+      if(!done())
       {
         host->switch_to();
       }
