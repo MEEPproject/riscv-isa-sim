@@ -24,7 +24,6 @@
 #include "sparta/utils/SpartaSharedPointer.hpp"
 
 #include <memory>
-#include "BaseInstruction.hpp"
 #include "L2Request.hpp"
 
 
