@@ -194,8 +194,23 @@ class vectorUnit_t {
         reg_referenced[vReg] = 1;
 
         T *regStart = (T*)((char*)reg_file + vReg * (VLEN >> 3));
+
+        check_raw(vReg);
+
         return regStart[n];
       }
+
+  private:
+    uint64_t avail_cycle[NVPR]={0};
+    uint8_t pending_events[NVPR]={0};
+
+    void check_raw(reg_t vReg);
+
+    uint64_t get_avail_cycle(reg_t i)
+    {
+      return avail_cycle[i];
+    }
+
   public:
 
     void reset();
@@ -218,6 +233,34 @@ class vectorUnit_t {
     VRM get_vround_mode() {
       return (VRM)vxrm;
     }
+
+
+    void set_avail(reg_t i, uint64_t cycle)
+    {
+      //if (!zero_reg || i != 0)
+      avail_cycle[i] = cycle;
+    }
+
+    bool ack_for_reg(reg_t i, uint64_t cycle)
+    {
+      bool res=false;
+      pending_events[i]--;
+      if(pending_events[i]==0)
+      {
+        set_avail(i, cycle);
+        res=true;
+      }
+      return res;
+    }
+
+    void set_event_dependent(reg_t i, uint8_t num_events)
+    {
+      pending_events[i]=num_events;
+      //if (!zero_reg || i != 0)
+      avail_cycle[i] = std::numeric_limits<uint64_t>::max();
+    }
+
+
 };
 
 // architectural state of a RISC-V hart

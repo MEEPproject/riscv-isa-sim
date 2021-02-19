@@ -142,7 +142,7 @@ bool sim_t::ack_register(const std::shared_ptr<spike_model::L2Request> & req, ui
             res=procs[req->getCoreId()]->get_state()->FPR.ack_for_reg(req->getRegId(), timestamp);
             break;
         case spike_model::L2Request::RegType::VECTOR:
-            
+            res=procs[req->getCoreId()]->VU.ack_for_reg(req->getRegId(), timestamp);
             break;
         default:
             std::cout << "Unknown register kind!\n";

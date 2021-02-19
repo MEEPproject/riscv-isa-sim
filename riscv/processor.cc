@@ -271,6 +271,14 @@ reg_t vectorUnit_t::set_vl(int rd, int rs1, reg_t reqVL, reg_t newType){
   setvl_count++;
   return vl;
 }
+    
+void vectorUnit_t::check_raw(reg_t vReg)
+{
+  if(get_avail_cycle(vReg)>p->get_current_cycle())
+  {
+    p->get_state()->raw=true;
+  }
+}
 
 void processor_t::set_debug(bool value)
 {

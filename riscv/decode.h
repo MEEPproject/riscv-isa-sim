@@ -1590,6 +1590,11 @@ for (reg_t i = 0; i < vlmax; ++i) { \
       } \
     } \
   } \
+  if(MMU.num_pending_data_misses()>0) \
+  { \
+    P_.VU.set_event_dependent(vd, MMU.num_pending_data_misses()); \
+    MMU.set_misses_dest_reg(vd, spike_model::L2Request::RegType::VECTOR); \
+  } \
   P_.VU.vstart = 0;
 
 #define VI_LD(stride, offset, ld_width, elt_byte) \
@@ -1657,7 +1662,12 @@ for (reg_t i = 0; i < vlmax; ++i) { \
     if (early_stop) { \
       break; \
     } \
-  }
+  } \
+  if(MMU.num_pending_data_misses()>0) \
+  { \
+    P_.VU.set_event_dependent(rd_num, MMU.num_pending_data_misses()); \
+    MMU.set_misses_dest_reg(rd_num, spike_model::L2Request::RegType::VECTOR); \
+  } 
 
 
 //

@@ -44,7 +44,7 @@ namespace spike_model
                 PARAMETER(std::string, p, "1", "The number of cores this l2 is connected to")
                 PARAMETER(std::string, ic, "64:8:64", "The icache configuration")
                 PARAMETER(std::string, dc, "64:8:64", "The dcache configuration")
-                PARAMETER(std::string, isa, "RV64", "The isa to use")
+                PARAMETER(std::string, isa, "RV64IMAFDCV", "The isa to use")
                 PARAMETER(std::string, cmd, "", "The command to simulate")
             };
 
