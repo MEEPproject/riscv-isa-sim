@@ -122,10 +122,9 @@ bool processor_t::step(size_t n)
   if(get_mmu()->num_pending_misses()>0)
   {
     get_mmu()->clear_misses();
-    missed_on_l1=false;
   }
 
-  while (n > 0 && !missed_on_l1) {
+  while (n > 0) {
     size_t instret = 0;
     reg_t pc = state.pc;
     mmu_t* _mmu = mmu;
@@ -151,7 +150,7 @@ bool processor_t::step(size_t n)
 
       if (unlikely(slow_path()))
       {
-        while (instret < n && !missed_on_l1)
+        while (instret < n)
         {
           if (unlikely(!state.serialized && state.single_step == state.STEP_STEPPED)) {
             state.single_step = state.STEP_NONE;
@@ -175,7 +174,7 @@ bool processor_t::step(size_t n)
           advance_pc();
         }
       }
-      else while (instret < n && !missed_on_l1)
+      else while (instret < n)
       {
         // This code uses a modified Duff's Device to improve the performance
         // of executing instructions. While typical Duff's Devices are used

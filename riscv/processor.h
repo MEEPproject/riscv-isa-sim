@@ -499,7 +499,6 @@ private:
   bool finished=false; //BORJA
 
   bool log_misses=false;
-  bool missed_on_l1=false;
 
   std::list<std::shared_ptr<spike_model::L2Request>> pending_misses;
   uint64_t current_cycle;
