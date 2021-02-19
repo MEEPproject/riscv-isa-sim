@@ -58,7 +58,7 @@ public:
   bool simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::shared_ptr<spike_model::L2Request>>& l1Misses);
 
   void advance_clock(uint64_t);
-  bool ack_register(const spike_model::L2Request & req, uint64_t timestamp);
+  bool ack_register(const std::shared_ptr<spike_model::L2Request> & req, uint64_t timestamp);
 private:
   std::vector<std::pair<reg_t, mem_t*>> mems;
   std::vector<std::pair<reg_t, abstract_device_t*>> plugin_devices;

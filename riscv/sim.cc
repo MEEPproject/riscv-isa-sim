@@ -130,16 +130,16 @@ bool sim_t::simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::s
 }
 
 
-bool sim_t::ack_register(const spike_model::L2Request & req, uint64_t timestamp)
+bool sim_t::ack_register(const std::shared_ptr<spike_model::L2Request> & req, uint64_t timestamp)
 {
     bool res=false;
-    switch(req.getRegType())
+    switch(req->getRegType())
     {
         case spike_model::L2Request::RegType::INTEGER:
-            res=procs[req.getCoreId()]->get_state()->XPR.ack_for_reg(req.getRegId(), timestamp);
+            res=procs[req->getCoreId()]->get_state()->XPR.ack_for_reg(req->getRegId(), timestamp);
             break;
         case spike_model::L2Request::RegType::FLOAT:
-            res=procs[req.getCoreId()]->get_state()->FPR.ack_for_reg(req.getRegId(), timestamp);
+            res=procs[req->getCoreId()]->get_state()->FPR.ack_for_reg(req->getRegId(), timestamp);
             break;
         case spike_model::L2Request::RegType::VECTOR:
             

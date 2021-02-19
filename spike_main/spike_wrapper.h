@@ -101,7 +101,7 @@ namespace spike_model
             void setupForMissLogging(std::vector<std::string> args);
 
             bool simulateOne(uint16_t core, uint64_t current_cycle, std::list<std::shared_ptr<spike_model::L2Request>>& l1Misses);
-            bool ackRegister(const spike_model::L2Request & req, uint64_t timestamp);
+            bool ackRegister(const std::shared_ptr<spike_model::L2Request> & req, uint64_t timestamp);
 
             void l2AckForCore(uint16_t core, uint64_t timestamp);
     };

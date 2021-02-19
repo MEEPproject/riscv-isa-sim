@@ -87,7 +87,7 @@ namespace spike_model
         return simulation->simulate_one(core, current_cycle, l1Misses);
     }
 
-    bool SpikeWrapper::ackRegister(const spike_model::L2Request & req, uint64_t timestamp)
+    bool SpikeWrapper::ackRegister(const std::shared_ptr<spike_model::L2Request> & req, uint64_t timestamp)
     {
         return simulation->ack_register(req, timestamp);
     }
