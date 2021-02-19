@@ -35,8 +35,18 @@ default : all
 project_name := @PACKAGE_TARNAME@
 src_dir      := @srcdir@
 scripts_dir  := $(src_dir)/scripts
-sparta_spike_model_path  := $(SPIKE_MODEL_SRC) #/home/bscuser/simulation/map/sparta/example/SpikeModel/src
-sparta_path := $(SPARTA_PATH)
+
+ifndef SPIKE_MODEL_SRC
+  sparta_spike_model_path := $(src_dir)/../SpikeModel/src/
+else
+  sparta_spike_model_path  := $(SPIKE_MODEL_SRC)
+endif
+
+ifndef SPARTA_PATH
+  sparta_path := ../map/sparta/
+else
+  sparta_path := $(SPARTA_PATH)
+endif
 
 HAVE_INT128 := @HAVE_INT128@
 
