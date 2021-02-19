@@ -4,6 +4,7 @@
 
 #include "sim.h"
 #include "cachesim.h"
+#include "fastcachesim.h"
 #include <vector>
 #include <queue>
 
@@ -33,7 +34,7 @@ namespace spike_model
     {
         public:
 
-            SpikeWrapper(std::string p, std::string ic, std::string dc, std::string isa, std::string cmd, std::string varch);
+            SpikeWrapper(std::string p, std::string ic, std::string dc, std::string isa, std::string cmd, std::string varch, bool fast_cache);
 
             ~SpikeWrapper() 
             {
@@ -65,8 +66,12 @@ namespace spike_model
             uint32_t running_cores;
 
 
-            std::vector<icache_sim_t *> ics;
-            std::vector<dcache_sim_t *> dcs;
+            std::vector<memtracer_t *> ics;
+            std::vector<memtracer_t *> dcs;
+            //std::vector<icache_sim_t *> ics;
+            //std::vector<dcache_sim_t *> dcs;
+
+            bool fast_cache;
 
         public:
 

@@ -7,7 +7,6 @@
 #include <string.h>
 #include <vector>
 
-
 enum access_type {
   LOAD,
   STORE,

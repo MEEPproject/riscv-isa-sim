@@ -468,7 +468,7 @@ private:
   
   void log_miss(uint64_t addr, size_t bytes, spike_model::L2Request::AccessType type)
   {
-    misses_last_inst.push_back(std::make_shared<spike_model::L2Request> (addr, bytes, type, proc->get_current_cycle(), proc->get_id()));
+    misses_last_inst.push_back(std::make_shared<spike_model::L2Request> (addr, type, proc->state.pc, proc->get_current_cycle(), proc->get_id()));
     if(type==spike_model::L2Request::AccessType::FETCH)
     {
         has_fetch_miss=true;

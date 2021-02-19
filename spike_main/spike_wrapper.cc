@@ -22,14 +22,15 @@ namespace spike_model
     Creates a fully functional wrapped instance of spike that waits for single instruction 
     simulation requests on individual cores.
     */
-    SpikeWrapper::SpikeWrapper(std::string p, std::string ic, std::string dc, std::string isa, std::string cmd, std::string varch) :
+    SpikeWrapper::SpikeWrapper(std::string p, std::string ic, std::string dc, std::string isa, std::string cmd, std::string varch, bool fast_cache) :
             p_(p),
             ic_(ic),
             dc_(dc),
             isa_(isa),
             cmd_(cmd),
             varch_(varch),
-            running_cores(std::stoul(p_))
+            running_cores(std::stoul(p_)),
+            fast_cache(fast_cache)
     {
         //TODO: REFACTOR
         sparta_assert(cmd_!="", "An application to simulate must be provided.");
@@ -368,21 +369,45 @@ namespace spike_model
         {
           if (ic_conf!=NULL)
           {
-              icache_sim_t * ic;
-              ic=new icache_sim_t(ic_conf);
-              if(l2) ic->set_miss_handler(&*l2);
-              ic->set_log(log_cache);
-              s->get_core(i)->get_mmu()->register_memtracer(ic);
-              ics.push_back(ic);
+              if(fast_cache)
+              {
+                fast_icache_sim_t * ic;
+                ic=new fast_icache_sim_t(ic_conf);
+                if(l2) ic->set_miss_handler(&*l2);
+                ic->set_log(log_cache);
+                s->get_core(i)->get_mmu()->register_memtracer(ic);
+                ics.push_back(ic);
+              }
+              else
+              {
+                icache_sim_t * ic;
+                ic=new icache_sim_t(ic_conf);
+                if(l2) ic->set_miss_handler(&*l2);
+                ic->set_log(log_cache);
+                s->get_core(i)->get_mmu()->register_memtracer(ic);
+                ics.push_back(ic);
+              }
           }
           if (dc_conf!=NULL)
           {
-              dcache_sim_t * dc;
-              dc=new dcache_sim_t(dc_conf);
-              if(l2) dc->set_miss_handler(&*l2);
-              dc->set_log(log_cache);
-              s->get_core(i)->get_mmu()->register_memtracer(dc);
-              dcs.push_back(dc);
+              if(fast_cache)
+              {
+                fast_dcache_sim_t * dc;
+                dc=new fast_dcache_sim_t(dc_conf);
+                if(l2) dc->set_miss_handler(&*l2);
+                dc->set_log(log_cache);
+                s->get_core(i)->get_mmu()->register_memtracer(dc);
+                dcs.push_back(dc);
+              }
+              else
+              {
+                dcache_sim_t * dc;
+                dc=new dcache_sim_t(dc_conf);
+                if(l2) dc->set_miss_handler(&*l2);
+                dc->set_log(log_cache);
+                s->get_core(i)->get_mmu()->register_memtracer(dc);
+                dcs.push_back(dc);
+              }
           }
           if (extension) s->get_core(i)->register_extension(extension());
         }

@@ -119,7 +119,7 @@ bool sim_t::simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::s
     else
     {
         res=true;
-        l1Misses.push_back(std::make_shared<spike_model::L2Request>(0, 0, spike_model::L2Request::AccessType::FINISH, current_cycle, core));
+        l1Misses.push_back(std::make_shared<spike_model::L2Request>(0, spike_model::L2Request::AccessType::FINISH, 0, current_cycle, core));
     }
     return res;
 }
@@ -128,30 +128,30 @@ bool sim_t::simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::s
 bool sim_t::ack_register(const std::shared_ptr<spike_model::L2Request> & req, uint64_t timestamp)
 {
     bool ready;
-    switch(req->getRegType())
+    switch(req->getDestinationRegType())
     {
         case spike_model::L2Request::RegType::INTEGER:
-            ready=procs[req->getCoreId()]->get_state()->XPR.ack_for_reg(req->getRegId(), timestamp);
+            ready=procs[req->getCoreId()]->get_state()->XPR.ack_for_reg(req->getDestinationRegId(), timestamp);
             // If all the requests for the register (vector instructions might require many) have been serviced, it is no longer pending
             if(ready)
             {
-                procs[req->getCoreId()]->get_state()->pending_int_regs->remove(req->getRegId());
+                procs[req->getCoreId()]->get_state()->pending_int_regs->erase(req->getDestinationRegId());
             }
             break;
         case spike_model::L2Request::RegType::FLOAT:
-            ready=procs[req->getCoreId()]->get_state()->FPR.ack_for_reg(req->getRegId(), timestamp);
+            ready=procs[req->getCoreId()]->get_state()->FPR.ack_for_reg(req->getDestinationRegId(), timestamp);
             // If all the requests for the register (vector instructions might require many) have been serviced, it is no longer pending
             if(ready)
             {
-                procs[req->getCoreId()]->get_state()->pending_float_regs->remove(req->getRegId());
+                procs[req->getCoreId()]->get_state()->pending_float_regs->erase(req->getDestinationRegId());
             }
             break;
         case spike_model::L2Request::RegType::VECTOR:
-            ready=procs[req->getCoreId()]->VU.ack_for_reg(req->getRegId(), timestamp);
+            ready=procs[req->getCoreId()]->VU.ack_for_reg(req->getDestinationRegId(), timestamp);
             // If all the requests for the register (vector instructions might require many) have been serviced, it is no longer pending
             if(ready)
             {
-                procs[req->getCoreId()]->get_state()->pending_vector_regs->remove(req->getRegId());
+                procs[req->getCoreId()]->get_state()->pending_vector_regs->erase(req->getDestinationRegId());
             }
             break;
         default:

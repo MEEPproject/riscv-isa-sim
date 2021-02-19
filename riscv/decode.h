@@ -146,7 +146,9 @@ public:
   void set_avail(size_t i, uint64_t cycle)
   {
     if (!zero_reg || i != 0)
+    {
       avail_cycle[i] = cycle;
+    }
   }
 
   bool ack_for_reg(size_t i, uint64_t cycle)
@@ -188,7 +190,7 @@ private:
         if(STATE.XPR.get_avail_cycle(reg)>P_.get_current_cycle()) \
         { \
             STATE.raw=true; \
-            STATE.pending_int_regs->push_back(reg); \
+            STATE.pending_int_regs->insert(reg); \
         } \
         STATE.XPR[reg]; \
     })
@@ -197,7 +199,7 @@ private:
         if(STATE.FPR.get_avail_cycle(reg)>P_.get_current_cycle()) \
         { \
             STATE.raw=true; \
-            STATE.pending_float_regs->push_back(reg); \
+            STATE.pending_float_regs->insert(reg); \
         } \
         STATE.FPR[reg]; \
     })

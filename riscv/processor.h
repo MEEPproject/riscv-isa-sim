@@ -18,6 +18,7 @@
 
 #include "L2Request.hpp"
 #include <list>
+#include <set>
 
 class processor_t;
 class mmu_t;
@@ -315,9 +316,9 @@ struct state_t
   bool serialized; // whether timer CSRs are in a well-defined state
 
   bool raw=false;
-  std::list<size_t> * pending_int_regs;
-  std::list<size_t> * pending_float_regs;
-  std::list<size_t> * pending_vector_regs;
+  std::set<size_t> * pending_int_regs;
+  std::set<size_t> * pending_float_regs;
+  std::set<size_t> * pending_vector_regs;
 
   // When true, execute a single instruction and then enter debug mode.  This
   // can only be set by executing dret.

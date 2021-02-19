@@ -368,6 +368,6 @@ void mmu_t::set_misses_dest_reg(uint8_t reg, spike_model::L2Request::RegType t)
 {
   for(std::shared_ptr<spike_model::L2Request> miss: misses_last_inst)
   {
-    miss->setRegId(reg, t);
+    miss->setDestinationReg(reg, t);
   }
 }

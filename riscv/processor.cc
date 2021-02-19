@@ -40,9 +40,9 @@ processor_t::processor_t(const char* isa, const char* priv, const char* varch,
       disassembler->add_insn(disasm_insn);
 
   reset();
-  get_state()->pending_int_regs=new std::list<size_t>();
-  get_state()->pending_float_regs=new std::list<size_t>();
-  get_state()->pending_vector_regs=new std::list<size_t>();
+  get_state()->pending_int_regs=new std::set<size_t>();
+  get_state()->pending_float_regs=new std::set<size_t>();
+  get_state()->pending_vector_regs=new std::set<size_t>();
 }
 
 processor_t::~processor_t()
@@ -285,7 +285,7 @@ void vectorUnit_t::check_raw(reg_t vReg)
   if(get_avail_cycle(vReg)>p->get_current_cycle())
   {
     p->get_state()->raw=true;
-    p->get_state()->pending_vector_regs->push_back(vReg);
+    p->get_state()->pending_vector_regs->insert(vReg);
   }
 }
 
