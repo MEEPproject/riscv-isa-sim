@@ -130,19 +130,25 @@ bool processor_t::step(size_t n)
     mmu_t* _mmu = mmu;
 
     #define advance_pc() \
-     if (unlikely(invalid_pc(pc))) { \
-       switch (pc) { \
-         case PC_SERIALIZE_BEFORE: state.serialized = true; break; \
-         case PC_SERIALIZE_AFTER: ++instret; break; \
-         case PC_SERIALIZE_WFI: n = ++instret; break; \
-         default: abort(); \
-       } \
-       pc = state.pc; \
-       break; \
-     } else { \
-       state.pc = pc; \
-       instret++; \
-     }
+    if (unlikely(invalid_pc(pc))) { \
+        switch (pc) { \
+            case PC_SERIALIZE_BEFORE: state.serialized = true; break; \
+            case PC_SERIALIZE_AFTER: ++instret; break; \
+            case PC_SERIALIZE_WFI: n = ++instret; break; \
+            default: abort(); \
+        } \
+        if(!get_state()->raw) \
+        { \
+            pc = state.pc; \
+        }\
+            break; \
+    } else { \
+        if(!get_state()->raw) \
+        { \
+            state.pc = pc; \
+        } \
+            instret++; \
+    } 
 
     try
     {
@@ -273,7 +279,10 @@ bool processor_t::step(size_t n)
       n = instret;
     }
 
-    state.minstret += instret;
+    if(!get_state()->raw)
+    {
+        state.minstret += instret;
+    }
     n -= instret;
   }
   bool res=!get_state()->raw;
