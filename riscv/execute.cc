@@ -108,6 +108,7 @@ bool processor_t::slow_path()
 }
 
 // fetch/decode/execute loop
+//Modified to return whether a RAW was detected or not
 bool processor_t::step(size_t n)
 {
   if (!state.debug_mode) {

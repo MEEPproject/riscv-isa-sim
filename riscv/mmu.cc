@@ -117,6 +117,7 @@ void mmu_t::load_slow_path(reg_t addr, reg_t len, uint8_t* bytes)
         log_miss(paddr, len, spike_model::L2Request::AccessType::LOAD);
         if(victim!=0)
         {
+            //len should be a whole cache line. Maybe len could be ignored in the Sparta side for WRITEBACKS
             log_miss(paddr, len, spike_model::L2Request::AccessType::WRITEBACK);
         }
       }
@@ -158,6 +159,7 @@ void mmu_t::store_slow_path(reg_t addr, reg_t len, const uint8_t* bytes)
         log_miss(paddr, len, spike_model::L2Request::AccessType::STORE);
         if(victim!=0)
         {
+            //len should be a whole cache line. Maybe len could be ignored in the Sparta side for WRITEBACKS
             log_miss(paddr, len, spike_model::L2Request::AccessType::WRITEBACK);
         }
       }

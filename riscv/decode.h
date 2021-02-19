@@ -436,8 +436,10 @@ inline long double to_f(float128_t f){long double r; memcpy(&r, &f, sizeof(r)); 
     BODY; \
     bool skip = ((P_.VU.elt<uint64_t>(0, midx) >> mpos) & 0x1) == 0; \
     if (skip) \
+    {\
       continue; \
-  }
+    }\
+  } \
 
 #define VI_ELEMENT_SKIP(inx) \
   if (inx >= vl) { \
