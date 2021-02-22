@@ -512,6 +512,7 @@ disassembler_t::disassembler_t(int xlen)
   DEFINE_NOARG(wfi);
   DEFINE_NOARG(fence);
   DEFINE_NOARG(fence_i);
+  DEFINE_NOARG(simfence);
   DEFINE_SFENCE_TYPE(sfence_vma);
 
   add_insn(new disasm_insn_t("csrr", match_csrrs, mask_csrrs | mask_rs1, {&xrd, &csr}));
