@@ -378,7 +378,13 @@ public:
   {
     log_misses=true;
   }
-  
+
+  void sim_fence_log_miss()
+  {
+    std::cout << "Inside fence logn" << std::endl;
+    log_miss(0, 0, spike_model::Request::AccessType::FENCE);
+  }
+
   void set_misses_dest_reg(uint8_t reg, spike_model::Request::RegType t);
 
 private:

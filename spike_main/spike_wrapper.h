@@ -43,7 +43,7 @@ namespace spike_model
              * \param  node The node that represent the SpikeWrapper and
              * \param  p The SpikeWrapper parameter set
              */
-            SpikeWrapper(std::string p, std::string ic, std::string dc, std::string isa, std::string cmd, std::string varch, bool fast_cache);
+            SpikeWrapper(std::string p, std::string t, std::string ic, std::string dc, std::string isa, std::string cmd, std::string varch, bool fast_cache);
 
             ~SpikeWrapper() 
             {
@@ -62,6 +62,7 @@ namespace spike_model
 
         private:
             std::string p_;
+            std::string t_;
             std::string ic_;
             std::string dc_;
             std::string isa_;

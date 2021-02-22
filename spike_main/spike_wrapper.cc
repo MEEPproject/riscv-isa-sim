@@ -22,8 +22,9 @@ namespace spike_model
     Creates a fully functional wrapped instance of spike that waits for single instruction 
     simulation requests on individual cores.
     */
-    SpikeWrapper::SpikeWrapper(std::string p, std::string ic, std::string dc, std::string isa, std::string cmd, std::string varch, bool fast_cache) :
+    SpikeWrapper::SpikeWrapper(std::string p, std::string t,  std::string ic, std::string dc, std::string isa, std::string cmd, std::string varch, bool fast_cache) :
             p_(p),
+            t_(t),
             ic_(ic),
             dc_(dc),
             isa_(isa),
@@ -38,6 +39,10 @@ namespace spike_model
         std::stringstream str_stream_cores;
         str_stream_cores << "-p" << p_;
         std::string param_num_cores = str_stream_cores.str();
+
+        std::stringstream str_stream_threads;
+        str_stream_threads << "-t" << t_;
+        std::string param_num_threads = str_stream_threads.str();
 
         std::stringstream str_stream_isa;
         str_stream_isa << "--isa=" << isa_;
@@ -60,7 +65,7 @@ namespace spike_model
 
         std::cout << "The cmd is " << cmd << "\n";
     
-        std::vector<std::string> args={"spike", param_num_cores, param_isa, param_ic, param_dc, param_varch};
+        std::vector<std::string> args={"spike", param_num_cores, param_num_threads, param_isa, param_ic, param_dc, param_varch};
 
         args.insert(args.end(), cmd_tokens.begin(), cmd_tokens.end());
 
@@ -208,6 +213,7 @@ namespace spike_model
         bool dump_dts = false;
         bool dtb_enabled = true;
         size_t nprocs = 1;
+        size_t nthreads = 1;
         reg_t start_pc = reg_t(-1);
         std::vector<std::pair<reg_t, mem_t*>> mems;
         std::vector<std::pair<reg_t, abstract_device_t*>> plugin_devices;
@@ -296,6 +302,7 @@ namespace spike_model
         parser.option('g', 0, 0, [&](const char* s){histogram = true;});
         parser.option('l', 0, 0, [&](const char* s){log = true;});
         parser.option('p', 0, 1, [&](const char* s){nprocs = atoi(s);});
+        parser.option('t', 0, 1, [&](const char* s){nthreads = atoi(s);});
         parser.option('m', 0, 1, [&](const char* s){mems = make_mems(s);});
         // I wanted to use --halted, but for some reason that doesn't work.
         parser.option('H', 0, 0, [&](const char* s){halted = true;});
@@ -365,52 +372,67 @@ namespace spike_model
 
 
       
-        for (size_t i = 0; i < nprocs; i++)
+        for (size_t i = 0; i < nprocs/nthreads; i++)
         {
-          if (ic_conf!=NULL)
-          {
-              if(fast_cache)
-              {
-                fast_icache_sim_t * ic;
-                ic=new fast_icache_sim_t(ic_conf);
-                if(l2) ic->set_miss_handler(&*l2);
-                ic->set_log(log_cache);
-                s->get_core(i)->get_mmu()->register_memtracer(ic);
-                ics.push_back(ic);
-              }
-              else
-              {
-                icache_sim_t * ic;
-                ic=new icache_sim_t(ic_conf);
-                if(l2) ic->set_miss_handler(&*l2);
-                ic->set_log(log_cache);
-                s->get_core(i)->get_mmu()->register_memtracer(ic);
-                ics.push_back(ic);
-              }
-          }
-          if (dc_conf!=NULL)
-          {
-              if(fast_cache)
-              {
-                fast_dcache_sim_t * dc;
-                dc=new fast_dcache_sim_t(dc_conf);
-                if(l2) dc->set_miss_handler(&*l2);
-                dc->set_log(log_cache);
-                s->get_core(i)->get_mmu()->register_memtracer(dc);
-                dcs.push_back(dc);
-              }
-              else
-              {
-                dcache_sim_t * dc;
-                dc=new dcache_sim_t(dc_conf);
-                if(l2) dc->set_miss_handler(&*l2);
-                dc->set_log(log_cache);
-                s->get_core(i)->get_mmu()->register_memtracer(dc);
-                dcs.push_back(dc);
-              }
-          }
-          if (extension) s->get_core(i)->register_extension(extension());
+            if (ic_conf!=NULL)
+            {
+                if(fast_cache)
+                {
+                    fast_icache_sim_t *ic;
+                    ic=new fast_icache_sim_t(ic_conf);
+                    if(l2) ic->set_miss_handler(&*l2);
+                    ic->set_log(log_cache);
+                    for(size_t j = 0; j < nthreads; j++)
+                    {
+                        s->get_core(i*nthreads + j)->get_mmu()->register_memtracer(ic);
+                    }
+                    ics.push_back(ic);
+                }
+                else
+                {
+                    icache_sim_t *ic;
+                    ic=new icache_sim_t(ic_conf);
+                    if(l2) ic->set_miss_handler(&*l2);
+                    ic->set_log(log_cache);
+                    for(size_t j = 0; j < nthreads; j++)
+                    {
+                        s->get_core(i*nthreads + j)->get_mmu()->register_memtracer(ic);
+                    }
+                    ics.push_back(ic);
+                }
+            }
+            if (dc_conf!=NULL)
+            {
+                if(fast_cache)
+                {
+                    fast_dcache_sim_t *dc;
+                    dc=new fast_dcache_sim_t(dc_conf);
+                    if(l2) dc->set_miss_handler(&*l2);
+                    dc->set_log(log_cache);
+                    for(size_t j = 0; j < nthreads; j++)
+                    {
+                        s->get_core(i*nthreads + j)->get_mmu()->register_memtracer(dc);
+                    }
+                    dcs.push_back(dc);
+                }
+                else
+                {
+                    dcache_sim_t *dc;
+                    dc=new dcache_sim_t(dc_conf);
+                    if(l2) dc->set_miss_handler(&*l2);
+                    dc->set_log(log_cache);
+                    for(size_t j = 0; j < nthreads; j++)
+                    {
+                        s->get_core(i*nthreads + j)->get_mmu()->register_memtracer(dc);
+                    }
+                    dcs.push_back(dc);
+                }
+            }
         }
+
+        if (extension)
+            for(size_t i = 0; i < nprocs; i++)
+                s->get_core(i)->register_extension(extension());
 
         s->set_debug(debug);
         s->set_log(log);
