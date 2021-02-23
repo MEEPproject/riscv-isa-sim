@@ -501,6 +501,9 @@ public:
 
   uint16_t get_id() {return id;}
 
+  void sim_fence_log();
+  bool is_in_fence();
+
   simif_t* sim;
 private:
   
@@ -546,6 +549,7 @@ private:
   uint64_t last_pc, last_bits, executions;
  
   bool log_misses=false;
+  bool in_fence=false;
 
   std::list<std::shared_ptr<spike_model::Request>> pending_misses;
   uint64_t current_cycle;

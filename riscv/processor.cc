@@ -1107,4 +1107,15 @@ uint64_t processor_t::get_current_cycle()
 {
   return current_cycle;
 }
+  
+void processor_t::sim_fence_log()
+{
+ in_fence=true; 
+}
 
+bool processor_t::is_in_fence()
+{
+  bool res=in_fence;
+  in_fence=false;
+  return res;
+}
