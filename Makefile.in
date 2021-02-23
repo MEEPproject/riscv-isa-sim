@@ -43,7 +43,7 @@ else
 endif
 
 ifndef SPARTA_PATH
-  sparta_path := ../map/sparta/
+  sparta_path := $(src_dir)/../map/sparta
 else
   sparta_path := $(SPARTA_PATH)
 endif
