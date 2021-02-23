@@ -16,6 +16,9 @@
 #include "debug_module.h"
 #include "simif.h"
 #include "Request.hpp"
+#include "Finish.hpp"
+#include "Fence.hpp"
+#include "SpikeEvent.hpp"
 #include <stdint.h>
 
 class mmu_t;
@@ -56,7 +59,7 @@ public:
 
   void prepare();
 
-  bool simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::shared_ptr<spike_model::Request>>& l1Misses);
+  bool simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::shared_ptr<spike_model::SpikeEvent>>& events);
 
   void advance_clock(uint64_t);
   bool ack_register(const std::shared_ptr<spike_model::Request> & req, uint64_t timestamp);

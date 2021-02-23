@@ -1,1 +1,1 @@
-MMU.sim_fence_log_miss();
+P_.sim_fence_log();

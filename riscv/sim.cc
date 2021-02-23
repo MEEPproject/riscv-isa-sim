@@ -107,7 +107,7 @@ void sim_t::main()
 
 }
 
-bool sim_t::simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::shared_ptr<spike_model::Request>>& l1Misses)
+bool sim_t::simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::shared_ptr<spike_model::SpikeEvent>>& events)
 {
     //struct timeval st, et;
     //gettimeofday(&st,NULL);
@@ -116,13 +116,32 @@ bool sim_t::simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::s
     {
         procs[core]->set_current_cycle(current_cycle);
         res=my_step_one(core);
-        l1Misses=procs[core]->get_mmu()->get_misses();
+        std::list<std::shared_ptr<spike_model::Request>> new_misses=procs[core]->get_mmu()->get_misses();
+
+        //This is clearly inefficient, but we cannot directly return a SpikeEvent list
+        //The destination register has to be set from decode, which runs after misses
+        //have been stored in the MMU. We need requests to remain requests until this moment.
+        //TODO: Verify that this not incurr in significant performance loss. Other, more performant
+        //      implementation might be challenging without significant changes to Spike
+        //TODO: Considering we are adding new kinds of events, we might change events into an aggregate
+        //      ttpe that already holds classified events (e.g. a list of misses and a list of 
+        //      the rest of events)
+        for(std::shared_ptr<spike_model::Request> miss: new_misses)
+        {
+            events.push_back(miss);
+        }
+
         //printf("Got %lu misses here\n", l1Misses.size());
+
+        if(procs[core]->is_in_fence())
+        {
+            events.push_back(std::make_shared<spike_model::Fence>(0, current_cycle, core));
+        }
     }
     else
     {
         res=true;
-        l1Misses.push_back(std::make_shared<spike_model::Request>(0, spike_model::Request::AccessType::FINISH, 0, current_cycle, core));
+        events.push_back(std::make_shared<spike_model::Finish>(0, current_cycle, core));
     }
     //gettimeofday(&et,NULL);
 
