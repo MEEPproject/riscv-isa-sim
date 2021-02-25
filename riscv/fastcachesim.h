@@ -13,6 +13,8 @@
 #include <queue>
 #include <memory>
 
+#include "serviceable.h"
+#include "serviceablecachesim.h"
 
 typedef struct {
 	char * name;
@@ -24,7 +26,7 @@ typedef struct {
 
 typedef enum {replacePseudoLRU, replaceLRU, replaceDirect } wayReplacement;
 
-class fast_cache_sim_t
+class fast_cache_sim_t : public serviceable
 {
  public:
   fast_cache_sim_t(size_t lines, size_t length, size_t log2Lines, size_t log2LineLength, size_t numways, const char* _name);
@@ -42,6 +44,8 @@ class fast_cache_sim_t
   bool i_cache_access(uint64_t address);
   bool d_cache_read(uint64_t address);
   bool d_cache_write(uint64_t address);
+  
+  virtual std::shared_ptr<spike_model::Request> serviceRequest(std::shared_ptr<spike_model::Request> req){return std::shared_ptr<spike_model::Request>(nullptr);};//TODO
 
  protected:
   void init();
@@ -90,9 +94,10 @@ class fast_cache_sim_t
   bool log;
 };
 
-class fast_cache_memtracer_t : public memtracer_t
+class fast_cache_memtracer_t : public serviceable_cache_memtracer_t
 {
  public:
+  fast_cache_memtracer_t(){};
   fast_cache_memtracer_t(const char* config, const char* name)
   {
     cache = fast_cache_sim_t::construct(config, name);

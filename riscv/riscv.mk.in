@@ -20,6 +20,8 @@ riscv_hdrs = \
 	encoding.h \
 	cachesim.h \
     fastcachesim.h \
+    serviceablecachesim.h \
+    serviceable.h \
 	memtracer.h \
 	mmio_plugin.h \
 	tracer.h \
@@ -45,6 +47,7 @@ riscv_srcs = \
 	trap.cc \
 	cachesim.cc \
     fastcachesim.cc \
+    serviceablecachesim.cc \
 	mmu.cc \
 	disasm.cc \
 	extension.cc \
