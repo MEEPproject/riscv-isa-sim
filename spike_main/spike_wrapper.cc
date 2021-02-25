@@ -13,6 +13,7 @@
 #include <string>
 #include <memory>
 #include "../VERSION"
+#include "serviceablecachesim.h"
 
 namespace spike_model
 {    
@@ -109,6 +110,26 @@ namespace spike_model
     bool SpikeWrapper::ackRegister(const std::shared_ptr<spike_model::Request> & req, uint64_t timestamp)
     {
         return simulation->ack_register(req, timestamp);
+    }
+    
+    std::shared_ptr<Request> SpikeWrapper::serviceRequest(std::shared_ptr<Request> req)
+    {
+        std::shared_ptr<Request> wb=std::shared_ptr<Request>(nullptr);
+        uint32_t cache_idx=req->getCoreId()/threads_per_core;
+        //FETCHES REQUIRE NO WRITEBACKS BECAUSE CODE CANNOT BE WRITTEN (WILL NOT BE DIRTY)
+        if(req->getType()==Request::AccessType::FETCH)
+        {
+           ics[cache_idx]->serviceRequest(req);
+        }
+        else
+        {
+           wb=dcs[cache_idx]->serviceRequest(req);
+        }
+        if(wb!=nullptr)
+        {
+            wb->setCoreId(req->getCoreId());
+        }
+        return wb;
     }
 
     static void help(int exit_code = 1)
@@ -390,8 +411,8 @@ namespace spike_model
                 }
                 else
                 {
-                    icache_sim_t *ic;
-                    ic=new icache_sim_t(ic_conf);
+                    serviceable_icache_sim_t *ic;
+                    ic=new serviceable_icache_sim_t(ic_conf);
                     if(l2) ic->set_miss_handler(&*l2);
                     ic->set_log(log_cache);
                     for(size_t j = 0; j < nthreads; j++)
@@ -417,8 +438,8 @@ namespace spike_model
                 }
                 else
                 {
-                    dcache_sim_t *dc;
-                    dc=new dcache_sim_t(dc_conf);
+                    serviceable_dcache_sim_t *dc;
+                    dc=new serviceable_dcache_sim_t(dc_conf);
                     if(l2) dc->set_miss_handler(&*l2);
                     dc->set_log(log_cache);
                     for(size_t j = 0; j < nthreads; j++)
@@ -438,6 +459,8 @@ namespace spike_model
         s->set_log(log);
         s->set_histogram(histogram);
         s->set_log_commits(log_commits);
+
+        threads_per_core=nthreads;
 
         simulation=s;
     }

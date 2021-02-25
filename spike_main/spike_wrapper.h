@@ -5,6 +5,7 @@
 #include "sim.h"
 #include "cachesim.h"
 #include "fastcachesim.h"
+#include "serviceable.h"
 #include <vector>
 #include <queue>
 
@@ -84,12 +85,13 @@ namespace spike_model
             uint32_t running_cores;
 
 
-            std::vector<memtracer_t *> ics;
-            std::vector<memtracer_t *> dcs;
+            std::vector<serviceable_cache_memtracer_t *> ics;
+            std::vector<serviceable_cache_memtracer_t *> dcs;
             //std::vector<icache_sim_t *> ics;
             //std::vector<dcache_sim_t *> dcs;
 
             bool fast_cache;
+            size_t threads_per_core;
 
         public:
 
@@ -120,6 +122,13 @@ namespace spike_model
              * \return Whether the core associated to the dependency can now run or not.
              */
             bool ackRegister(const std::shared_ptr<spike_model::Request> & req, uint64_t timestamp);
+
+            /*
+             * \brief Notify that an L2 request has been serviced
+             * \param req The serviced request
+             * \return A request for a writeback or null
+             */
+            std::shared_ptr<Request> serviceRequest(std::shared_ptr<Request> req);
     };
 }
 #endif
