@@ -19,6 +19,7 @@
 #include "Finish.hpp"
 #include "Fence.hpp"
 #include "Event.hpp"
+#include "MCPURequest.hpp"
 #include <stdint.h>
 
 class mmu_t;
@@ -63,6 +64,7 @@ public:
 
   void advance_clock(uint64_t);
   bool ack_register(const std::shared_ptr<spike_model::CacheRequest> & req, uint64_t timestamp);
+  bool ack_register_and_setvl(uint64_t coreId, uint64_t vl, uint64_t timestamp);
 private:
   std::vector<std::pair<reg_t, mem_t*>> mems;
   std::vector<std::pair<reg_t, abstract_device_t*>> plugin_devices;

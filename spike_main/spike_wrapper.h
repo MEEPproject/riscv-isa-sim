@@ -123,6 +123,8 @@ namespace spike_model
              */
             bool ackRegister(const std::shared_ptr<spike_model::CacheRequest> & req, uint64_t timestamp);
 
+            bool ackRegisterAndSetvl(uint64_t coreId, uint64_t vl, uint64_t timestamp);
+
             /*
              * \brief Notify that an L2 request has been serviced
              * \param req The serviced request

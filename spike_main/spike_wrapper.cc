@@ -112,6 +112,11 @@ namespace spike_model
         return simulation->ack_register(req, timestamp);
     }
     
+    bool SpikeWrapper::ackRegisterAndSetvl(uint64_t coreId, uint64_t vl, uint64_t timestamp)
+    {
+        return simulation->ack_register_and_setvl(coreId, vl, timestamp);
+    }
+
     std::shared_ptr<CacheRequest> SpikeWrapper::serviceCacheRequest(std::shared_ptr<CacheRequest> req)
     {
         std::shared_ptr<CacheRequest> wb=std::shared_ptr<CacheRequest>(nullptr);

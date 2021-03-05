@@ -89,6 +89,7 @@ inline void processor_t::update_histogram(reg_t pc)
 // This is expected to be inlined by the compiler so each use of execute_insn
 // includes a duplicated body of the function to get separate fetch.func
 // function calls.
+extern bool enable_smart_mcpu;
 static reg_t execute_insn(processor_t* p, reg_t pc, insn_fetch_t fetch)
 {
 //struct timeval st, et;
@@ -131,9 +132,11 @@ bool processor_t::step(size_t n)
     get_mmu()->clear_misses();
   }
 
+  reg_t oldpc = 0;
   while (n > 0) {
     size_t instret = 0;
     reg_t pc = state.pc;
+    oldpc = pc;
     mmu_t* _mmu = mmu;
 
     #define advance_pc() \
@@ -285,5 +288,23 @@ bool processor_t::step(size_t n)
   }
   bool res=!get_state()->raw;
   get_state()->raw=false;
+
+  /*****************************************************************************
+     Check if the processor is executing the instruction which needs vector CSRs.
+     As of now, the easiest way to check this is the following
+     We should not allow this instruction to execute until the vector length
+     value is returned from MCPU
+  *****************************************************************************/
+  if(enable_smart_mcpu)
+  {
+    if(res)
+    {
+      if(oldpc == state.pc)
+      {
+        std::cout << "VECTOR CSR Dependency" << std::endl;
+        return false;
+      }
+    }
+  }
   return res;
 }

@@ -177,8 +177,9 @@ class vectorUnit_t {
     reg_t vediv, vsew, vlmul;
     reg_t ELEN, VLEN, SLEN;
     bool vill;
+    int curr_rd, curr_RS1;
+    reg_t curr_req_vl, curr_new_type;
 
-    // vector element for varies SEW
     template<class T>
       T& elt(reg_t vReg, reg_t n){
         assert(vsew != 0);
@@ -227,6 +228,9 @@ class vectorUnit_t {
     }
 
     reg_t set_vl(int rd, int rs1, reg_t reqVL, reg_t newType);
+    void set_vl_from_mcpu(reg_t vl_from_mcpu);
+    void get_vl_from_mcpu(int rd, int rs1, reg_t reqVL, reg_t newType);
+    uint64_t get_requested_vl();
 
     reg_t get_vlen() { return VLEN; }
     reg_t get_elen() { return ELEN; }
@@ -503,6 +507,11 @@ public:
 
   void sim_fence_log();
   bool is_in_fence();
+  bool is_in_set_vl();
+  void set_vl_progress(bool);
+  void set_vl_available(bool);
+  bool is_vl_available();
+  uint64_t get_requested_vl();
 
   simif_t* sim;
 private:
@@ -550,6 +559,8 @@ private:
  
   bool log_misses=false;
   bool in_fence=false;
+  bool in_set_vl = false;
+  bool vl_available = true;
 
   std::list<std::shared_ptr<spike_model::CacheRequest>> pending_misses;
   uint64_t current_cycle;

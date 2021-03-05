@@ -137,6 +137,10 @@ bool sim_t::simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::s
         {
             events.push_back(std::make_shared<spike_model::Fence>(0, current_cycle, core));
         }
+        else if(procs[core]->is_in_set_vl())
+        {
+            events.push_back(std::make_shared<spike_model::MCPURequest>(procs[core]->get_requested_vl(), 0, current_cycle, core));
+        }
     }
     else
     {
@@ -189,6 +193,19 @@ bool sim_t::ack_register(const std::shared_ptr<spike_model::CacheRequest> & req,
     return procs[req->getCoreId()]->get_state()->pending_int_regs->size()==0 && procs[req->getCoreId()]->get_state()->pending_float_regs->size()==0 && procs[req->getCoreId()]->get_state()->pending_vector_regs->size()==0;
 }
 
+bool sim_t::ack_register_and_setvl(uint64_t coreId, uint64_t vl, uint64_t timestamp)
+{
+    bool ready;
+    ready=procs[coreId]->get_state()->XPR.ack_for_reg(procs[coreId]->VU.curr_rd, timestamp);
+    // If all the requests for the register (vector instructions might require many) have been serviced, it is no longer pending
+    if(ready)
+    {
+        procs[coreId]->get_state()->pending_int_regs->erase(procs[coreId]->VU.curr_rd);
+    }
+    //Simulation can resumen if there are no pending registers.
+    procs[coreId]->VU.set_vl_from_mcpu(vl);
+    return procs[coreId]->get_state()->pending_int_regs->size()==0 && procs[coreId]->get_state()->pending_float_regs->size()==0 && procs[coreId]->get_state()->pending_vector_regs->size()==0;
+}
 
 void htif_run_launcher(void* arg)
 {

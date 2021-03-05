@@ -279,7 +279,88 @@ reg_t vectorUnit_t::set_vl(int rd, int rs1, reg_t reqVL, reg_t newType){
   setvl_count++;
   return vl;
 }
-    
+
+void vectorUnit_t::set_vl_from_mcpu(reg_t vl_from_mcpu)
+{
+  if (vtype != curr_new_type){
+    vtype = curr_new_type;
+    vsew = 1 << (BITS(curr_new_type, 4, 2) + 3);
+    vlmul = 1 << BITS(curr_new_type, 1, 0);
+    vediv = 1 << BITS(curr_new_type, 6, 5);
+    vlmax = VLEN/vsew * vlmul;
+    vmlen = vsew / vlmul;
+    reg_mask = (NVPR-1) & ~(vlmul-1);
+
+    vill = vsew > ELEN || vediv != 1 || (curr_new_type >> 7) != 0;
+    if (vill) {
+      vlmax = 0;
+      vtype = UINT64_MAX << (p->get_xlen() - 1);
+    }
+  }
+
+  // set vl
+  if (vlmax == 0) {
+    vl = 0;
+  } else if (curr_rd == 0 && curr_RS1 == 0) {
+    vl = vl > vlmax ? vlmax : vl;
+  } else if (curr_rd != 0 && curr_RS1 == 0) {
+    vl = vlmax;
+  } else if (curr_RS1 != 0) {
+    vl = vl_from_mcpu > vlmax ? vlmax : vl_from_mcpu;
+  }
+
+  std::cout << "Set the vector length for returned VL " << vl <<  " and " << vlmax << std::endl;
+  vstart = 0;
+  setvl_count++;
+
+  (*p->get_state()).XPR.write(curr_rd, vl);
+  p->set_vl_available(true);
+}
+
+void vectorUnit_t::get_vl_from_mcpu(int rd, int rs1, reg_t reqVL, reg_t newType)
+{
+  p->set_vl_progress(true);
+  p->set_vl_available(false);
+  curr_rd = rd;
+  curr_RS1 = rs1;
+  curr_req_vl = reqVL;
+  curr_new_type = newType;
+  (*p->get_state()).XPR.set_event_dependent(curr_rd, 1);
+  std::cout << "Get the vector length for requested VL " << reqVL << std::endl;
+}
+
+bool processor_t::is_in_set_vl()
+{
+  bool res = in_set_vl;
+  in_set_vl = false;
+  return res;
+}
+
+void processor_t::set_vl_progress(bool val)
+{
+  in_set_vl = val;
+}
+
+void processor_t::set_vl_available(bool val)
+{
+  vl_available = val;
+}
+
+bool processor_t::is_vl_available()
+{
+  return vl_available;
+}
+
+uint64_t vectorUnit_t::get_requested_vl()
+{
+  return curr_req_vl;
+}
+
+uint64_t processor_t::get_requested_vl()
+{
+  return VU.get_requested_vl();
+}
+
 void vectorUnit_t::check_raw(reg_t vReg)
 {
   if(get_avail_cycle(vReg)>p->get_current_cycle())
