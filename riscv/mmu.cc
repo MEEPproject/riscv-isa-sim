@@ -114,11 +114,11 @@ void mmu_t::load_slow_path(reg_t addr, reg_t len, uint8_t* bytes)
       bool traced=tracer.trace(paddr, len, LOAD, hit, victim);
       if(log_misses && traced && !hit)
       {
-        log_miss(paddr, len, spike_model::Request::AccessType::LOAD);
+        log_miss(paddr, len, spike_model::CacheRequest::AccessType::LOAD);
         if(victim!=0)
         {
             //len should be a whole cache line. Maybe len could be ignored in the Sparta side for WRITEBACKS
-            log_miss(paddr, len, spike_model::Request::AccessType::WRITEBACK);
+            log_miss(paddr, len, spike_model::CacheRequest::AccessType::WRITEBACK);
         }
       }
     }
@@ -156,12 +156,12 @@ void mmu_t::store_slow_path(reg_t addr, reg_t len, const uint8_t* bytes)
       bool traced=tracer.trace(paddr, len, STORE, hit, victim);
       if(log_misses && traced && !hit)
       {
-        log_miss(paddr, len, spike_model::Request::AccessType::STORE);
+        log_miss(paddr, len, spike_model::CacheRequest::AccessType::STORE);
         misses_last_inst.back()->setSize(len);
         if(victim!=0)
         {
             //len should be a whole cache line. Maybe len could be ignored in the Sparta side for WRITEBACKS
-            log_miss(paddr, len, spike_model::Request::AccessType::WRITEBACK);
+            log_miss(paddr, len, spike_model::CacheRequest::AccessType::WRITEBACK);
         }
       }
     }
@@ -365,9 +365,9 @@ void mmu_t::register_memtracer(memtracer_t* t)
   tracer.hook(t);
 }
 
-void mmu_t::set_misses_dest_reg(uint8_t reg, spike_model::Request::RegType t)
+void mmu_t::set_misses_dest_reg(uint8_t reg, spike_model::CacheRequest::RegType t)
 {
-  for(std::shared_ptr<spike_model::Request> miss: misses_last_inst)
+  for(std::shared_ptr<spike_model::CacheRequest> miss: misses_last_inst)
   {
     miss->setDestinationReg(reg, t);
   }

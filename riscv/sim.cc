@@ -107,7 +107,7 @@ void sim_t::main()
 
 }
 
-bool sim_t::simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::shared_ptr<spike_model::SpikeEvent>>& events)
+bool sim_t::simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::shared_ptr<spike_model::Event>>& events)
 {
     //struct timeval st, et;
     //gettimeofday(&st,NULL);
@@ -116,9 +116,9 @@ bool sim_t::simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::s
     {
         procs[core]->set_current_cycle(current_cycle);
         res=my_step_one(core);
-        std::list<std::shared_ptr<spike_model::Request>> new_misses=procs[core]->get_mmu()->get_misses();
+        std::list<std::shared_ptr<spike_model::CacheRequest>> new_misses=procs[core]->get_mmu()->get_misses();
 
-        //This is clearly inefficient, but we cannot directly return a SpikeEvent list
+        //This is clearly inefficient, but we cannot directly return a Event list
         //The destination register has to be set from decode, which runs after misses
         //have been stored in the MMU. We need requests to remain requests until this moment.
         //TODO: Verify that this not incurr in significant performance loss. Other, more performant
@@ -126,7 +126,7 @@ bool sim_t::simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::s
         //TODO: Considering we are adding new kinds of events, we might change events into an aggregate
         //      ttpe that already holds classified events (e.g. a list of misses and a list of 
         //      the rest of events)
-        for(std::shared_ptr<spike_model::Request> miss: new_misses)
+        for(std::shared_ptr<spike_model::CacheRequest> miss: new_misses)
         {
             events.push_back(miss);
         }
@@ -152,12 +152,12 @@ bool sim_t::simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::s
 }
 
 
-bool sim_t::ack_register(const std::shared_ptr<spike_model::Request> & req, uint64_t timestamp)
+bool sim_t::ack_register(const std::shared_ptr<spike_model::CacheRequest> & req, uint64_t timestamp)
 {
     bool ready;
     switch(req->getDestinationRegType())
     {
-        case spike_model::Request::RegType::INTEGER:
+        case spike_model::CacheRequest::RegType::INTEGER:
             ready=procs[req->getCoreId()]->get_state()->XPR.ack_for_reg(req->getDestinationRegId(), timestamp);
             // If all the requests for the register (vector instructions might require many) have been serviced, it is no longer pending
             if(ready)
@@ -165,7 +165,7 @@ bool sim_t::ack_register(const std::shared_ptr<spike_model::Request> & req, uint
                 procs[req->getCoreId()]->get_state()->pending_int_regs->erase(req->getDestinationRegId());
             }
             break;
-        case spike_model::Request::RegType::FLOAT:
+        case spike_model::CacheRequest::RegType::FLOAT:
             ready=procs[req->getCoreId()]->get_state()->FPR.ack_for_reg(req->getDestinationRegId(), timestamp);
             // If all the requests for the register (vector instructions might require many) have been serviced, it is no longer pending
             if(ready)
@@ -173,7 +173,7 @@ bool sim_t::ack_register(const std::shared_ptr<spike_model::Request> & req, uint
                 procs[req->getCoreId()]->get_state()->pending_float_regs->erase(req->getDestinationRegId());
             }
             break;
-        case spike_model::Request::RegType::VECTOR:
+        case spike_model::CacheRequest::RegType::VECTOR:
             ready=procs[req->getCoreId()]->VU.ack_for_reg(req->getDestinationRegId(), timestamp);
             // If all the requests for the register (vector instructions might require many) have been serviced, it is no longer pending
             if(ready)

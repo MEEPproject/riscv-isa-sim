@@ -16,7 +16,7 @@
 #include "devices.h"
 #include "trap.h"
 
-#include "Request.hpp"
+#include "CacheRequest.hpp"
 #include <list>
 #include <set>
 
@@ -551,7 +551,7 @@ private:
   bool log_misses=false;
   bool in_fence=false;
 
-  std::list<std::shared_ptr<spike_model::Request>> pending_misses;
+  std::list<std::shared_ptr<spike_model::CacheRequest>> pending_misses;
   uint64_t current_cycle;
 
 

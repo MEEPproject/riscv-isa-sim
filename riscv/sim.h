@@ -15,10 +15,10 @@
 #include "devices.h"
 #include "debug_module.h"
 #include "simif.h"
-#include "Request.hpp"
+#include "CacheRequest.hpp"
 #include "Finish.hpp"
 #include "Fence.hpp"
-#include "SpikeEvent.hpp"
+#include "Event.hpp"
 #include <stdint.h>
 
 class mmu_t;
@@ -59,10 +59,10 @@ public:
 
   void prepare();
 
-  bool simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::shared_ptr<spike_model::SpikeEvent>>& events);
+  bool simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::shared_ptr<spike_model::Event>>& events);
 
   void advance_clock(uint64_t);
-  bool ack_register(const std::shared_ptr<spike_model::Request> & req, uint64_t timestamp);
+  bool ack_register(const std::shared_ptr<spike_model::CacheRequest> & req, uint64_t timestamp);
 private:
   std::vector<std::pair<reg_t, mem_t*>> mems;
   std::vector<std::pair<reg_t, abstract_device_t*>> plugin_devices;

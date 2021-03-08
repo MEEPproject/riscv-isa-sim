@@ -6,7 +6,7 @@
 #include <iostream>
 #include <iomanip>
 
-#include "Request.hpp"
+#include "CacheRequest.hpp"
 
 serviceable_cache_sim_t::serviceable_cache_sim_t(size_t _sets, size_t _ways, size_t _linesz, const char* _name)
 : cache_sim_t(_sets, _ways, _linesz, _name)
@@ -65,9 +65,9 @@ bool serviceable_cache_sim_t::access(uint64_t addr, size_t bytes, bool store)
   return false;
 }
 
-std::shared_ptr<spike_model::Request> serviceable_cache_sim_t::serviceRequest(std::shared_ptr<spike_model::Request> req)
+std::shared_ptr<spike_model::CacheRequest> serviceable_cache_sim_t::serviceCacheRequest(std::shared_ptr<spike_model::CacheRequest> req)
 {
-  std::shared_ptr<spike_model::Request> wb=std::shared_ptr<spike_model::Request>(nullptr);
+  std::shared_ptr<spike_model::CacheRequest> wb=std::shared_ptr<spike_model::CacheRequest>(nullptr);
   uint64_t victim=victimize(req->getAddress());
 
   if ((victim & (VALID | DIRTY)) == (VALID | DIRTY))
@@ -76,9 +76,9 @@ std::shared_ptr<spike_model::Request> serviceable_cache_sim_t::serviceRequest(st
     if (miss_handler)
       miss_handler->access(dirty_addr, linesz, true);
     writebacks++;
-    wb=std::make_shared<spike_model::Request>(victim, spike_model::Request::AccessType::WRITEBACK, 0);
+    wb=std::make_shared<spike_model::CacheRequest>(victim, spike_model::CacheRequest::AccessType::WRITEBACK, 0);
   }
-  if (req->getType()==spike_model::Request::AccessType::STORE)
+  if (req->getType()==spike_model::CacheRequest::AccessType::STORE)
   {
     *check_tag(req->getAddress()) |= DIRTY;
   }

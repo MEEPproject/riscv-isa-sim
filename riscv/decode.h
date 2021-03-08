@@ -216,7 +216,7 @@ private:
         if(MMU.num_pending_data_misses()>0) \
         { \
             STATE.XPR.set_event_dependent(reg, MMU.num_pending_data_misses()); \
-            MMU.set_misses_dest_reg(reg, spike_model::Request::RegType::INTEGER); \
+            MMU.set_misses_dest_reg(reg, spike_model::CacheRequest::RegType::INTEGER); \
         } \
     })
 
@@ -229,7 +229,7 @@ private:
     if(MMU.num_pending_data_misses()>0) \
         { \
             STATE.XPR.set_event_dependent(reg, MMU.num_pending_data_misses()); \
-            MMU.set_misses_dest_reg(reg, spike_model::Request::RegType::INTEGER); \
+            MMU.set_misses_dest_reg(reg, spike_model::CacheRequest::RegType::INTEGER); \
         } \
   })
 # define WRITE_FREG(reg, value) ({ \
@@ -263,7 +263,7 @@ private:
         if(MMU.num_pending_data_misses()>0) \
         { \
             STATE.FPR.set_event_dependent(reg, MMU.num_pending_data_misses()); \
-            MMU.set_misses_dest_reg(reg, spike_model::Request::RegType::FLOAT); \
+            MMU.set_misses_dest_reg(reg, spike_model::CacheRequest::RegType::FLOAT); \
         } \
     })
 
@@ -1600,7 +1600,7 @@ for (reg_t i = 0; i < vlmax; ++i) { \
   if(MMU.num_pending_data_misses()>0) \
   { \
     P_.VU.set_event_dependent(vd, MMU.num_pending_data_misses()); \
-    MMU.set_misses_dest_reg(vd, spike_model::Request::RegType::VECTOR); \
+    MMU.set_misses_dest_reg(vd, spike_model::CacheRequest::RegType::VECTOR); \
   } \
   P_.VU.vstart = 0;
 
@@ -1673,7 +1673,7 @@ for (reg_t i = 0; i < vlmax; ++i) { \
   if(MMU.num_pending_data_misses()>0) \
   { \
     P_.VU.set_event_dependent(rd_num, MMU.num_pending_data_misses()); \
-    MMU.set_misses_dest_reg(rd_num, spike_model::Request::RegType::VECTOR); \
+    MMU.set_misses_dest_reg(rd_num, spike_model::CacheRequest::RegType::VECTOR); \
   } 
 
 

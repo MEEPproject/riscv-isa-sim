@@ -7,13 +7,13 @@
 #include "serviceable.h"
 #include "memtracer.h"
 
-#include "Request.hpp"
+#include "CacheRequest.hpp"
 
 class serviceable_cache_sim_t : public cache_sim_t, serviceable
 {
  public:
    serviceable_cache_sim_t(size_t _sets, size_t _ways, size_t _linesz, const char* _name);
-   virtual std::shared_ptr<spike_model::Request> serviceRequest(std::shared_ptr<spike_model::Request> req);
+   virtual std::shared_ptr<spike_model::CacheRequest> serviceCacheRequest(std::shared_ptr<spike_model::CacheRequest> req);
    bool access(uint64_t addr, size_t bytes, bool store);
    virtual ~serviceable_cache_sim_t(){};
 
@@ -41,9 +41,9 @@ class serviceable_cache_memtracer_t : public memtracer_t
     cache->set_log(log);
   }
 
-  std::shared_ptr<spike_model::Request> serviceRequest(std::shared_ptr<spike_model::Request> req)
+  std::shared_ptr<spike_model::CacheRequest> serviceCacheRequest(std::shared_ptr<spike_model::CacheRequest> req)
   {
-    return cache->serviceRequest(req);
+    return cache->serviceCacheRequest(req);
   }
 
  protected:
