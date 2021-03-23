@@ -105,6 +105,10 @@ public:
   // template for functions that load an aligned value from memory
   #define load_func(type) \
     inline type##_t load_##type(reg_t addr) { \
+      if(proc && (!proc->is_vl_available()) && proc->get_state()->raw) {\
+        proc->vl_dependent = true; \
+        return 0; \
+      } \
       if (unlikely(addr & (sizeof(type##_t)-1))) \
         return misaligned_load(addr, sizeof(type##_t)); \
       reg_t vpn = addr >> PGSHIFT; \
@@ -163,6 +167,10 @@ public:
   // template for functions that store an aligned value to memory
   #define store_func(type) \
     void store_##type(reg_t addr, type##_t val) { \
+      if(proc && (!proc->is_vl_available()) && proc->get_state()->raw) {\
+        proc->vl_dependent = true; \
+        return; \
+      } \
       if (unlikely(addr & (sizeof(type##_t)-1))) \
         return misaligned_store(addr, val, sizeof(type##_t)); \
       reg_t vpn = addr >> PGSHIFT; \

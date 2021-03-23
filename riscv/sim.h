@@ -35,7 +35,7 @@ public:
         reg_t start_pc, std::vector<std::pair<reg_t, mem_t*>> mems,
         std::vector<std::pair<reg_t, abstract_device_t*>> plugin_devices,
         const std::vector<std::string>& args, const std::vector<int> hartids,
-        const debug_module_config_t &dm_config);
+        const debug_module_config_t &dm_config, bool enable_smart_mcpu);
   ~sim_t();
 
   // run the simulation to completion
@@ -65,6 +65,7 @@ public:
   void advance_clock(uint64_t);
   bool ack_register(const std::shared_ptr<spike_model::CacheRequest> & req, uint64_t timestamp);
   bool ack_register_and_setvl(uint64_t coreId, uint64_t vl, uint64_t timestamp);
+  bool is_vec_available(uint64_t coreId);
 private:
   std::vector<std::pair<reg_t, mem_t*>> mems;
   std::vector<std::pair<reg_t, abstract_device_t*>> plugin_devices;
@@ -75,6 +76,7 @@ private:
   std::unique_ptr<rom_device_t> boot_rom;
   std::unique_ptr<clint_t> clint;
   bus_t bus;
+  bool enable_smart_mcpu;
 
 
   processor_t* get_core(const std::string& i);

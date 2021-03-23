@@ -22,10 +22,10 @@
 
 
 processor_t::processor_t(const char* isa, const char* priv, const char* varch,
-                         simif_t* sim, uint32_t id, bool halt_on_reset)
+                         simif_t* sim, uint32_t id, bool halt_on_reset, bool enable_smart_mcpu)
   : debug(false), halt_request(false), sim(sim), ext(NULL), id(id), xlen(0),
   histogram_enabled(false), log_commits_enabled(false),
-  halt_on_reset(halt_on_reset), last_pc(1), executions(1)
+  halt_on_reset(halt_on_reset), last_pc(1), executions(1), enable_smart_mcpu(enable_smart_mcpu)
 {
   VU.p = this;
   parse_isa_string(isa);
@@ -43,6 +43,9 @@ processor_t::processor_t(const char* isa, const char* priv, const char* varch,
   get_state()->pending_int_regs=new std::set<size_t>();
   get_state()->pending_float_regs=new std::set<size_t>();
   get_state()->pending_vector_regs=new std::set<size_t>();
+
+  vl_dependent = false;
+  last_inst_vsetvl = false;
 }
 
 processor_t::~processor_t()
@@ -309,7 +312,6 @@ void vectorUnit_t::set_vl_from_mcpu(reg_t vl_from_mcpu)
     vl = vl_from_mcpu > vlmax ? vlmax : vl_from_mcpu;
   }
 
-  std::cout << "Set the vector length for returned VL " << vl <<  " and " << vlmax << std::endl;
   vstart = 0;
   setvl_count++;
 
@@ -319,14 +321,16 @@ void vectorUnit_t::set_vl_from_mcpu(reg_t vl_from_mcpu)
 
 void vectorUnit_t::get_vl_from_mcpu(int rd, int rs1, reg_t reqVL, reg_t newType)
 {
+  p->last_inst_vsetvl = true;
   p->set_vl_progress(true);
   p->set_vl_available(false);
   curr_rd = rd;
   curr_RS1 = rs1;
   curr_req_vl = reqVL;
   curr_new_type = newType;
-  (*p->get_state()).XPR.set_event_dependent(curr_rd, 1);
-  std::cout << "Get the vector length for requested VL " << reqVL << std::endl;
+
+  (*p->get_state()).XPR.set_event_dependent(curr_rd, (*p->get_mmu()).num_pending_data_misses() + 1);
+
 }
 
 bool processor_t::is_in_set_vl()

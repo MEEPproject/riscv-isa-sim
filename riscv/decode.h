@@ -138,6 +138,11 @@ public:
       data[i] = value;
   }
 
+  T read(size_t i)
+  {
+      return data[i];
+  }
+
   uint64_t get_avail_cycle(size_t i)
   {
     return avail_cycle[i];
@@ -212,6 +217,11 @@ private:
 
 #ifndef RISCV_ENABLE_COMMITLOG
 # define WRITE_REG(reg, value) ({ \
+        if(!(P_.is_vl_available())) \
+        { \
+            P_.old_val = STATE.XPR.read(reg); \
+            P_.old_reg = reg; \
+        } \
         STATE.XPR.write(reg, value); \
         if(MMU.num_pending_data_misses()>0) \
         { \

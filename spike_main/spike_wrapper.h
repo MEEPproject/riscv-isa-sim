@@ -45,7 +45,7 @@ namespace spike_model
              * \param  node The node that represent the SpikeWrapper and
              * \param  p The SpikeWrapper parameter set
              */
-            SpikeWrapper(std::string p, std::string t, std::string ic, std::string dc, std::string isa, std::string cmd, std::string varch, bool fast_cache);
+            SpikeWrapper(std::string p, std::string t, std::string ic, std::string dc, std::string isa, std::string cmd, std::string varch, bool fast_cache, bool enable_smart_mcpu);
 
             ~SpikeWrapper() 
             {
@@ -92,6 +92,7 @@ namespace spike_model
 
             bool fast_cache;
             size_t threads_per_core;
+            bool enable_smart_mcpu;
 
         public:
 
@@ -124,6 +125,8 @@ namespace spike_model
             bool ackRegister(const std::shared_ptr<spike_model::CacheRequest> & req, uint64_t timestamp);
 
             bool ackRegisterAndSetvl(uint64_t coreId, uint64_t vl, uint64_t timestamp);
+
+            bool isVecAvailable(uint64_t coreId);
 
             /*
              * \brief Notify that an L2 request has been serviced

@@ -177,7 +177,7 @@ class vectorUnit_t {
     reg_t vediv, vsew, vlmul;
     reg_t ELEN, VLEN, SLEN;
     bool vill;
-    int curr_rd, curr_RS1;
+    reg_t curr_rd, curr_RS1;
     reg_t curr_req_vl, curr_new_type;
 
     template<class T>
@@ -362,7 +362,7 @@ class processor_t : public abstract_device_t
 {
 public:
   processor_t(const char* isa, const char* priv, const char* varch,
-              simif_t* sim, uint32_t id, bool halt_on_reset=false);
+              simif_t* sim, uint32_t id, bool halt_on_reset=false, bool enable_smart_mcpu=false);
   ~processor_t();
 
   void set_debug(bool value);
@@ -514,6 +514,11 @@ public:
   uint64_t get_requested_vl();
 
   simif_t* sim;
+  bool vl_dependent;
+  bool last_inst_vsetvl;
+  uint64_t old_val;
+  uint64_t old_reg;
+  bool enable_smart_mcpu;
 private:
   
   mmu_t* mmu; // main memory is always accessed via the mmu

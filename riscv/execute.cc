@@ -89,7 +89,6 @@ inline void processor_t::update_histogram(reg_t pc)
 // This is expected to be inlined by the compiler so each use of execute_insn
 // includes a duplicated body of the function to get separate fetch.func
 // function calls.
-extern bool enable_smart_mcpu;
 static reg_t execute_insn(processor_t* p, reg_t pc, insn_fetch_t fetch)
 {
 //struct timeval st, et;
@@ -118,6 +117,7 @@ bool processor_t::slow_path()
 //Modified to return whether a RAW was detected or not
 bool processor_t::step(size_t n)
 {
+  last_inst_vsetvl = false;
   if (!state.debug_mode) {
     if (halt_request) {
       enter_debug_mode(DCSR_CAUSE_DEBUGINT);
@@ -286,8 +286,8 @@ bool processor_t::step(size_t n)
     state.minstret += instret;
     n -= instret;
   }
+
   bool res=!get_state()->raw;
-  get_state()->raw=false;
 
   /*****************************************************************************
      Check if the processor is executing the instruction which needs vector CSRs.
@@ -297,14 +297,32 @@ bool processor_t::step(size_t n)
   *****************************************************************************/
   if(enable_smart_mcpu)
   {
-    if(res)
-    {
-      if(oldpc == state.pc)
+      if(oldpc == state.pc) //Vector instruction or load/store with RAW
       {
-        std::cout << "VECTOR CSR Dependency" << std::endl;
-        return false;
+        get_mmu()->clear_misses();
+        res = false;
       }
-    }
-  }
-  return res;
+      else if(!is_vl_available() && get_state()->raw){ //vsetvl going on, This instruction needs to be executed again
+        if(last_inst_vsetvl){ //raw on vsetvl, rollback the instruction
+          set_vl_progress(false);
+          set_vl_available(true);
+          state.XPR.ack_for_reg(VU.curr_rd, current_cycle);
+          state.pc = oldpc;
+          get_mmu()->clear_misses();
+          std::cout << "last inst vset vl " << std::endl;
+        }
+        else
+        {
+          //TODO : Add checks for floating point operations as well
+          std::cout << "Arithmetic RAW for vsetvl at " << current_cycle << std::endl;
+          state.pc = oldpc;
+          state.XPR.write(old_reg, old_val);
+          get_mmu()->clear_misses();
+        }
+      }
+   }
+
+   get_state()->raw=false;
+
+   return res;
 }

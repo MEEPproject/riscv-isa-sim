@@ -32,13 +32,14 @@ sim_t::sim_t(const char* isa, const char* priv, const char* varch,
              std::vector<std::pair<reg_t, abstract_device_t*>> plugin_devices,
              const std::vector<std::string>& args,
              std::vector<int> const hartids,
-             const debug_module_config_t &dm_config
+             const debug_module_config_t &dm_config,
+             bool enable_smart_mcpu
              )
   : htif_t(args), mems(mems), plugin_devices(plugin_devices),
     procs(std::max(nprocs, size_t(1))), start_pc(start_pc), current_step(0),
     current_proc(0), debug(false), histogram_enabled(false),
     log_commits_enabled(false), dtb_enabled(true),
-    remote_bitbang(NULL), debug_module(this, dm_config)
+    remote_bitbang(NULL), debug_module(this, dm_config), enable_smart_mcpu(enable_smart_mcpu)
 {
   signal(SIGINT, &handle_signal);
 
@@ -55,7 +56,7 @@ sim_t::sim_t(const char* isa, const char* priv, const char* varch,
 
   if (hartids.size() == 0) {
     for (size_t i = 0; i < procs.size(); i++) {
-      procs[i] = new processor_t(isa, priv, varch, this, i, halted);
+      procs[i] = new processor_t(isa, priv, varch, this, i, halted, enable_smart_mcpu);
     }
   }
   else {
@@ -205,6 +206,11 @@ bool sim_t::ack_register_and_setvl(uint64_t coreId, uint64_t vl, uint64_t timest
     //Simulation can resumen if there are no pending registers.
     procs[coreId]->VU.set_vl_from_mcpu(vl);
     return procs[coreId]->get_state()->pending_int_regs->size()==0 && procs[coreId]->get_state()->pending_float_regs->size()==0 && procs[coreId]->get_state()->pending_vector_regs->size()==0;
+}
+
+bool sim_t::is_vec_available(uint64_t coreId)
+{
+    return procs[coreId]->is_vl_available();
 }
 
 void htif_run_launcher(void* arg)

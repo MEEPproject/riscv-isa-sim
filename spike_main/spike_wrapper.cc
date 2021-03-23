@@ -23,7 +23,7 @@ namespace spike_model
     Creates a fully functional wrapped instance of spike that waits for single instruction 
     simulation requests on individual cores.
     */
-    SpikeWrapper::SpikeWrapper(std::string p, std::string t,  std::string ic, std::string dc, std::string isa, std::string cmd, std::string varch, bool fast_cache) :
+    SpikeWrapper::SpikeWrapper(std::string p, std::string t,  std::string ic, std::string dc, std::string isa, std::string cmd, std::string varch, bool fast_cache, bool enable_smart_mcpu) :
             p_(p),
             t_(t),
             ic_(ic),
@@ -32,7 +32,8 @@ namespace spike_model
             cmd_(cmd),
             varch_(varch),
             running_cores(std::stoul(p_)),
-            fast_cache(fast_cache)
+            fast_cache(fast_cache),
+            enable_smart_mcpu(enable_smart_mcpu)
     {
         //TODO: REFACTOR
         sparta_assert(cmd_!="", "An application to simulate must be provided.");
@@ -115,6 +116,11 @@ namespace spike_model
     bool SpikeWrapper::ackRegisterAndSetvl(uint64_t coreId, uint64_t vl, uint64_t timestamp)
     {
         return simulation->ack_register_and_setvl(coreId, vl, timestamp);
+    }
+
+    bool SpikeWrapper::isVecAvailable(uint64_t coreId)
+    {
+        return simulation->is_vec_available(coreId);
     }
 
     std::shared_ptr<CacheRequest> SpikeWrapper::serviceCacheRequest(std::shared_ptr<CacheRequest> req)
@@ -380,8 +386,9 @@ namespace spike_model
             help();
 
 
+	std::cout << "Calling sim with smart mcpu " << enable_smart_mcpu << std::endl;
         std::shared_ptr<sim_t> s=std::make_shared<sim_t> (isa, priv, varch, nprocs, halted, start_pc, mems, plugin_devices, htif_args,
-                std::move(hartids), dm_config); //BORJA
+                std::move(hartids), dm_config, enable_smart_mcpu); //BORJA
         std::unique_ptr<remote_bitbang_t> remote_bitbang((remote_bitbang_t *) NULL);
         std::unique_ptr<jtag_dtm_t> jtag_dtm(
                 new jtag_dtm_t(&s->debug_module, dmi_rti));
