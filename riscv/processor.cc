@@ -369,7 +369,6 @@ void vectorUnit_t::check_raw(reg_t vReg)
 {
   if(get_avail_cycle(vReg)>p->get_current_cycle())
   {
-    p->get_state()->raw=true;
     p->get_state()->pending_vector_regs->insert(vReg);
   }
 }
@@ -1203,4 +1202,24 @@ bool processor_t::is_in_fence()
   bool res=in_fence;
   in_fence=false;
   return res;
+}
+
+void processor_t::log_mcpu_instruction(uint64_t base_address)
+{
+  mcpu_instruction=std::make_shared<spike_model::MCPUInstruction>(state.pc, current_cycle, id, base_address);
+}
+
+void processor_t::log_stride_for_mcpu_instruction(uint64_t index)
+{
+  mcpu_instruction->addIndex(index);
+}
+
+bool processor_t::is_mcpu_instruction()
+{
+    return mcpu_instruction!=nullptr;
+}
+
+std::shared_ptr<spike_model::MCPUInstruction> processor_t::get_mcpu_instruction()
+{
+    return mcpu_instruction;
 }

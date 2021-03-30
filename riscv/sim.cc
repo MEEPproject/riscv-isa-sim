@@ -142,6 +142,10 @@ bool sim_t::simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::s
         {
             events.push_back(std::make_shared<spike_model::MCPURequest>(procs[core]->get_requested_vl(), 0, current_cycle, core));
         }
+        else if(procs[core]->is_mcpu_instruction())
+        {
+            events.push_back(procs[core]->get_mcpu_instruction());
+        }
     }
     else
     {
@@ -157,7 +161,7 @@ bool sim_t::simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::s
 }
 
 
-bool sim_t::ack_register(const std::shared_ptr<spike_model::CacheRequest> & req, uint64_t timestamp)
+bool sim_t::ack_register(const std::shared_ptr<spike_model::Request> & req, uint64_t timestamp)
 {
     bool ready;
     switch(req->getDestinationRegType())

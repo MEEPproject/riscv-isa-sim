@@ -1553,6 +1553,10 @@ for (reg_t i = 0; i < vlmax; ++i) { \
   const reg_t vs3 = insn.rd(); \
   require(vs3 + nf * P_.VU.vlmul <= NVPR); \
   const reg_t vlmul = P_.VU.vlmul; \
+  if(P_.enable_smart_mcpu){ \
+    P_.log_mcpu_instruction(baseAddr); \
+    MMU.enable_l1_bypass(); \
+  } \
   for (reg_t i = 0; i < vl; ++i) { \
     VI_STRIP(i) \
     VI_ELEMENT_SKIP(i); \
@@ -1574,7 +1578,14 @@ for (reg_t i = 0; i < vlmax; ++i) { \
         break; \
       } \
       MMU.store_##st_width(baseAddr + (stride) + (offset) * elt_byte, val); \
+      if(P_.enable_smart_mcpu && stride!=0){ \
+        P_.log_stride_for_mcpu_instruction(stride); \
+      } \
     } \
+  } \
+  if(P_.enable_smart_mcpu){ \
+    P_.log_mcpu_instruction(baseAddr); \
+    MMU.disable_l1_bypass(); \
   } \
   P_.VU.vstart = 0; 
 
@@ -1586,6 +1597,10 @@ for (reg_t i = 0; i < vlmax; ++i) { \
   const reg_t vd = insn.rd(); \
   require(vd + nf * P_.VU.vlmul <= NVPR); \
   const reg_t vlmul = P_.VU.vlmul; \
+  if(P_.enable_smart_mcpu){ \
+    P_.log_mcpu_instruction(baseAddr); \
+    MMU.enable_l1_bypass(); \
+  } \
   for (reg_t i = 0; i < vl; ++i) { \
     VI_ELEMENT_SKIP(i); \
     VI_STRIP(i); \
@@ -1605,12 +1620,19 @@ for (reg_t i = 0; i < vlmax; ++i) { \
         default: \
           P_.VU.elt<uint64_t>(vd + fn * vlmul, vreg_inx) = val; \
       } \
+      if(P_.enable_smart_mcpu && stride!=0){ \
+        P_.log_stride_for_mcpu_instruction(stride); \
+      } \
     } \
   } \
   if(MMU.num_pending_data_misses()>0) \
   { \
     P_.VU.set_event_dependent(vd, MMU.num_pending_data_misses()); \
     MMU.set_misses_dest_reg(vd, spike_model::CacheRequest::RegType::VECTOR); \
+  } \
+  if(P_.enable_smart_mcpu){ \
+    P_.log_mcpu_instruction(baseAddr); \
+    MMU.disable_l1_bypass(); \
   } \
   P_.VU.vstart = 0;
 
@@ -1643,6 +1665,10 @@ for (reg_t i = 0; i < vlmax; ++i) { \
   const reg_t vlmul = P_.VU.vlmul; \
   require(rd_num + nf * P_.VU.vlmul <= NVPR); \
   p->VU.vstart = 0; \
+  if(P_.enable_smart_mcpu){ \
+    P_.log_mcpu_instruction(baseAddr); \
+    MMU.enable_l1_bypass(); \
+  } \
   for (reg_t i = 0; i < vl; ++i) { \
     VI_STRIP(i); \
     VI_ELEMENT_SKIP(i); \
@@ -1677,7 +1703,15 @@ for (reg_t i = 0; i < vlmax; ++i) { \
     } \
     \
     if (early_stop) { \
+      if(P_.enable_smart_mcpu){ \
+        P_.log_mcpu_instruction(baseAddr); \
+        MMU.disable_l1_bypass(); \
+      } \
       break; \
+    } \
+    if(P_.enable_smart_mcpu){ \
+      P_.log_mcpu_instruction(baseAddr); \
+      MMU.disable_l1_bypass(); \
     } \
   } \
   if(MMU.num_pending_data_misses()>0) \

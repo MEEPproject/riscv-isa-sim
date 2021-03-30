@@ -17,6 +17,7 @@
 #include "trap.h"
 
 #include "CacheRequest.hpp"
+#include "MCPUInstruction.hpp"
 #include <list>
 #include <set>
 
@@ -505,6 +506,11 @@ public:
 
   uint16_t get_id() {return id;}
 
+  void log_mcpu_instruction(uint64_t base_address);
+  void log_stride_for_mcpu_instruction(uint64_t index);
+  bool is_mcpu_instruction();
+  std::shared_ptr<spike_model::MCPUInstruction> get_mcpu_instruction();
+
   void sim_fence_log();
   bool is_in_fence();
   bool is_in_set_vl();
@@ -570,6 +576,7 @@ private:
   std::list<std::shared_ptr<spike_model::CacheRequest>> pending_misses;
   uint64_t current_cycle;
 
+  std::shared_ptr<spike_model::MCPUInstruction> mcpu_instruction=nullptr;
 
 public:
   vectorUnit_t VU;

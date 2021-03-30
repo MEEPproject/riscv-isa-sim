@@ -387,6 +387,16 @@ public:
     log_misses=true;
   }
 
+  void enable_l1_bypass()
+  {
+    bypass_l1=true;
+  }
+
+  void disable_l1_bypass()
+  {
+    bypass_l1=false;
+  }
+
   void set_misses_dest_reg(uint8_t reg, spike_model::CacheRequest::RegType t);
 
 private:
@@ -492,6 +502,7 @@ private:
 
   bool log_instructions=false;
   bool log_misses=false;
+  bool bypass_l1=false;
 
   uint16_t num_writebacks=0;
 };

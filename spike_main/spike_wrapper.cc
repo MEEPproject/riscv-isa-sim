@@ -106,9 +106,9 @@ namespace spike_model
     }
 
     /*
-    Notifies the completion of an CacheRequest, so the corresponding register is set as available.
+    Notifies the completion of a Request, so the corresponding register is set as available.
     */
-    bool SpikeWrapper::ackRegister(const std::shared_ptr<spike_model::CacheRequest> & req, uint64_t timestamp)
+    bool SpikeWrapper::ackRegister(const std::shared_ptr<spike_model::Request> & req, uint64_t timestamp)
     {
         return simulation->ack_register(req, timestamp);
     }
@@ -123,7 +123,7 @@ namespace spike_model
         return simulation->is_vec_available(coreId);
     }
 
-    std::shared_ptr<CacheRequest> SpikeWrapper::serviceCacheRequest(std::shared_ptr<CacheRequest> req)
+    std::shared_ptr<CacheRequest> SpikeWrapper::serviceCacheRequest(std::shared_ptr<CacheRequest> req, uint64_t timestamp)
     {
         std::shared_ptr<CacheRequest> wb=std::shared_ptr<CacheRequest>(nullptr);
         uint32_t cache_idx=req->getCoreId()/threads_per_core;
@@ -139,6 +139,7 @@ namespace spike_model
         if(wb!=nullptr)
         {
             wb->setCoreId(req->getCoreId());
+            wb->setTimestamp(timestamp+1);
         }
         return wb;
     }

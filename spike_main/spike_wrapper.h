@@ -27,6 +27,7 @@
 
 #include <memory>
 #include "CacheRequest.hpp"
+#include "Request.hpp"
 #include "Event.hpp"
 
 
@@ -122,7 +123,7 @@ namespace spike_model
              * \param  timestamp The cycle in which the dependency was satisfied
              * \return Whether the core associated to the dependency can now run or not.
              */
-            bool ackRegister(const std::shared_ptr<spike_model::CacheRequest> & req, uint64_t timestamp);
+            bool ackRegister(const std::shared_ptr<spike_model::Request> & req, uint64_t timestamp);
 
             bool ackRegisterAndSetvl(uint64_t coreId, uint64_t vl, uint64_t timestamp);
 
@@ -131,9 +132,10 @@ namespace spike_model
             /*
              * \brief Notify that an L2 request has been serviced
              * \param req The serviced request
+             * \param timestamp The timestamp of the service
              * \return A request for a writeback or null
              */
-            std::shared_ptr<CacheRequest> serviceCacheRequest(std::shared_ptr<CacheRequest> req);
+            std::shared_ptr<CacheRequest> serviceCacheRequest(std::shared_ptr<CacheRequest> req, uint64_t timestamp);
     };
 }
 #endif

@@ -118,6 +118,7 @@ bool processor_t::slow_path()
 bool processor_t::step(size_t n)
 {
   last_inst_vsetvl = false;
+  mcpu_instruction=nullptr;
   if (!state.debug_mode) {
     if (halt_request) {
       enter_debug_mode(DCSR_CAUSE_DEBUGINT);

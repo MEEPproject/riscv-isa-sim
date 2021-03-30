@@ -16,6 +16,7 @@
 #include "debug_module.h"
 #include "simif.h"
 #include "CacheRequest.hpp"
+#include "Request.hpp"
 #include "Finish.hpp"
 #include "Fence.hpp"
 #include "Event.hpp"
@@ -63,7 +64,7 @@ public:
   bool simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::shared_ptr<spike_model::Event>>& events);
 
   void advance_clock(uint64_t);
-  bool ack_register(const std::shared_ptr<spike_model::CacheRequest> & req, uint64_t timestamp);
+  bool ack_register(const std::shared_ptr<spike_model::Request> & req, uint64_t timestamp);
   bool ack_register_and_setvl(uint64_t coreId, uint64_t vl, uint64_t timestamp);
   bool is_vec_available(uint64_t coreId);
 private:

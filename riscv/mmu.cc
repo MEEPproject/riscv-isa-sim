@@ -107,7 +107,7 @@ void mmu_t::load_slow_path(reg_t addr, reg_t len, uint8_t* bytes)
 
   if (auto host_addr = sim->addr_to_mem(paddr)) {
     memcpy(bytes, host_addr, len);
-    if (tracer.interested_in_range(paddr, paddr + PGSIZE, LOAD))
+    if (tracer.interested_in_range(paddr, paddr + PGSIZE, LOAD) && !bypass_l1)
     {
       bool hit=false;
       uint64_t victim=0;
@@ -149,7 +149,7 @@ void mmu_t::store_slow_path(reg_t addr, reg_t len, const uint8_t* bytes)
 
   if (auto host_addr = sim->addr_to_mem(paddr)) {
     memcpy(host_addr, bytes, len);
-    if (tracer.interested_in_range(paddr, paddr + PGSIZE, STORE))
+    if (tracer.interested_in_range(paddr, paddr + PGSIZE, STORE) && !bypass_l1)
     {
       bool hit=false;
       uint64_t victim=0;
