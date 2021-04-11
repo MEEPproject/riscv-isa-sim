@@ -15,15 +15,15 @@ for (reg_t i = 0; i < vlmax && vl != 0; ++i) {
   switch (P_.VU.vsew) {
   case e16:
     MMU.store_uint16(baseAddr + index[i],
-                     P_.VU.elt<uint16_t>(vs3, vreg_inx));
+                     P_.VU.elt<uint16_t>(vs3, vreg_inx, VREAD));
     break;
   case e32:
     MMU.store_uint16(baseAddr + index[i],
-                     P_.VU.elt<uint32_t>(vs3, vreg_inx));
+                     P_.VU.elt<uint32_t>(vs3, vreg_inx, VREAD));
     break;
   case e64:
     MMU.store_uint16(baseAddr + index[i],
-                     P_.VU.elt<uint64_t>(vs3, vreg_inx));
+                     P_.VU.elt<uint64_t>(vs3, vreg_inx, VREAD));
     break;
   }
 }

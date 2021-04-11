@@ -354,7 +354,7 @@ void mmu_t::register_memtracer(memtracer_t* t)
   tracer.hook(t);
 }
 
-void mmu_t::set_misses_dest_reg(uint8_t reg, spike_model::CacheRequest::RegType t)
+void mmu_t::set_misses_dest_reg(size_t reg, spike_model::CacheRequest::RegType t)
 {
   for(std::shared_ptr<spike_model::CacheRequest> miss: misses_last_inst)
   {

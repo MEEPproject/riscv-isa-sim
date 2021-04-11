@@ -122,10 +122,10 @@ bool sim_t::simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::s
         //This is clearly inefficient, but we cannot directly return a Event list
         //The destination register has to be set from decode, which runs after misses
         //have been stored in the MMU. We need requests to remain requests until this moment.
-        //TODO: Verify that this not incurr in significant performance loss. Other, more performant
+        //TODO: Verify that does not incurr in significant performance loss. Other, more performant
         //      implementation might be challenging without significant changes to Spike
         //TODO: Considering we are adding new kinds of events, we might change events into an aggregate
-        //      ttpe that already holds classified events (e.g. a list of misses and a list of 
+        //      type that already holds classified events (e.g. a list of misses and a list of
         //      the rest of events)
         for(std::shared_ptr<spike_model::CacheRequest> miss: new_misses)
         {
@@ -146,6 +146,23 @@ bool sim_t::simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::s
         {
             events.push_back(procs[core]->get_mcpu_instruction());
         }
+
+        if(!res && procs[core]->is_insn_executed)
+        {
+            /* There is a RAW dependency in the current instruction.
+               A new event should be generated only when the depending instruction
+               is compute. If the depending instruction is memory instruction,
+               a CacheRequest event is generated.
+            */
+            std::list<std::shared_ptr<spike_model::InsnLatencyEvent>> latency_event =
+                       procs[core]->get_insn_latency_event_list();
+            std::list<std::shared_ptr<spike_model::InsnLatencyEvent>>::iterator itr;
+            for(itr = latency_event.begin(); itr != latency_event.end(); itr++)
+            {
+                events.push_back(*itr);
+            }
+            procs[core]->clear_latency_event_list();
+        }
     }
     else
     {
@@ -157,6 +174,7 @@ bool sim_t::simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::s
     //uint64_t elapsed = ((et.tv_sec - st.tv_sec) * 1000000) + (et.tv_usec - st.tv_usec);
     //timer+=elapsed;
 
+    procs[core]->VU.clear_bookkeeping_regs();
     return res;
 }
 
@@ -166,7 +184,7 @@ bool sim_t::ack_register(const std::shared_ptr<spike_model::Request> & req, uint
     bool ready;
     switch(req->getDestinationRegType())
     {
-        case spike_model::CacheRequest::RegType::INTEGER:
+        case spike_model::Request::RegType::INTEGER:
             ready=procs[req->getCoreId()]->get_state()->XPR.ack_for_reg(req->getDestinationRegId(), timestamp);
             // If all the requests for the register (vector instructions might require many) have been serviced, it is no longer pending
             if(ready)
@@ -174,7 +192,7 @@ bool sim_t::ack_register(const std::shared_ptr<spike_model::Request> & req, uint
                 procs[req->getCoreId()]->get_state()->pending_int_regs->erase(req->getDestinationRegId());
             }
             break;
-        case spike_model::CacheRequest::RegType::FLOAT:
+        case spike_model::Request::RegType::FLOAT:
             ready=procs[req->getCoreId()]->get_state()->FPR.ack_for_reg(req->getDestinationRegId(), timestamp);
             // If all the requests for the register (vector instructions might require many) have been serviced, it is no longer pending
             if(ready)
@@ -182,7 +200,7 @@ bool sim_t::ack_register(const std::shared_ptr<spike_model::Request> & req, uint
                 procs[req->getCoreId()]->get_state()->pending_float_regs->erase(req->getDestinationRegId());
             }
             break;
-        case spike_model::CacheRequest::RegType::VECTOR:
+        case spike_model::Request::RegType::VECTOR:
             ready=procs[req->getCoreId()]->VU.ack_for_reg(req->getDestinationRegId(), timestamp);
             // If all the requests for the register (vector instructions might require many) have been serviced, it is no longer pending
             if(ready)
@@ -193,6 +211,19 @@ bool sim_t::ack_register(const std::shared_ptr<spike_model::Request> & req, uint
         default:
             std::cout << "Unknown register kind!\n";
             break;
+    }
+
+    //If this reg was read by some later instructions which had RAW dependency on this,
+    //set that instruction's dest reg to appropriate latency.
+    std::pair<std::pair<reg_t, spike_model::Request::RegType>, uint64_t> elem;
+    bool ret = procs[req->getCoreId()]->get_raw_dependent_info(req->getDestinationRegId(),
+                                                   req->getDestinationRegType(), &elem);
+
+    if(ret)
+    {
+      if(elem.first.first != std::numeric_limits<uint64_t>::max())
+          set_latency(req->getCoreId(), elem.first.first, elem.first.second,
+                      elem.second, timestamp);
     }
     //Simulation can resumen if there are no pending registers.
     return procs[req->getCoreId()]->get_state()->pending_int_regs->size()==0 && procs[req->getCoreId()]->get_state()->pending_float_regs->size()==0 && procs[req->getCoreId()]->get_state()->pending_vector_regs->size()==0;
@@ -215,6 +246,63 @@ bool sim_t::ack_register_and_setvl(uint64_t coreId, uint64_t vl, uint64_t timest
 bool sim_t::is_vec_available(uint64_t coreId)
 {
     return procs[coreId]->is_vl_available();
+}
+
+bool sim_t::can_resume(uint64_t coreId, size_t srcRegId,
+                       spike_model::Request::RegType srcRegType,
+                       size_t destRegId, spike_model::Request::RegType destRegType,
+                       uint64_t latency, uint64_t timestamp)
+{
+    switch(srcRegType)
+    {
+        case spike_model::Request::RegType::INTEGER:
+             procs[coreId]->get_state()->pending_int_regs->erase(srcRegId);
+             break;
+        case spike_model::Request::RegType::FLOAT:
+             procs[coreId]->get_state()->pending_float_regs->erase(srcRegId);
+             break;
+        case spike_model::Request::RegType::VECTOR:
+             procs[coreId]->get_state()->pending_vector_regs->erase(srcRegId);
+             break;
+        default:
+            std::cout << "Unknown register kind!\n";
+            break;
+    }
+
+    //Ensure that its an instruction which writes to a register
+    if(destRegId != std::numeric_limits<uint64_t>::max())
+    {
+        set_latency(coreId, destRegId, destRegType, latency, timestamp);
+    }
+
+    //Simulation can resume if there are no pending registers.
+    return procs[coreId]->get_state()->pending_int_regs->size()==0 &&
+           procs[coreId]->get_state()->pending_float_regs->size()==0 &&
+           procs[coreId]->get_state()->pending_vector_regs->size()==0;
+}
+
+bool sim_t::set_latency(uint64_t coreId, size_t destRegId,
+                        spike_model::Request::RegType destRegType,
+                        uint64_t latency, uint64_t timestamp)
+{
+    switch(destRegType)
+    {
+        case spike_model::Request::RegType::INTEGER:
+             if(procs[coreId]->get_state()->XPR.get_avail_cycle(destRegId) < (timestamp+latency))
+                 procs[coreId]->get_state()->XPR.set_avail(destRegId, timestamp+latency);
+             break;
+        case spike_model::Request::RegType::FLOAT:
+             if(procs[coreId]->get_state()->FPR.get_avail_cycle(destRegId) < (timestamp+latency))
+                 procs[coreId]->get_state()->FPR.set_avail(destRegId, timestamp+latency);
+             break;
+        case spike_model::Request::RegType::VECTOR:
+             if(procs[coreId]->VU.get_avail_cycle(destRegId) < (timestamp+latency))
+                 procs[coreId]->VU.set_avail(destRegId, timestamp+latency);
+             break;
+        default:
+            std::cout << "Unknown register kind!\n";
+            break;
+    }
 }
 
 void htif_run_launcher(void* arg)

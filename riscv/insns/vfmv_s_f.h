@@ -11,15 +11,15 @@ if (vl > 0) {
   switch(P_.VU.vsew) {
     case 32:
       if (FLEN == 64)
-        P_.VU.elt<uint32_t>(rd_num, 0) = f64(FRS1).v;
+        P_.VU.elt<uint32_t>(rd_num, 0, VWRITE) = f64(FRS1).v;
       else
-        P_.VU.elt<uint32_t>(rd_num, 0) = f32(FRS1).v;
+        P_.VU.elt<uint32_t>(rd_num, 0, VWRITE) = f32(FRS1).v;
       break;
     case 64:
       if (FLEN == 64)
-        P_.VU.elt<uint64_t>(rd_num, 0) = f64(FRS1).v;
+        P_.VU.elt<uint64_t>(rd_num, 0, VWRITE) = f64(FRS1).v;
       else
-        P_.VU.elt<uint64_t>(rd_num, 0) = f32(FRS1).v;
+        P_.VU.elt<uint64_t>(rd_num, 0, VWRITE) = f32(FRS1).v;
       break;
   }
 }

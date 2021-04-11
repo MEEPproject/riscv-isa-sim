@@ -18,8 +18,8 @@ for (reg_t i = 0; i < vl; ++i) {
   const int midx = (mlen * i) / 64;
   const int mpos = (mlen * i) % 64;
 
-  bool vs2_lsb = ((P_.VU.elt<uint64_t>(rs2_num, midx) >> mpos) & 0x1) == 1;
-  bool do_mask = (P_.VU.elt<uint64_t>(0, midx) >> mpos) & 0x1;
+  bool vs2_lsb = ((P_.VU.elt<uint64_t>(rs2_num, midx, VREAD) >> mpos) & 0x1) == 1;
+  bool do_mask = (P_.VU.elt<uint64_t>(0, midx, VREAD) >> mpos) & 0x1;
 
   bool has_one = false;
   if (insn.v_vm() == 1 || (insn.v_vm() == 0 && do_mask)) {
@@ -31,20 +31,20 @@ for (reg_t i = 0; i < vl; ++i) {
   bool use_ori = (insn.v_vm() == 0) && !do_mask;
   switch (sew) {
   case e8:
-    P_.VU.elt<uint8_t>(rd_num, i) = use_ori ?
-                                   P_.VU.elt<uint8_t>(rd_num, i) : cnt;
+    P_.VU.elt<uint8_t>(rd_num, i, VWRITE) = use_ori ?
+                                   P_.VU.elt<uint8_t>(rd_num, i, VREAD) : cnt;
     break;
   case e16:
-    P_.VU.elt<uint16_t>(rd_num, i) = use_ori ?
-                                    P_.VU.elt<uint16_t>(rd_num, i) : cnt;
+    P_.VU.elt<uint16_t>(rd_num, i, VWRITE) = use_ori ?
+                                    P_.VU.elt<uint16_t>(rd_num, i, VREAD) : cnt;
     break;
   case e32:
-    P_.VU.elt<uint32_t>(rd_num, i) = use_ori ?
-                                    P_.VU.elt<uint32_t>(rd_num, i) : cnt;
+    P_.VU.elt<uint32_t>(rd_num, i, VWRITE) = use_ori ?
+                                    P_.VU.elt<uint32_t>(rd_num, i, VREAD) : cnt;
     break;
   default:
-    P_.VU.elt<uint64_t>(rd_num, i) = use_ori ?
-                                    P_.VU.elt<uint64_t>(rd_num, i) : cnt;
+    P_.VU.elt<uint64_t>(rd_num, i, VWRITE) = use_ori ?
+                                    P_.VU.elt<uint64_t>(rd_num, i, VREAD) : cnt;
     break;
   }
 

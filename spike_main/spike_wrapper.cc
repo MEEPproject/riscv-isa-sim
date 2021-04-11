@@ -123,6 +123,15 @@ namespace spike_model
         return simulation->is_vec_available(coreId);
     }
 
+    bool SpikeWrapper::canResume(uint64_t coreId, size_t srcRegId,
+                                 spike_model::Request::RegType srcRegType,
+                                 size_t destRegId, spike_model::Request::RegType destRegType,
+                                 uint64_t latency, uint64_t timestamp)
+    {
+        return simulation->can_resume(coreId, srcRegId, srcRegType, destRegId,
+                                      destRegType, latency, timestamp);
+    }
+
     std::shared_ptr<CacheRequest> SpikeWrapper::serviceCacheRequest(std::shared_ptr<CacheRequest> req, uint64_t timestamp)
     {
         std::shared_ptr<CacheRequest> wb=std::shared_ptr<CacheRequest>(nullptr);

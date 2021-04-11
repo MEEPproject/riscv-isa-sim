@@ -14,9 +14,9 @@ for (reg_t i = P_.VU.vstart; i < vl; ++i) {
   const int mpos = (mlen * i) % 64;
   const uint64_t mmask = (UINT64_MAX << (64 - mlen)) >> (64 - mlen - mpos);
 
-  bool vs2_lsb = ((P_.VU.elt<uint64_t>(rs2_num, midx) >> mpos) & 0x1) == 1;
-  bool do_mask = (P_.VU.elt<uint64_t>(0, midx) >> mpos) & 0x1;
-  auto &vd = P_.VU.elt<uint64_t>(rd_num, midx);
+  bool vs2_lsb = ((P_.VU.elt<uint64_t>(rs2_num, midx, VREAD) >> mpos) & 0x1) == 1;
+  bool do_mask = (P_.VU.elt<uint64_t>(0, midx, VREAD) >> mpos) & 0x1;
+  auto &vd = P_.VU.elt<uint64_t>(rd_num, midx, VREADWRITE);
 
 
   if (insn.v_vm() == 1 || (insn.v_vm() == 0 && do_mask)) {

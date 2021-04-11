@@ -400,7 +400,12 @@ public:
     bypass_l1=false;
   }
 
-  void set_misses_dest_reg(uint8_t reg, spike_model::CacheRequest::RegType t);
+  /*
+     Although Spike uses 32 INT, FPR and vector registers each,
+     change the data type to size_t(which is uint64_t) to be compatible with
+     Spike.
+  */
+  void set_misses_dest_reg(size_t reg, spike_model::CacheRequest::RegType t);
 
 private:
   simif_t* sim;

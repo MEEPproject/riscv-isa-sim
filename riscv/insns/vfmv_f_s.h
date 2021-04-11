@@ -9,10 +9,10 @@ uint64_t vs2_0 = 0;
 const reg_t sew = P_.VU.vsew;
 switch(sew) {
 case e32:
-  vs2_0 = P_.VU.elt<uint32_t>(rs2_num, 0);
+  vs2_0 = P_.VU.elt<uint32_t>(rs2_num, 0, VREAD);
   break;
 default:
-  vs2_0 = P_.VU.elt<uint64_t>(rs2_num, 0);
+  vs2_0 = P_.VU.elt<uint64_t>(rs2_num, 0, VREAD);
   break;
 }
 

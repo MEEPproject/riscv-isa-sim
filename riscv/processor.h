@@ -18,8 +18,11 @@
 
 #include "CacheRequest.hpp"
 #include "MCPUInstruction.hpp"
+#include "InsnLatencyEvent.hpp"
 #include <list>
 #include <set>
+#include <algorithm>
+#include <vector>
 
 class processor_t;
 class mmu_t;
@@ -180,9 +183,11 @@ class vectorUnit_t {
     bool vill;
     reg_t curr_rd, curr_RS1;
     reg_t curr_req_vl, curr_new_type;
+    std::unordered_map<uint64_t, int> read_reg_encountered;
+    std::unordered_map<uint64_t, int> write_reg_encountered;
 
     template<class T>
-      T& elt(reg_t vReg, reg_t n){
+      T& elt(reg_t vReg, reg_t n, vreg_access_type access_type){
         assert(vsew != 0);
         assert((VLEN >> 3)/sizeof(T) > 0);
         reg_t elts_per_reg = (VLEN >> 3) / (sizeof(T));
@@ -196,10 +201,50 @@ class vectorUnit_t {
         reg_referenced[vReg] = 1;
         T *regStart = (T*)((char*)reg_file + vReg * (VLEN >> 3));
 
-        check_raw(vReg);
-
+        if(access_type != VLOAD)
+        {
+          if(access_type == VREAD || access_type == VREADWRITE)
+          {
+            if(read_reg_encountered.find(vReg) == read_reg_encountered.end())
+            {
+              read_reg_encountered[vReg] = 1;
+              check_raw(vReg);
+            }
+          }
+          if(access_type == VWRITE || access_type == VREADWRITE)
+          {
+            if(write_reg_encountered.find(vReg) == write_reg_encountered.end())
+            {
+              write_reg_encountered[vReg] = 1;
+              if(p->get_state()->raw)
+              {
+                /*
+                  Set the destination register also, because once the acknowledge is done,
+                  we have to set the availability of this register.
+                */
+                p->set_dest_reg_in_event_list_raw(vReg, spike_model::Request::RegType::VECTOR);
+                p->set_src_load_reg_raw(vReg, spike_model::Request::RegType::VECTOR);
+              }
+              else
+              {
+                set_event_dependent(vReg, 0, p->get_current_cycle() + p->get_curr_insn_latency());
+              }
+            }
+          }
+        }
         return regStart[n];
       }
+
+      uint64_t get_avail_cycle(reg_t i)
+      {
+        return avail_cycle[i];
+      }
+
+     void clear_bookkeeping_regs()
+     {
+       read_reg_encountered.clear();
+       write_reg_encountered.clear();
+     }
 
   private:
     uint64_t avail_cycle[NVPR]={0};
@@ -207,10 +252,6 @@ class vectorUnit_t {
 
     void check_raw(reg_t vReg);
 
-    uint64_t get_avail_cycle(reg_t i)
-    {
-      return avail_cycle[i];
-    }
 
   public:
 
@@ -260,14 +301,20 @@ class vectorUnit_t {
       return res;
     }
 
-    void set_event_dependent(reg_t i, uint8_t num_events)
+    /* num_events == 0 => compute instruction. Pending event should be 0
+                   because at the time of writing the register,
+                   it is not known if this register would be used in future
+     num_events >= 0 => memory instruction. Pending event is equal to
+                   number of misses.
+     cycle < max => compute instruction. Set to the instruction latency.
+     cycle == max => memory instruction. The actual cycles is not known
+              at the time of writing to the register.
+    */
+    void set_event_dependent(reg_t i, uint8_t num_events, uint64_t cycle)
     {
       pending_events[i]=num_events;
-      //if (!zero_reg || i != 0)
-      avail_cycle[i] = std::numeric_limits<uint64_t>::max();
+      avail_cycle[i] = cycle;
     }
-
-
 };
 
 // architectural state of a RISC-V hart
@@ -504,6 +551,8 @@ public:
   void set_current_cycle(uint64_t c){current_cycle=c;};
   uint64_t get_current_cycle();
 
+  uint64_t get_curr_insn_latency();
+
   uint16_t get_id() {return id;}
 
   void log_mcpu_instruction(uint64_t base_address);
@@ -519,12 +568,75 @@ public:
   bool is_vl_available();
   uint64_t get_requested_vl();
 
+  std::list<std::shared_ptr<spike_model::InsnLatencyEvent>> get_insn_latency_event_list()
+  {
+    std::list<std::shared_ptr<spike_model::InsnLatencyEvent>> retList;
+    for_each(insn_latency_event_list.begin(), insn_latency_event_list.end(),
+    [&](const std::shared_ptr<spike_model::InsnLatencyEvent> & elem){
+        retList.push_back(elem);
+    });
+    return retList;
+  }
+
+  void clear_latency_event_list()
+  {
+    insn_latency_event_list.clear();
+  }
+
+  void push_insn_latency_event(std::shared_ptr<spike_model::InsnLatencyEvent> insn_latency_ptr)
+  {
+    insn_latency_event_list.insert(insn_latency_ptr);
+  }
+
+  void push_src_reg_load_raw(reg_t reg, spike_model::Request::RegType regT)
+  {
+    src_load_reg_vec.push_back(std::make_pair(reg, regT));
+  }
+
+  void set_dest_reg_in_event_list_raw(reg_t reg, spike_model::Request::RegType r)
+  {
+    std::set<std::shared_ptr<spike_model::InsnLatencyEvent>>::iterator itr;
+    for(itr = insn_latency_event_list.begin(); itr != insn_latency_event_list.end(); ++itr)
+    {
+      (*itr)->setDestinationReg(reg, r);
+    }
+  }
+
+  void set_src_load_reg_raw(reg_t reg, spike_model::Request::RegType r)
+  {
+    std::list<std::pair<reg_t, spike_model::Request::RegType>>::iterator itr;
+    for(itr = src_load_reg_vec.begin(); itr != src_load_reg_vec.end() ; itr++)
+    {
+      std::pair<reg_t, spike_model::Request::RegType> innerPair(reg, r);
+      std::pair<std::pair<reg_t, spike_model::Request::RegType>, uint64_t>
+                                 tmpPair(innerPair, get_curr_insn_latency());
+      load_insn_raw_map[static_cast<int>(itr->second)][itr->first] = tmpPair;
+    }
+
+    src_load_reg_vec.clear();
+  }
+
+  bool get_raw_dependent_info(reg_t regId, spike_model::Request::RegType regType,
+         std::pair<std::pair<reg_t, spike_model::Request::RegType>, uint64_t> *elem)
+  {
+    if(load_insn_raw_map[static_cast<int>(regType)].find(regId) !=
+    load_insn_raw_map[static_cast<int>(regType)].end())
+    {
+      *elem = load_insn_raw_map[static_cast<int>(regType)][regId];
+      load_insn_raw_map[static_cast<int>(regType)].erase(regId);
+      return true;
+    }
+    return false;
+  }
+
   simif_t* sim;
   bool vl_dependent;
   bool last_inst_vsetvl;
   uint64_t old_val;
   uint64_t old_reg;
   bool enable_smart_mcpu;
+  int curr_insn_latency;
+  bool is_insn_executed;
 private:
   
   mmu_t* mmu; // main memory is always accessed via the mmu
@@ -577,6 +689,17 @@ private:
   uint64_t current_cycle;
 
   std::shared_ptr<spike_model::MCPUInstruction> mcpu_instruction=nullptr;
+
+  /*There is a possibility of duplicate events getting inserted in the list.
+    This could result into corruption in the RAW event tracking mechanism.
+    Lets use set to avoid any duplicacy
+  */
+  std::set<std::shared_ptr<spike_model::InsnLatencyEvent>, spike_model::CustomCompare>
+             insn_latency_event_list;
+  std::list<std::pair<reg_t, spike_model::Request::RegType>> src_load_reg_vec;
+  std::unordered_map<reg_t, std::pair<std::pair<reg_t,
+                            spike_model::Request::RegType>, uint64_t>>
+ load_insn_raw_map[3];
 
 public:
   vectorUnit_t VU;

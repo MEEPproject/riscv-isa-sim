@@ -8,3 +8,4 @@
 #include "tracer.h"
 #include <assert.h>
 #include "processor.h"
+#include "insn_latency.h"

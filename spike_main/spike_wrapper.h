@@ -129,6 +129,12 @@ namespace spike_model
 
             bool isVecAvailable(uint64_t coreId);
 
+            bool canResume(uint64_t coreId, size_t srcRegId,
+                           spike_model::Request::RegType srcRegType,
+                           size_t destRegId,
+                           spike_model::Request::RegType destRegType,
+                           uint64_t latency, uint64_t timestamp);
+
             /*
              * \brief Notify that an L2 request has been serviced
              * \param req The serviced request

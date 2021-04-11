@@ -4,7 +4,7 @@ VI_VFP_COMMON
 switch(P_.VU.vsew) {
   case e32:
     for (reg_t i=P_.VU.vstart; i<vl; ++i) {
-      auto &vd = P_.VU.elt<float32_t>(rd_num, i);
+      auto &vd = P_.VU.elt<float32_t>(rd_num, i, VWRITE);
       auto rs1 = f32(READ_FREG(rs1_num));
 
       vd = rs1;
@@ -12,7 +12,7 @@ switch(P_.VU.vsew) {
     break;
   case e64:
     for (reg_t i=P_.VU.vstart; i<vl; ++i) {
-      auto &vd = P_.VU.elt<float64_t>(rd_num, i);
+      auto &vd = P_.VU.elt<float64_t>(rd_num, i, VWRITE);
       auto rs1 = f64(READ_FREG(rs1_num));
 
       vd = rs1;

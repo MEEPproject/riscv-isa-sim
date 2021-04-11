@@ -12,11 +12,11 @@ for (reg_t i=P_.VU.vstart; i<vl; ++i) {
   const int midx = (mlen * i) / 32;
   const int mpos = (mlen * i) % 32;
 
-  bool vs2_lsb = ((P_.VU.elt<uint32_t>(rs2_num, midx ) >> mpos) & 0x1) == 1;
+  bool vs2_lsb = ((P_.VU.elt<uint32_t>(rs2_num, midx, VREAD ) >> mpos) & 0x1) == 1;
   if (insn.v_vm() == 1) {
     popcount += vs2_lsb;
   } else {
-    bool do_mask = (P_.VU.elt<uint32_t>(0, midx) >> mpos) & 0x1;
+    bool do_mask = (P_.VU.elt<uint32_t>(0, midx, VREAD) >> mpos) & 0x1;
     popcount += (vs2_lsb && do_mask);
   }
 }

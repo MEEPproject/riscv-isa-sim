@@ -25,7 +25,9 @@ processor_t::processor_t(const char* isa, const char* priv, const char* varch,
                          simif_t* sim, uint32_t id, bool halt_on_reset, bool enable_smart_mcpu)
   : debug(false), halt_request(false), sim(sim), ext(NULL), id(id), xlen(0),
   histogram_enabled(false), log_commits_enabled(false),
-  halt_on_reset(halt_on_reset), last_pc(1), executions(1), enable_smart_mcpu(enable_smart_mcpu)
+  halt_on_reset(halt_on_reset), last_pc(1), executions(1),
+  enable_smart_mcpu(enable_smart_mcpu), is_insn_executed(true),
+  vl_dependent(false), last_inst_vsetvl(false)
 {
   VU.p = this;
   parse_isa_string(isa);
@@ -43,9 +45,6 @@ processor_t::processor_t(const char* isa, const char* priv, const char* varch,
   get_state()->pending_int_regs=new std::set<size_t>();
   get_state()->pending_float_regs=new std::set<size_t>();
   get_state()->pending_vector_regs=new std::set<size_t>();
-
-  vl_dependent = false;
-  last_inst_vsetvl = false;
 }
 
 processor_t::~processor_t()
@@ -329,8 +328,7 @@ void vectorUnit_t::get_vl_from_mcpu(int rd, int rs1, reg_t reqVL, reg_t newType)
   curr_req_vl = reqVL;
   curr_new_type = newType;
 
-  (*p->get_state()).XPR.set_event_dependent(curr_rd, (*p->get_mmu()).num_pending_data_misses() + 1);
-
+  (*p->get_state()).XPR.set_event_dependent(curr_rd, (*p->get_mmu()).num_pending_data_misses() + 1, 1);
 }
 
 bool processor_t::is_in_set_vl()
@@ -369,7 +367,37 @@ void vectorUnit_t::check_raw(reg_t vReg)
 {
   if(get_avail_cycle(vReg)>p->get_current_cycle())
   {
-    p->get_state()->pending_vector_regs->insert(vReg);
+    p->get_state()->raw=true;
+    /*
+      Push the data into the vector if the depending
+      instruction is a compute instruction.
+      If the depending instruction is a load, a separate
+      cacheRequest event would be generated
+    */
+    if(get_avail_cycle(vReg) != std::numeric_limits<uint64_t>::max())
+    {
+        std::shared_ptr<spike_model::InsnLatencyEvent> insn_latency_ptr =
+                       std::make_shared<spike_model::InsnLatencyEvent>(
+                       p->get_id(),
+                       vReg,
+                       spike_model::CacheRequest::RegType::VECTOR,
+                       std::numeric_limits<uint64_t>::max(),
+                       p->get_curr_insn_latency(),
+                       get_avail_cycle(vReg));
+        p->push_insn_latency_event(insn_latency_ptr);
+     }
+     else
+     {
+       /*load inst while acknowledging, should set the availability
+         any insns depending on it. Since load miss cacheRequest
+         is already generated, we have to rely on some other method to
+         communicate the dependency. Since there could be multiple
+         source reg which are not available due to load miss,
+         we use vector to track them.
+       */
+       p->push_src_reg_load_raw(vReg, spike_model::Request::RegType::VECTOR);
+     }
+     p->get_state()->pending_vector_regs->insert(vReg);
   }
 }
 
@@ -1191,7 +1219,12 @@ uint64_t processor_t::get_current_cycle()
 {
   return current_cycle;
 }
-  
+
+uint64_t processor_t::get_curr_insn_latency()
+{
+  return curr_insn_latency;
+}
+
 void processor_t::sim_fence_log()
 {
  in_fence=true; 

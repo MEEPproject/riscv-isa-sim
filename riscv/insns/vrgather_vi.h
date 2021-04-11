@@ -14,16 +14,16 @@ for (reg_t i = P_.VU.vstart; i < vl; ++i) {
 
   switch (sew) {
   case e8:
-    P_.VU.elt<uint8_t>(rd_num, i) = zimm5 >= P_.VU.vlmax ? 0 : P_.VU.elt<uint8_t>(rs2_num, zimm5);
+    P_.VU.elt<uint8_t>(rd_num, i, VWRITE) = zimm5 >= P_.VU.vlmax ? 0 : P_.VU.elt<uint8_t>(rs2_num, zimm5, VREAD);
     break;
   case e16:
-    P_.VU.elt<uint16_t>(rd_num, i) = zimm5 >= P_.VU.vlmax ? 0 : P_.VU.elt<uint16_t>(rs2_num, zimm5);
+    P_.VU.elt<uint16_t>(rd_num, i, VWRITE) = zimm5 >= P_.VU.vlmax ? 0 : P_.VU.elt<uint16_t>(rs2_num, zimm5, VREAD);
     break;
   case e32:
-    P_.VU.elt<uint32_t>(rd_num, i) = zimm5 >= P_.VU.vlmax ? 0 : P_.VU.elt<uint32_t>(rs2_num, zimm5);
+    P_.VU.elt<uint32_t>(rd_num, i, VWRITE) = zimm5 >= P_.VU.vlmax ? 0 : P_.VU.elt<uint32_t>(rs2_num, zimm5, VREAD);
     break;
   default:
-    P_.VU.elt<uint64_t>(rd_num, i) = zimm5 >= P_.VU.vlmax ? 0 : P_.VU.elt<uint64_t>(rs2_num, zimm5);
+    P_.VU.elt<uint64_t>(rd_num, i, VWRITE) = zimm5 >= P_.VU.vlmax ? 0 : P_.VU.elt<uint64_t>(rs2_num, zimm5, VREAD);
     break;
   }
 }

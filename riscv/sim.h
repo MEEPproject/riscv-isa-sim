@@ -21,6 +21,7 @@
 #include "Fence.hpp"
 #include "Event.hpp"
 #include "MCPURequest.hpp"
+#include "InsnLatencyEvent.hpp"
 #include <stdint.h>
 
 class mmu_t;
@@ -67,6 +68,15 @@ public:
   bool ack_register(const std::shared_ptr<spike_model::Request> & req, uint64_t timestamp);
   bool ack_register_and_setvl(uint64_t coreId, uint64_t vl, uint64_t timestamp);
   bool is_vec_available(uint64_t coreId);
+  bool can_resume(uint64_t coreId, size_t srcRegId,
+                  spike_model::Request::RegType srcRegType,
+                  size_t destRegId, spike_model::Request::RegType destRegType,
+                  uint64_t latency, uint64_t timestamp);
+
+  bool set_latency(uint64_t coreId, size_t destRegId,
+                   spike_model::Request::RegType destRegType,
+                   uint64_t latency, uint64_t timestamp);
+
 private:
   std::vector<std::pair<reg_t, mem_t*>> mems;
   std::vector<std::pair<reg_t, abstract_device_t*>> plugin_devices;
