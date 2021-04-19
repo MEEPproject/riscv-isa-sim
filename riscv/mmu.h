@@ -501,12 +501,13 @@ private:
         line_size=ic_linesz;
     }
 
+    //Obtain the address for the line containing the miss
+    size_t miss_line_addr=((unsigned)addr/line_size)*line_size;
+
     std::list<std::shared_ptr<spike_model::CacheRequest>>::iterator it;
     for (it = misses_last_inst.begin(); it != misses_last_inst.end(); ++it)
     {
-        uint64_t line_start=((*it)->getAddress()/line_size)*line_size;
-        uint64_t line_end=line_start+line_size;
-        contains_line=(line_start<=addr && line_end>addr);
+        contains_line=(miss_line_addr==(*it)->getAddress());
         if(contains_line)
         {
             break;
@@ -515,7 +516,8 @@ private:
 
     if(!contains_line)
     {
-        misses_last_inst.push_back(std::make_shared<spike_model::CacheRequest> (addr, type, proc->state.pc, proc->get_current_cycle(), proc->get_id()));
+        //The request is for the line instead of the missing access
+        misses_last_inst.push_back(std::make_shared<spike_model::CacheRequest> (miss_line_addr, type, proc->state.pc, proc->get_current_cycle(), proc->get_id()));
         misses_last_inst.back()->setSize(line_size);
         if(type==spike_model::CacheRequest::AccessType::FETCH)
         {

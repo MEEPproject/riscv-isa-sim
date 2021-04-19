@@ -409,10 +409,10 @@ namespace spike_model
         {
             const char* wp = strchr(ic_conf, ':');
             if (!wp++) help();
-            const char* bp = strchr(ic_conf, ':');
+            const char* bp = strchr(wp, ':');
             if (!bp++) help();
 
-            ic_linesz = atoi(bp)*8; //Convert to bits
+            ic_linesz = atoi(bp);
         }
 
         size_t dc_linesz=0;
@@ -420,10 +420,10 @@ namespace spike_model
         {
             const char* wp = strchr(dc_conf, ':');
             if (!wp++) help();
-            const char* bp = strchr(dc_conf, ':');
+            const char* bp = strchr(wp, ':');
             if (!bp++) help();
 
-            dc_linesz = atoi(bp)*8; //Convert to bits
+            dc_linesz = atoi(bp);
         }
 
       
