@@ -331,6 +331,9 @@ public:
   void flush_icache();
 
   void register_memtracer(memtracer_t*);
+  
+  void register_dc_line_size(uint16_t line_size){dc_linesz=line_size;}
+  void register_ic_line_size(uint16_t line_size){ic_linesz=line_size;}
 
   int is_dirty_enabled()
   {
@@ -405,6 +408,9 @@ private:
   memtracer_list_t tracer;
   reg_t load_reservation_address;
   uint16_t fetch_temp;
+
+  uint16_t dc_linesz=0;
+  uint16_t ic_linesz=0;
 
   // implement an instruction cache for simulator performance
   icache_entry_t icache[ICACHE_ENTRIES];
@@ -488,14 +494,33 @@ private:
   
   void log_miss(uint64_t addr, size_t bytes, spike_model::CacheRequest::AccessType type)
   {
-    misses_last_inst.push_back(std::make_shared<spike_model::CacheRequest> (addr, type, proc->state.pc, proc->get_current_cycle(), proc->get_id()));
+    bool contains_line=false;
+    uint16_t line_size=dc_linesz;
     if(type==spike_model::CacheRequest::AccessType::FETCH)
     {
-        has_fetch_miss=true;
+        line_size=ic_linesz;
     }
-    if(type==spike_model::CacheRequest::AccessType::WRITEBACK)
+
+    std::list<std::shared_ptr<spike_model::CacheRequest>>::iterator it;
+    for (it = misses_last_inst.begin(); it != misses_last_inst.end(); ++it)
     {
-        num_writebacks++;
+        uint64_t line_start=((*it)->getAddress()/line_size)*line_size;
+        uint64_t line_end=line_start+line_size;
+        contains_line=(line_start<=addr && line_end>addr);
+        if(contains_line)
+        {
+            break;
+        }
+    }
+
+    if(!contains_line)
+    {
+        misses_last_inst.push_back(std::make_shared<spike_model::CacheRequest> (addr, type, proc->state.pc, proc->get_current_cycle(), proc->get_id()));
+        misses_last_inst.back()->setSize(line_size);
+        if(type==spike_model::CacheRequest::AccessType::FETCH)
+        {
+            has_fetch_miss=true;
+        }
     }
   }
 

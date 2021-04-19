@@ -404,6 +404,27 @@ namespace spike_model
             exit(0);
         }
 
+        size_t ic_linesz=0;
+        if (ic_conf!=NULL)
+        {
+            const char* wp = strchr(ic_conf, ':');
+            if (!wp++) help();
+            const char* bp = strchr(ic_conf, ':');
+            if (!bp++) help();
+
+            ic_linesz = atoi(bp)*8; //Convert to bits
+        }
+
+        size_t dc_linesz=0;
+        if (dc_conf!=NULL)
+        {
+            const char* wp = strchr(dc_conf, ':');
+            if (!wp++) help();
+            const char* bp = strchr(dc_conf, ':');
+            if (!bp++) help();
+
+            dc_linesz = atoi(bp)*8; //Convert to bits
+        }
 
       
         for (size_t i = 0; i < nprocs/nthreads; i++)
@@ -419,6 +440,7 @@ namespace spike_model
                     for(size_t j = 0; j < nthreads; j++)
                     {
                         s->get_core(i*nthreads + j)->get_mmu()->register_memtracer(ic);
+                        s->get_core(i*nthreads + j)->get_mmu()->register_ic_line_size(ic_linesz);
                     }
                     ics.push_back(ic);
                 }
@@ -431,6 +453,7 @@ namespace spike_model
                     for(size_t j = 0; j < nthreads; j++)
                     {
                         s->get_core(i*nthreads + j)->get_mmu()->register_memtracer(ic);
+                        s->get_core(i*nthreads + j)->get_mmu()->register_ic_line_size(ic_linesz);
                     }
                     ics.push_back(ic);
                 }
@@ -446,6 +469,7 @@ namespace spike_model
                     for(size_t j = 0; j < nthreads; j++)
                     {
                         s->get_core(i*nthreads + j)->get_mmu()->register_memtracer(dc);
+                        s->get_core(i*nthreads + j)->get_mmu()->register_dc_line_size(dc_linesz);
                     }
                     dcs.push_back(dc);
                 }
@@ -458,6 +482,7 @@ namespace spike_model
                     for(size_t j = 0; j < nthreads; j++)
                     {
                         s->get_core(i*nthreads + j)->get_mmu()->register_memtracer(dc);
+                        s->get_core(i*nthreads + j)->get_mmu()->register_dc_line_size(dc_linesz);
                     }
                     dcs.push_back(dc);
                 }
