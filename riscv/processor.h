@@ -169,6 +169,13 @@ struct type_sew_t<64>
   using type=int64_t;
 };
 
+typedef struct load_insn_raw_dep
+{
+    reg_t regId;
+    spike_model::Request::RegType regType;
+    uint64_t latency;
+}load_insn_raw_dep;
+
 class vectorUnit_t {
   public:
     processor_t* p;
@@ -568,14 +575,9 @@ public:
   bool is_vl_available();
   uint64_t get_requested_vl();
 
-  std::list<std::shared_ptr<spike_model::InsnLatencyEvent>> get_insn_latency_event_list()
+  std::list<std::shared_ptr<spike_model::InsnLatencyEvent>>& get_insn_latency_event_list()
   {
-    std::list<std::shared_ptr<spike_model::InsnLatencyEvent>> retList;
-    for_each(insn_latency_event_list.begin(), insn_latency_event_list.end(),
-    [&](const std::shared_ptr<spike_model::InsnLatencyEvent> & elem){
-        retList.push_back(elem);
-    });
-    return retList;
+    return insn_latency_event_list;
   }
 
   void clear_latency_event_list()
@@ -585,7 +587,7 @@ public:
 
   void push_insn_latency_event(std::shared_ptr<spike_model::InsnLatencyEvent> insn_latency_ptr)
   {
-    insn_latency_event_list.insert(insn_latency_ptr);
+    insn_latency_event_list.push_back(insn_latency_ptr);
   }
 
   void push_src_reg_load_raw(reg_t reg, spike_model::Request::RegType regT)
@@ -595,7 +597,7 @@ public:
 
   void set_dest_reg_in_event_list_raw(reg_t reg, spike_model::Request::RegType r)
   {
-    std::set<std::shared_ptr<spike_model::InsnLatencyEvent>>::iterator itr;
+    std::list<std::shared_ptr<spike_model::InsnLatencyEvent>>::iterator itr;
     for(itr = insn_latency_event_list.begin(); itr != insn_latency_event_list.end(); ++itr)
     {
       (*itr)->setDestinationReg(reg, r);
@@ -607,26 +609,27 @@ public:
     std::list<std::pair<reg_t, spike_model::Request::RegType>>::iterator itr;
     for(itr = src_load_reg_vec.begin(); itr != src_load_reg_vec.end() ; itr++)
     {
-      std::pair<reg_t, spike_model::Request::RegType> innerPair(reg, r);
-      std::pair<std::pair<reg_t, spike_model::Request::RegType>, uint64_t>
-                                 tmpPair(innerPair, get_curr_insn_latency());
-      load_insn_raw_map[static_cast<int>(itr->second)][itr->first] = tmpPair;
-    }
 
+      std::shared_ptr<load_insn_raw_dep> elem = std::make_shared<load_insn_raw_dep>();
+      elem->regId = reg;
+      elem->regType = r;
+      elem->latency = get_curr_insn_latency();
+      load_insn_raw_map[static_cast<int>(itr->second)][itr->first] = elem;
+    }
     src_load_reg_vec.clear();
   }
 
-  bool get_raw_dependent_info(reg_t regId, spike_model::Request::RegType regType,
-         std::pair<std::pair<reg_t, spike_model::Request::RegType>, uint64_t> *elem)
+  std::shared_ptr<load_insn_raw_dep> get_raw_dependent_info(reg_t regId,
+                                 spike_model::Request::RegType regType)
   {
+    std::shared_ptr<load_insn_raw_dep> elem = nullptr;
     if(load_insn_raw_map[static_cast<int>(regType)].find(regId) !=
     load_insn_raw_map[static_cast<int>(regType)].end())
     {
-      *elem = load_insn_raw_map[static_cast<int>(regType)][regId];
+      elem = load_insn_raw_map[static_cast<int>(regType)][regId];
       load_insn_raw_map[static_cast<int>(regType)].erase(regId);
-      return true;
     }
-    return false;
+    return elem;
   }
 
   simif_t* sim;
@@ -694,12 +697,10 @@ private:
     This could result into corruption in the RAW event tracking mechanism.
     Lets use set to avoid any duplicacy
   */
-  std::set<std::shared_ptr<spike_model::InsnLatencyEvent>, spike_model::CustomCompare>
+  std::list<std::shared_ptr<spike_model::InsnLatencyEvent>>
              insn_latency_event_list;
   std::list<std::pair<reg_t, spike_model::Request::RegType>> src_load_reg_vec;
-  std::unordered_map<reg_t, std::pair<std::pair<reg_t,
-                            spike_model::Request::RegType>, uint64_t>>
- load_insn_raw_map[3];
+  std::unordered_map<reg_t, std::shared_ptr<load_insn_raw_dep>> load_insn_raw_map[3];
 
 public:
   vectorUnit_t VU;

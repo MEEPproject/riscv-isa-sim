@@ -380,7 +380,7 @@ void vectorUnit_t::check_raw(reg_t vReg)
                        std::make_shared<spike_model::InsnLatencyEvent>(
                        p->get_id(),
                        vReg,
-                       spike_model::CacheRequest::RegType::VECTOR,
+                       spike_model::Request::RegType::VECTOR,
                        std::numeric_limits<uint64_t>::max(),
                        p->get_curr_insn_latency(),
                        get_avail_cycle(vReg));

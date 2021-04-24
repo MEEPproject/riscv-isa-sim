@@ -154,12 +154,11 @@ bool sim_t::simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::s
                is compute. If the depending instruction is memory instruction,
                a CacheRequest event is generated.
             */
-            std::list<std::shared_ptr<spike_model::InsnLatencyEvent>> latency_event =
+            std::list<std::shared_ptr<spike_model::InsnLatencyEvent>> latency_event_list =
                        procs[core]->get_insn_latency_event_list();
-            std::list<std::shared_ptr<spike_model::InsnLatencyEvent>>::iterator itr;
-            for(itr = latency_event.begin(); itr != latency_event.end(); itr++)
+            for(std::shared_ptr<spike_model::InsnLatencyEvent> latency_event: latency_event_list)
             {
-                events.push_back(*itr);
+                events.push_back(latency_event);
             }
             procs[core]->clear_latency_event_list();
         }
@@ -215,15 +214,33 @@ bool sim_t::ack_register(const std::shared_ptr<spike_model::Request> & req, uint
 
     //If this reg was read by some later instructions which had RAW dependency on this,
     //set that instruction's dest reg to appropriate latency.
-    std::pair<std::pair<reg_t, spike_model::Request::RegType>, uint64_t> elem;
-    bool ret = procs[req->getCoreId()]->get_raw_dependent_info(req->getDestinationRegId(),
-                                                   req->getDestinationRegType(), &elem);
+    std::shared_ptr<load_insn_raw_dep> elem =
+                    procs[req->getCoreId()]->get_raw_dependent_info(
+                                                req->getDestinationRegId(),
+                                                req->getDestinationRegType());
 
-    if(ret)
+    if(elem)
     {
-      if(elem.first.first != std::numeric_limits<uint64_t>::max())
-          set_latency(req->getCoreId(), elem.first.first, elem.first.second,
-                      elem.second, timestamp);
+      if(elem->regId != std::numeric_limits<uint64_t>::max())
+      {
+          switch(elem->regType)
+          {
+             case spike_model::Request::RegType::INTEGER:
+                 procs[req->getCoreId()]->get_state()->pending_int_regs->erase(elem->regId);
+                 break;
+            case spike_model::Request::RegType::FLOAT:
+                 procs[req->getCoreId()]->get_state()->pending_float_regs->erase(elem->regId);
+                 break;
+            case spike_model::Request::RegType::VECTOR:
+                 procs[req->getCoreId()]->get_state()->pending_vector_regs->erase(elem->regId);
+                 break;
+            default:
+                std::cout << "Unknown register kind!" << __LINE__ << "\n";
+                break;
+          }
+          set_latency(req->getCoreId(), elem->regId, elem->regType,
+                      elem->latency, timestamp);
+      }
     }
     //Simulation can resumen if there are no pending registers.
     return procs[req->getCoreId()]->get_state()->pending_int_regs->size()==0 && procs[req->getCoreId()]->get_state()->pending_float_regs->size()==0 && procs[req->getCoreId()]->get_state()->pending_vector_regs->size()==0;
