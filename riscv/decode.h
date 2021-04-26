@@ -213,8 +213,11 @@ private:
 //Cannot set the timing of the dest reg, if there is a RAW. Needs to be set
 //only when its sources are serviced
 #define READ_REG(reg) ({ \
-        if(STATE.XPR.get_avail_cycle(reg)>P_.get_current_cycle()) \
+        if(P_.read_reg_encountered.find(reg) == P_.read_reg_encountered.end()) \
         { \
+          P_.read_reg_encountered[reg] = 1; \
+          if(STATE.XPR.get_avail_cycle(reg)>P_.get_current_cycle()) \
+          { \
             STATE.raw=true; \
             /* \
                Push the data into the vector if the depending \
@@ -250,13 +253,17 @@ private:
                P_.push_src_reg_load_raw(reg, spike_model::Request::RegType::INTEGER); \
             } \
             STATE.pending_int_regs->insert(reg); \
+          } \
         } \
         STATE.XPR[reg]; \
     })
 
 #define READ_FREG(reg) ({ \
-        if(STATE.FPR.get_avail_cycle(reg)>P_.get_current_cycle()) \
+        if(P_.read_freg_encountered.find(reg) == P_.read_freg_encountered.end()) \
         { \
+          P_.read_freg_encountered[reg] = 1; \
+          if(STATE.FPR.get_avail_cycle(reg)>P_.get_current_cycle()) \
+          { \
             STATE.raw=true; \
             /* \
                Push the data into the vector if the depending \
@@ -292,6 +299,7 @@ private:
                P_.push_src_reg_load_raw(reg, spike_model::Request::RegType::FLOAT); \
              } \
              STATE.pending_float_regs->insert(reg); \
+          } \
         } \
         STATE.FPR[reg]; \
     })
@@ -310,23 +318,27 @@ private:
             P_.old_reg = reg; \
         } \
         STATE.XPR.write(reg, value); \
-        if(STATE.raw) \
+        if(P_.write_reg_encountered.find(reg) == P_.write_reg_encountered.end()) \
         { \
+          P_.write_reg_encountered[reg] = 1; \
+          if(STATE.raw) \
+          { \
             /*
               Set the destination register also, because once the acknowledge is done, \
               we have to set the availability of this register. \
             */ \
             P_.set_dest_reg_in_event_list_raw(reg, spike_model::Request::RegType::INTEGER); \
             P_.set_src_load_reg_raw(reg, spike_model::Request::RegType::INTEGER); \
-        } \
-        else \
-        { \
+          } \
+          else \
+          { \
             STATE.XPR.set_event_dependent(reg, 0, P_.get_current_cycle() + P_.get_curr_insn_latency()); \
-        } \
-        if(MMU.num_pending_data_misses()>0) \
-        { \
+          } \
+          if(MMU.num_pending_data_misses()>0) \
+          { \
             STATE.XPR.set_event_dependent(reg, MMU.num_pending_data_misses(), std::numeric_limits<uint64_t>::max()); \
             MMU.set_misses_dest_reg(reg, spike_model::CacheRequest::RegType::INTEGER); \
+          } \
         } \
     })
 
@@ -336,23 +348,27 @@ private:
     reg_t wdata = (value); /* value may have side effects */ \
     STATE.log_reg_write = (commit_log_reg_t){(reg) << 1, {wdata, 0}}; \
     STATE.XPR.write(reg, wdata); \
-    if(STATE.raw) \
+    if(P_.write_reg_encountered.find(reg) == P_.write_reg_encountered.end()) \
     { \
+      P_.write_reg_encountered[reg] = 1; \
+      if(STATE.raw) \
+      { \
         /*
           Set the destination register also, because once the acknowledge is done, \
           we have to set the availability of this register. \
         */ \
         P_.set_dest_reg_in_event_list_raw(reg, spike_model::Request::RegType::INTEGER); \
         P_.set_src_load_reg_raw(reg, spike_model::Request::RegType::INTEGER); \
-    } \
-    else \
-    { \
+      } \
+      else \
+      { \
         STATE.XPR.set_event_dependent(reg, 0, P_.get_current_cycle() + P_.get_curr_insn_latency()); \
-    } \
-    if(MMU.num_pending_data_misses()>0) \
-    { \
+      } \
+      if(MMU.num_pending_data_misses()>0) \
+      { \
         STATE.XPR.set_event_dependent(reg, MMU.num_pending_data_misses(), std::numeric_limits<uint64_t>::max()); \
         MMU.set_misses_dest_reg(reg, spike_model::Request::RegType::INTEGER); \
+      } \
     } \
   })
 
@@ -384,23 +400,27 @@ private:
 #define dirty_vs_state (STATE.mstatus |= MSTATUS_VS | (xlen == 64 ? MSTATUS64_SD : MSTATUS32_SD))
 #define DO_WRITE_FREG(reg, value) ({ \
         (STATE.FPR.write(reg, value), dirty_fp_state); \
-        if(STATE.raw) \
+        if(P_.write_freg_encountered.find(reg) == P_.write_freg_encountered.end()) \
         { \
+          P_.write_freg_encountered[reg] = 1; \
+          if(STATE.raw) \
+          { \
             /*
               Set the destination register also, because once the acknowledge is done, \
               we have to set the availability of this register. \
             */ \
             P_.set_dest_reg_in_event_list_raw(reg, spike_model::Request::RegType::FLOAT); \
             P_.set_src_load_reg_raw(reg, spike_model::Request::RegType::FLOAT); \
-        } \
-        else \
-        { \
+          } \
+          else \
+          { \
             STATE.FPR.set_event_dependent(reg, 0, P_.get_current_cycle() + P_.get_curr_insn_latency()); \
-        } \
-        if(MMU.num_pending_data_misses()>0) \
-        { \
+          } \
+          if(MMU.num_pending_data_misses()>0) \
+          { \
             STATE.FPR.set_event_dependent(reg, MMU.num_pending_data_misses(), std::numeric_limits<uint64_t>::max()); \
             MMU.set_misses_dest_reg(reg, spike_model::Request::RegType::FLOAT); \
+          } \
         } \
     })
 

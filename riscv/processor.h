@@ -632,6 +632,14 @@ public:
     return elem;
   }
 
+  void clear_bookkeeping_regs()
+  {
+    read_reg_encountered.clear();
+    write_reg_encountered.clear();
+    read_freg_encountered.clear();
+    write_freg_encountered.clear();
+  }
+
   simif_t* sim;
   bool vl_dependent;
   bool last_inst_vsetvl;
@@ -702,8 +710,18 @@ private:
   std::list<std::pair<reg_t, spike_model::Request::RegType>> src_load_reg_vec;
   std::unordered_map<reg_t, std::shared_ptr<load_insn_raw_dep>> load_insn_raw_map[3];
 
+
 public:
   vectorUnit_t VU;
+
+  //READ_REG, READ_FREG etc are all macros. Each of their 
+  //use invokes the corresponding macros, even for the same register. So we use 
+  //map to keep track of which registers are already referred to in the current
+  //instruction
+  std::unordered_map<uint64_t, int> read_reg_encountered;
+  std::unordered_map<uint64_t, int> write_reg_encountered;
+  std::unordered_map<uint64_t, int> read_freg_encountered;
+  std::unordered_map<uint64_t, int> write_freg_encountered;
 };
 
 
