@@ -53,3 +53,9 @@ reg_t rv64_NAME(processor_t* p, insn_t insn, reg_t pc)
   trace_opcode(p, OPCODE, insn);
   return npc;
 }
+
+bool is_raw_NAME(processor_t* p, insn_t insn, reg_t pc)
+{
+  int xlen = 64;
+  #include "insns/raw/NAME.h"
+}

@@ -296,7 +296,7 @@ void vectorUnit_t::check_raw(reg_t vReg)
   if(get_avail_cycle(vReg)>p->get_current_cycle())
   {
     p->get_state()->raw=true;
-    /*
+    /* 
       Push the data into the vector if the depending
       instruction is a compute instruction.
       If the depending instruction is a load, a separate
@@ -313,17 +313,6 @@ void vectorUnit_t::check_raw(reg_t vReg)
                        p->get_curr_insn_latency(),
                        get_avail_cycle(vReg));
         p->push_insn_latency_event(insn_latency_ptr);
-     }
-     else
-     {
-       /*load inst while acknowledging, should set the availability
-         any insns depending on it. Since load miss cacheRequest
-         is already generated, we have to rely on some other method to
-         communicate the dependency. Since there could be multiple
-         source reg which are not available due to load miss,
-         we use vector to track them.
-       */
-       p->push_src_reg_load_raw(vReg, spike_model::Request::RegType::VECTOR);
      }
      p->get_state()->pending_vector_regs->insert(vReg);
   }

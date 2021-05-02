@@ -19,9 +19,9 @@ riscv_hdrs = \
 	trap.h \
 	encoding.h \
 	cachesim.h \
-    fastcachesim.h \
-    serviceablecachesim.h \
-    serviceable.h \
+	fastcachesim.h \
+	serviceablecachesim.h \
+	serviceable.h \
 	memtracer.h \
 	mmio_plugin.h \
 	tracer.h \
@@ -47,8 +47,8 @@ riscv_srcs = \
 	interactive.cc \
 	trap.cc \
 	cachesim.cc \
-    fastcachesim.cc \
-    serviceablecachesim.cc \
+	fastcachesim.cc \
+	serviceablecachesim.cc \
 	mmu.cc \
 	disasm.cc \
 	extension.cc \
@@ -715,4 +715,3 @@ $(gen_sparta_connection): %.cc
 
 riscv_junk = \
 	$(riscv_gen_srcs) \
-

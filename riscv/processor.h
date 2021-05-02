@@ -27,6 +27,7 @@
 class processor_t;
 class mmu_t;
 typedef reg_t (*insn_func_t)(processor_t*, insn_t, reg_t);
+typedef bool (*insn_func_raw_t)(processor_t*, insn_t, reg_t);
 class simif_t;
 class trap_t;
 class extension_t;
@@ -38,6 +39,7 @@ struct insn_desc_t
   insn_bits_t mask;
   insn_func_t rv32;
   insn_func_t rv64;
+  insn_func_raw_t is_raw;
 };
 
 struct commit_log_reg_t
@@ -206,17 +208,7 @@ class vectorUnit_t {
         reg_referenced[vReg] = 1;
         T *regStart = (T*)((char*)reg_file + vReg * (VLEN >> 3));
 
-        if(access_type == VREAD || access_type == VREADWRITE)
-        {
-          if(read_reg_encountered.find(vReg) == read_reg_encountered.end())
-          {
-            read_reg_encountered[vReg] = 1;
-            check_raw(vReg);
-          }
-        }
-        if(access_type == VWRITE || access_type == VREADWRITE)
-        {
-          if(write_reg_encountered.find(vReg) == write_reg_encountered.end())
+          if(access_type == VWRITE || access_type == VREADWRITE)
           {
             write_reg_encountered[vReg] = 1;
             /*
@@ -226,7 +218,6 @@ class vectorUnit_t {
             p->curr_write_reg = vReg; \
             p->curr_write_reg_type = spike_model::Request::RegType::VECTOR; \
           }
-        }
         return regStart[n];
       }
 
@@ -235,18 +226,59 @@ class vectorUnit_t {
         return avail_cycle[i];
       }
 
-     void clear_bookkeeping_regs()
-     {
-       read_reg_encountered.clear();
-       write_reg_encountered.clear();
-     }
+      void clear_bookkeeping_regs()
+      { 
+        read_reg_encountered.clear();
+        write_reg_encountered.clear();
+      }
+
+      template<class T>
+      bool check_raw(reg_t vReg, reg_t n)
+      {
+        reg_t elts_per_reg = (VLEN >> 3) / (sizeof(T));
+        vReg += n / elts_per_reg;
+
+        if(get_avail_cycle(vReg)>p->get_current_cycle())
+        {
+          p->get_state()->raw=true;
+
+          /*Push the data into the vector if the depending
+            instruction is a compute instruction.
+            If the depending instruction is a load, a separate
+            cacheRequest event would be generated */
+
+          if(get_avail_cycle(vReg) != std::numeric_limits<uint64_t>::max())
+          {
+            std::shared_ptr<spike_model::InsnLatencyEvent> insn_latency_ptr =
+                       std::make_shared<spike_model::InsnLatencyEvent>(
+                       p->get_id(),
+                       vReg,
+                       spike_model::Request::RegType::VECTOR,
+                       std::numeric_limits<uint64_t>::max(),
+                       p->get_curr_insn_latency(),
+                       get_avail_cycle(vReg));
+            p->push_insn_latency_event(insn_latency_ptr);
+          }
+          else
+          {
+            /*load inst while acknowledging, should set the availability
+            any insns depending on it. Since load miss cacheRequest
+            is already generated, we have to rely on some other method to
+            communicate the dependency. Since there could be multiple
+            source reg which are not available due to load miss,
+            we use vector to track them.*/
+       
+            p->push_src_reg_load_raw(vReg, spike_model::Request::RegType::VECTOR);
+          }
+          p->get_state()->pending_vector_regs->insert(vReg);
+          return true;
+        }
+        return false;
+      }
 
   private:
     uint64_t avail_cycle[NVPR]={0};
     uint8_t pending_events[NVPR]={0};
-
-    void check_raw(reg_t vReg);
-
 
   public:
 
@@ -678,6 +710,7 @@ private:
  
   bool log_misses=false;
   bool in_fence=false;
+  bool in_set_vl = false;
 
   std::list<std::shared_ptr<spike_model::CacheRequest>> pending_misses;
   uint64_t current_cycle;
@@ -714,6 +747,7 @@ reg_t illegal_instruction(processor_t* p, insn_t insn, reg_t pc);
 #define REGISTER_INSN(proc, name, match, mask) \
   extern reg_t rv32_##name(processor_t*, insn_t, reg_t); \
   extern reg_t rv64_##name(processor_t*, insn_t, reg_t); \
-  proc->register_insn((insn_desc_t){match, mask, rv32_##name, rv64_##name});
+  extern bool is_raw_##name(processor_t*, insn_t, reg_t); \
+  proc->register_insn((insn_desc_t){match, mask, rv32_##name, rv64_##name, is_raw_##name});
 
 #endif

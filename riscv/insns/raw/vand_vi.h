@@ -1,0 +1,1 @@
+VECTOR_CHECK_RAW();

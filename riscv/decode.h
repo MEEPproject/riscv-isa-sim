@@ -213,6 +213,10 @@ private:
 //Cannot set the timing of the dest reg, if there is a RAW. Needs to be set
 //only when its sources are serviced
 #define READ_REG(reg) ({ \
+        STATE.XPR[reg]; \
+    })
+
+#define XPR_CHECK_RAW(reg) ({ \
         if(P_.read_reg_encountered.find(reg) == P_.read_reg_encountered.end()) \
         { \
           P_.read_reg_encountered[reg] = 1; \
@@ -253,12 +257,18 @@ private:
                P_.push_src_reg_load_raw(reg, spike_model::Request::RegType::INTEGER); \
             } \
             STATE.pending_int_regs->insert(reg); \
-          } \
+            true; \
         } \
-        STATE.XPR[reg]; \
+        false; \
+     } \
+     false; \
     })
 
 #define READ_FREG(reg) ({ \
+        STATE.FPR[reg]; \
+    })
+
+#define FPR_CHECK_RAW(reg) ({ \
         if(P_.read_freg_encountered.find(reg) == P_.read_freg_encountered.end()) \
         { \
           P_.read_freg_encountered[reg] = 1; \
@@ -299,9 +309,11 @@ private:
                P_.push_src_reg_load_raw(reg, spike_model::Request::RegType::FLOAT); \
              } \
              STATE.pending_float_regs->insert(reg); \
+             true; \
           } \
+          false; \
         } \
-        STATE.FPR[reg]; \
+        false; \
     })
 
 #define RD READ_REG(insn.rd())
@@ -309,6 +321,7 @@ private:
 #define RS2 READ_REG(insn.rs2())
 #define RS3 READ_REG(insn.rs3())
 #define WRITE_RD(value) WRITE_REG(insn.rd(), value)
+
 
 #ifndef RISCV_ENABLE_COMMITLOG
 # define WRITE_REG(reg, value) ({ \
@@ -2129,5 +2142,551 @@ for (reg_t i = 0; i < vlmax; ++i) { \
 // Seems that 0x0 doesn't work.
 #define DEBUG_START             0x100
 #define DEBUG_END               (0x1000 - 1)
+
+
+// FPU macros
+#define FRS1 READ_FREG(insn.rs1())
+#define FRS2 READ_FREG(insn.rs2())
+#define FRS3 READ_FREG(insn.rs3())
+
+#define C_RD XPR_CHECK_RAW(insn.rd())
+#define C_RS1 XPR_CHECK_RAW(insn.rs1())
+#define C_RS2 XPR_CHECK_RAW(insn.rs2())
+#define C_RS3 XPR_CHECK_RAW(insn.rs3())
+#define C_RVC_RS1 XPR_CHECK_RAW(insn.rvc_rs1())
+#define C_RVC_RS2 XPR_CHECK_RAW(insn.rvc_rs2())
+#define C_RVC_RS1S XPR_CHECK_RAW(insn.rvc_rs1s())
+#define C_RVC_RS2S XPR_CHECK_RAW(insn.rvc_rs2s())
+#define C_RVC_FRS2 FPR_CHECK_RAW(insn.rvc_rs2())
+#define C_RVC_FRS2S FPR_CHECK_RAW(insn.rvc_rs2s())
+#define C_RVC_SP XPR_CHECK_RAW(X_SP)
+#define C_FRS1 FPR_CHECK_RAW(insn.rs1())
+#define C_FRS2 FPR_CHECK_RAW(insn.rs2())
+#define C_FRS3 FPR_CHECK_RAW(insn.rs3())
+#define C_RVC_SP XPR_CHECK_RAW(X_SP)
+
+#define SKIP_CHECK_RAW() \
+   bool b6 = P_.VU.check_raw<uint64_t>(0, 0, VREAD);
+  
+#define VECTOR_VECTOR_UNSIGNED_CHECK_RAW() \
+  reg_t sew = P_.VU.vsew; \
+  reg_t rs1_num = insn.rs1(); \
+  reg_t rs2_num = insn.rs2(); \
+  SKIP_CHECK_RAW(); \
+  bool b7 = false; \
+  bool b8 = false; \
+  switch(sew) { \
+    case e8: { \
+     b7 = P_.VU.check_raw<type_usew_t<e8>::type>(rs1_num, 0); \
+     b8 = P_.VU.check_raw<type_usew_t<e8>::type>(rs2_num, 0); \
+     break; \
+    } \
+    case e16: { \
+     b7 = P_.VU.check_raw<type_usew_t<e16>::type>(rs1_num, 0); \
+     b8 = P_.VU.check_raw<type_usew_t<e16>::type>(rs2_num, 0); \
+     break; \
+    } \
+    case e32: { \
+     b7 = P_.VU.check_raw<type_usew_t<e32>::type>(rs1_num, 0); \
+     b8 = P_.VU.check_raw<type_usew_t<e32>::type>(rs2_num, 0); \
+     break; \
+    } \
+    default: { \
+     b7 = P_.VU.check_raw<type_usew_t<e64>::type>(rs1_num, 0); \
+     b8 = P_.VU.check_raw<type_usew_t<e64>::type>(rs2_num, 0); \
+     break; \
+    } \
+  } \
+  return (b6 || b7 || b8);
+
+#define SCALAR_VECTOR_UNSIGNED_CHECK_RAW() \
+  reg_t sew = P_.VU.vsew; \
+  reg_t rs1_num = insn.rs1(); \
+  reg_t rs2_num = insn.rs2(); \
+  SKIP_CHECK_RAW(); \
+  bool b7 = false; \
+  bool b8 = false; \
+  switch(sew) { \
+    case e8: { \
+     b7 = C_RS1; \
+     b8 = P_.VU.check_raw<type_usew_t<e8>::type>(rs2_num, 0); \
+     break; \
+    } \
+    case e16: { \
+     b7 = C_RS1; \
+     b8 = P_.VU.check_raw<type_usew_t<e16>::type>(rs2_num, 0); \
+     break; \
+    } \
+    case e32: { \
+     b7 = C_RS1; \
+     b8 = P_.VU.check_raw<type_usew_t<e32>::type>(rs2_num, 0); \
+     break; \
+    } \
+    default: { \
+     b7 = C_RS1; \
+     b8 = P_.VU.check_raw<type_usew_t<e64>::type>(rs2_num, 0); \
+     break; \
+    } \
+  } \
+  return (b6 || b7 || b8);
+
+#define VECTOR_UNSIGNED_CHECK_RAW() \
+  reg_t sew = P_.VU.vsew; \
+  reg_t rs1_num = insn.rs1(); \
+  reg_t rs2_num = insn.rs2(); \
+  SKIP_CHECK_RAW(); \
+  bool b7 = false; \
+  switch(sew) { \
+    case e8: { \
+     b7 = P_.VU.check_raw<type_usew_t<e8>::type>(rs2_num, 0); \
+     break; \
+    } \
+    case e16: { \
+     b7 = P_.VU.check_raw<type_usew_t<e16>::type>(rs2_num, 0); \
+     break; \
+    } \
+    case e32: { \
+     b7 = P_.VU.check_raw<type_usew_t<e32>::type>(rs2_num, 0); \
+     break; \
+    } \
+    default: { \
+     b7 = P_.VU.check_raw<type_usew_t<e64>::type>(rs2_num, 0); \
+     break; \
+    } \
+  } \
+  return (b6 || b7);
+
+#define VECTOR_VECTOR_VECTOR_UNSIGNED_CHECK_RAW() \
+  reg_t sew = P_.VU.vsew; \
+  reg_t rd_num = insn.rd(); \
+  reg_t rs1_num = insn.rs1(); \
+  reg_t rs2_num = insn.rs2(); \
+  bool b7 = false; \
+  bool b8 = false; \
+  bool b9 = false; \
+  SKIP_CHECK_RAW(); \
+  switch(sew) { \
+    case e8: { \
+     b7 = P_.VU.check_raw<type_usew_t<e8>::type>(rs1_num, 0); \
+     b8 = P_.VU.check_raw<type_usew_t<e8>::type>(rs2_num, 0); \
+     b9 = P_.VU.check_raw<type_usew_t<e8>::type>(rd_num, 0); \
+     break; \
+    } \
+    case e16: { \
+     b7 = P_.VU.check_raw<type_usew_t<e16>::type>(rs1_num, 0); \
+     b8 = P_.VU.check_raw<type_usew_t<e16>::type>(rs2_num, 0); \
+     b9 = P_.VU.check_raw<type_usew_t<e16>::type>(rd_num, 0); \
+     break; \
+    } \
+    case e32: { \
+     b7 = P_.VU.check_raw<type_usew_t<e32>::type>(rs1_num, 0); \
+     b8 = P_.VU.check_raw<type_usew_t<e32>::type>(rs2_num, 0); \
+     b9 = P_.VU.check_raw<type_usew_t<e32>::type>(rd_num, 0); \
+     break; \
+    } \
+    default: { \
+     b7 = P_.VU.check_raw<type_usew_t<e64>::type>(rs1_num, 0); \
+     b8 = P_.VU.check_raw<type_usew_t<e64>::type>(rs2_num, 0); \
+     b9 = P_.VU.check_raw<type_usew_t<e64>::type>(rd_num, 0); \
+     break; \
+    } \
+  } \
+  return (b6 || b7 || b8 || b9);
+
+#define VECTOR_SCALAR_VECTOR_FLOAT_CHECK_RAW() \
+  reg_t sew = P_.VU.vsew; \
+  reg_t rd_num = insn.rd(); \
+  reg_t rs1_num = insn.rs1(); \
+  reg_t rs2_num = insn.rs2(); \
+  SKIP_CHECK_RAW(); \
+  bool b7 = false; \
+  bool b8 = false; \
+  bool b9 = false; \
+  switch(P_.VU.vsew) { \
+    case e32: {\
+      b7 = P_.VU.check_raw<float32_t>(rd_num, 0); \
+      b8 = C_FRS1; \
+      b9 = P_.VU.check_raw<float32_t>(rs2_num, 0); \
+      break; \
+    }\
+    case e64: {\
+      b7 = P_.VU.check_raw<float64_t>(rd_num, 0); \
+      b8 = C_FRS1; \
+      b9 = P_.VU.check_raw<float64_t>(rs2_num, 0); \
+      break; \
+    }\
+    case e16: \
+    case e8: \
+    default: \
+      break; \
+  }; \
+  return (b6 || b7 || b8 || b9);
+
+#define VECTOR_SCALAR_VECTOR_CHECK_RAW() \
+  reg_t sew = P_.VU.vsew; \
+  reg_t rd_num = insn.rd(); \
+  reg_t rs1_num = insn.rs1(); \
+  reg_t rs2_num = insn.rs2(); \
+  SKIP_CHECK_RAW(); \
+  bool b7 = false; \
+  bool b8 = false; \
+  bool b9 = false; \
+  switch(P_.VU.vsew) { \
+    case e8: {\
+      b7 = P_.VU.check_raw<type_sew_t<e8>::type>(rd_num, 0); \
+      b8 = RS1; \
+      b9 = P_.VU.check_raw<type_sew_t<e8>::type>(rs2_num, 0); \
+      break; \
+    }\
+    case e16: {\
+      b7 = P_.VU.check_raw<type_sew_t<e16>::type>(rd_num, 0); \
+      b8 = RS1; \
+      b9 = P_.VU.check_raw<type_sew_t<e16>::type>(rs2_num, 0); \
+      break; \
+    }\
+    case e32: {\
+      b7 = P_.VU.check_raw<type_sew_t<e32>::type>(rd_num, 0); \
+      b8 = RS1; \
+      b9 = P_.VU.check_raw<type_sew_t<e32>::type>(rs2_num, 0); \
+      break; \
+    }\
+    default: {\
+      b7 = P_.VU.check_raw<type_sew_t<e64>::type>(rd_num, 0); \
+      b8 = RS1; \
+      b9 = P_.VU.check_raw<type_sew_t<e64>::type>(rs2_num, 0); \
+      break; \
+    }\
+  }; \
+  return (b6 || b7 || b8 || b9);
+
+#define VECTOR_SCALAR_VECTOR_UNSIGNED_CHECK_RAW() \
+  reg_t sew = P_.VU.vsew; \
+  reg_t rd_num = insn.rd(); \
+  reg_t rs1_num = insn.rs1(); \
+  reg_t rs2_num = insn.rs2(); \
+  SKIP_CHECK_RAW(); \
+  bool b7 = false; \
+  bool b8 = false; \
+  bool b9 = false; \
+  switch(P_.VU.vsew) { \
+    case e8: {\
+      b7 = P_.VU.check_raw<uint8_t>(rd_num, 0); \
+      b8 = RS1; \
+      b9 = P_.VU.check_raw<uint8_t>(rs2_num, 0); \
+      break; \
+    }\
+    case e16: {\
+      b7 = P_.VU.check_raw<uint16_t>(rd_num, 0); \
+      b8 = RS1; \
+      b9 = P_.VU.check_raw<uint16_t>(rs2_num, 0); \
+      break; \
+    }\
+    case e32: {\
+      b7 = P_.VU.check_raw<uint32_t>(rd_num, 0); \
+      b8 = RS1; \
+      b9 = P_.VU.check_raw<uint32_t>(rs2_num, 0); \
+      break; \
+    }\
+    default: {\
+      b7 = P_.VU.check_raw<uint64_t>(rd_num, 0); \
+      b8 = RS1; \
+      b9 = P_.VU.check_raw<uint64_t>(rs2_num, 0); \
+      break; \
+    }\
+  }; \
+  return (b6 || b7 || b8 || b9);
+
+#define VECTOR_VECTOR_VECTOR_FLOAT_CHECK_RAW() \
+  reg_t sew = P_.VU.vsew; \
+  reg_t rd_num = insn.rd(); \
+  reg_t rs1_num = insn.rs1(); \
+  reg_t rs2_num = insn.rs2(); \
+  SKIP_CHECK_RAW(); \
+  bool b7 = false; \
+  bool b8 = false; \
+  bool b9 = false; \
+  switch(P_.VU.vsew) { \
+    case e32: {\
+      b7 = P_.VU.check_raw<float32_t>(rd_num, 0); \
+      b8 = P_.VU.check_raw<float32_t>(rs1_num, 0); \
+      b9 = P_.VU.check_raw<float32_t>(rs2_num, 0); \
+      break; \
+    }\
+    case e64: {\
+      b7 = P_.VU.check_raw<float64_t>(rd_num, 0); \
+      b8 = P_.VU.check_raw<float64_t>(rs1_num, 0); \
+      b9 = P_.VU.check_raw<float64_t>(rs2_num, 0); \
+      break; \
+    }\
+    case e16: \
+    case e8: \
+    default: \
+      break; \
+  }; \
+  return (b6 || b7 || b8 || b9);
+
+#define VECTOR_VECTOR_FLOAT_CHECK_RAW() \
+  reg_t sew = P_.VU.vsew; \
+  reg_t rd_num = insn.rd(); \
+  reg_t rs1_num = insn.rs1(); \
+  reg_t rs2_num = insn.rs2(); \
+  SKIP_CHECK_RAW(); \
+  bool b8 = false; \
+  bool b9 = false; \
+  switch(P_.VU.vsew) { \
+    case e32: {\
+      b8 = P_.VU.check_raw<float32_t>(rs1_num, 0); \
+      b9 = P_.VU.check_raw<float32_t>(rs2_num, 0); \
+      break; \
+    }\
+    case e64: {\
+      b8 = P_.VU.check_raw<float64_t>(rs1_num, 0); \
+      b9 = P_.VU.check_raw<float64_t>(rs2_num, 0); \
+      break; \
+    }\
+    case e16: \
+    case e8: \
+    default: \
+      break; \
+  }; \
+  return (b6 || b8 || b9);
+
+#define SCALAR_VECTOR_FLOAT_CHECK_RAW() \
+  reg_t sew = P_.VU.vsew; \
+  reg_t rd_num = insn.rd(); \
+  reg_t rs1_num = insn.rs1(); \
+  reg_t rs2_num = insn.rs2(); \
+  SKIP_CHECK_RAW(); \
+  bool b8 = false; \
+  bool b9 = false; \
+  switch(P_.VU.vsew) { \
+    case e32: {\
+      b8 = C_FRS1; \
+      b9 = P_.VU.check_raw<float32_t>(rs2_num, 0); \
+      break; \
+    }\
+    case e64: {\
+      b8 = C_FRS1; \
+      b9 = P_.VU.check_raw<float64_t>(rs2_num, 0); \
+      break; \
+    }\
+    case e16: \
+    case e8: \
+    default: \
+      break; \
+  }; \
+  return (b6 || b8 || b9);
+
+#define VECTOR_FLOAT_CHECK_RAW() \
+  reg_t sew = P_.VU.vsew; \
+  reg_t rd_num = insn.rd(); \
+  reg_t rs2_num = insn.rs2(); \
+  SKIP_CHECK_RAW(); \
+  bool b9 = false; \
+  switch(P_.VU.vsew) { \
+    case e32: {\
+      b9 = P_.VU.check_raw<float32_t>(rs2_num, 0); \
+      break; \
+    }\
+    case e64: {\
+      b9 = P_.VU.check_raw<float64_t>(rs2_num, 0); \
+      break; \
+    }\
+    case e16: \
+    case e8: \
+    default: \
+      break; \
+  }; \
+  return (b6 || b9);
+
+#define VECTOR_VECTOR_CHECK_RAW() \
+  reg_t sew = P_.VU.vsew; \
+  reg_t rs1_num = insn.rs1(); \
+  reg_t rs2_num = insn.rs2(); \
+  SKIP_CHECK_RAW(); \
+  bool b7 = false; \
+  bool b8 = false; \
+  switch(sew) { \
+    case e8: { \
+     b7 = P_.VU.check_raw<type_sew_t<e8>::type>(rs1_num, 0); \
+     b8 = P_.VU.check_raw<type_sew_t<e8>::type>(rs2_num, 0); \
+     break; \
+    } \
+    case e16: { \
+     b7 = P_.VU.check_raw<type_sew_t<e16>::type>(rs1_num, 0); \
+     b8 = P_.VU.check_raw<type_sew_t<e16>::type>(rs2_num, 0); \
+     break; \
+    } \
+    case e32: { \
+     b7 = P_.VU.check_raw<type_sew_t<e32>::type>(rs1_num, 0); \
+     b8 = P_.VU.check_raw<type_sew_t<e32>::type>(rs2_num, 0); \
+     break; \
+    } \
+    default: { \
+     b7 = P_.VU.check_raw<type_sew_t<e64>::type>(rs1_num, 0); \
+     b8 = P_.VU.check_raw<type_sew_t<e64>::type>(rs2_num, 0); \
+     break; \
+    } \
+  } \
+  return (b6 || b7 || b8);
+
+#define SCALAR_VECTOR_CHECK_RAW() \
+  reg_t sew = P_.VU.vsew; \
+  reg_t rs1_num = insn.rs1(); \
+  reg_t rs2_num = insn.rs2(); \
+  SKIP_CHECK_RAW(); \
+  bool b7 = false; \
+  bool b8 = false; \
+  switch(sew) { \
+    case e8: { \
+     b7 = C_RS1; \
+     b8 = P_.VU.check_raw<type_sew_t<e8>::type>(rs2_num, 0); \
+     break; \
+    } \
+    case e16: { \
+     b7 = C_RS1; \
+     b8 = P_.VU.check_raw<type_sew_t<e16>::type>(rs2_num, 0); \
+     break; \
+    } \
+    case e32: { \
+     b7 = C_RS1; \
+     b8 = P_.VU.check_raw<type_sew_t<e32>::type>(rs2_num, 0); \
+     break; \
+    } \
+    default: { \
+     b7 = C_RS1; \
+     b8 = P_.VU.check_raw<type_sew_t<e64>::type>(rs2_num, 0); \
+     break; \
+    } \
+  } \
+  return (b6 || b7 || b8);
+
+#define VECTOR_CHECK_RAW() \
+  reg_t sew = P_.VU.vsew; \
+  reg_t rs1_num = insn.rs1(); \
+  reg_t rs2_num = insn.rs2(); \
+  SKIP_CHECK_RAW(); \
+  bool b7 = false; \
+  switch(sew) { \
+    case e8: { \
+     b7 = P_.VU.check_raw<type_sew_t<e8>::type>(rs2_num, 0); \
+     break; \
+    } \
+    case e16: { \
+     b7 = P_.VU.check_raw<type_sew_t<e16>::type>(rs2_num, 0); \
+     break; \
+    } \
+    case e32: { \
+     b7 = P_.VU.check_raw<type_sew_t<e32>::type>(rs2_num, 0); \
+     break; \
+    } \
+    default: { \
+     b7 = P_.VU.check_raw<type_sew_t<e64>::type>(rs2_num, 0); \
+     break; \
+    } \
+  } \
+  return (b6 || b7);
+
+#define VECTOR_VECTOR_VECTOR_CHECK_RAW() \
+  reg_t sew = P_.VU.vsew; \
+  reg_t rd_num = insn.rd(); \
+  reg_t rs1_num = insn.rs1(); \
+  reg_t rs2_num = insn.rs2(); \
+  SKIP_CHECK_RAW(); \
+  bool b7 = false; \
+  bool b8 = false; \
+  bool b9 = false; \
+  switch(sew) { \
+    case e8: { \
+     b7 = P_.VU.check_raw<type_sew_t<e8>::type>(rs1_num, 0); \
+     b8 = P_.VU.check_raw<type_sew_t<e8>::type>(rs2_num, 0); \
+     b9 = P_.VU.check_raw<type_sew_t<e8>::type>(rd_num, 0); \
+     break; \
+    } \
+    case e16: { \
+     b7 = P_.VU.check_raw<type_sew_t<e16>::type>(rs1_num, 0); \
+     b8 = P_.VU.check_raw<type_sew_t<e16>::type>(rs2_num, 0); \
+     b9 = P_.VU.check_raw<type_sew_t<e16>::type>(rd_num, 0); \
+     break; \
+    } \
+    case e32: { \
+     b7 = P_.VU.check_raw<type_sew_t<e32>::type>(rs1_num, 0); \
+     b8 = P_.VU.check_raw<type_sew_t<e32>::type>(rs2_num, 0); \
+     b9 = P_.VU.check_raw<type_sew_t<e32>::type>(rd_num, 0); \
+     break; \
+    } \
+    default: { \
+     b7 = P_.VU.check_raw<type_sew_t<e64>::type>(rs1_num, 0); \
+     b8 = P_.VU.check_raw<type_sew_t<e64>::type>(rs2_num, 0); \
+     b9 = P_.VU.check_raw<type_sew_t<e64>::type>(rd_num, 0); \
+     break; \
+    } \
+  } \
+  return (b6 || b7 || b8 || b9);
+
+#define SCALAR_DEST_VECTOR_UNSIGNED_CHECK_RAW() \
+      SKIP_CHECK_RAW(); \
+      bool b7 = C_RS1;\
+      bool b8 = false; \
+      switch (P_.VU.vsew) { \
+      case e8: \
+        b8 = P_.VU.check_raw<uint8_t>(insn.rd(), 0); \
+        break; \
+      case e16: \
+        b8 = P_.VU.check_raw<uint16_t>(insn.rd(), 0); \
+        break; \
+      case e32: \
+        b8 = P_.VU.check_raw<uint32_t>(insn.rd(), 0); \
+        break; \
+      default: \
+        b8 = P_.VU.check_raw<uint64_t>(insn.rd(), 0); \
+        break; \
+      } \
+      return (b6 || b7 || b8);
+
+#define SCALAR_SCALAR_DEST_VECTOR_UNSIGNED_CHECK_RAW() \
+      SKIP_CHECK_RAW(); \
+      bool b7 = C_RS1;\
+      bool b8 = C_RS2; \
+      bool b9 = false; \
+      switch (P_.VU.vsew) { \
+      case e8: \
+        b9 = P_.VU.check_raw<uint8_t>(insn.rd(), 0); \
+        break; \
+      case e16: \
+        b9 = P_.VU.check_raw<uint16_t>(insn.rd(), 0); \
+        break; \
+      case e32: \
+        b9 = P_.VU.check_raw<uint32_t>(insn.rd(), 0); \
+        break; \
+      default: \
+        b9 = P_.VU.check_raw<uint64_t>(insn.rd(), 0); \
+        break; \
+      } \
+      return (b6 || b7 || b8 || b9);
+
+#define VECTOR_DEST_VECTOR_UNSIGNED_CHECK_RAW() \
+      SKIP_CHECK_RAW(); \
+      bool b7 = false;\
+      bool b8 = false;\
+      switch (P_.VU.vsew) { \
+      case e8: \
+        b7 = P_.VU.check_raw<uint8_t>(insn.rd(), 0); \
+        b8 = P_.VU.check_raw<uint8_t>(insn.rs2(), 0); \
+        break; \
+      case e16: \
+        b7 = P_.VU.check_raw<uint16_t>(insn.rd(), 0); \
+        b8 = P_.VU.check_raw<uint16_t>(insn.rs2(), 0); \
+        break; \
+      case e32: \
+        b7 = P_.VU.check_raw<uint32_t>(insn.rd(), 0); \
+        b8 = P_.VU.check_raw<uint32_t>(insn.rs2(), 0); \
+        break; \
+      default: \
+        b7 = P_.VU.check_raw<uint64_t>(insn.rd(), 0); \
+        b8 = P_.VU.check_raw<uint64_t>(insn.rs2(), 0); \
+        break; \
+      } \
+      return (b6 || b7 || b8);
 
 #endif

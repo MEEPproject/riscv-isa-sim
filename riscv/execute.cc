@@ -91,9 +91,19 @@ inline void processor_t::update_histogram(reg_t pc)
 // function calls.
 static reg_t execute_insn(processor_t* p, reg_t pc, insn_fetch_t fetch)
 {
-//struct timeval st, et;
+  insn_func_raw_t func;
+  if(p->get_xlen() == 64)
+  {
+    func = (insn_func_raw_t)(fetch.func + 1);
+  }
+  else
+  {
+    func = (insn_func_raw_t)(fetch.func + 2);
+  }
 
-//gettimeofday(&st,NULL);
+  if(func(p, fetch.insn, pc))
+    return pc;
+
   commit_log_stash_privilege(p);
   reg_t npc = fetch.func(p, fetch.insn, pc);
   if (npc != PC_SERIALIZE_BEFORE) {
