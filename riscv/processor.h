@@ -229,8 +229,10 @@ class vectorUnit_t {
                   Set the destination register also, because once the acknowledge is done,
                   we have to set the availability of this register.
                 */
-                p->set_dest_reg_in_event_list_raw(vReg, spike_model::Request::RegType::VECTOR);
-                p->set_src_load_reg_raw(vReg, spike_model::Request::RegType::VECTOR);
+                if((p->is_vl_available())){
+                  p->set_dest_reg_in_event_list_raw(vReg, spike_model::Request::RegType::VECTOR);
+                  p->set_src_load_reg_raw(vReg, spike_model::Request::RegType::VECTOR);
+                }
               }
               else
               {

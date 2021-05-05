@@ -328,7 +328,7 @@ void vectorUnit_t::get_vl_from_mcpu(int rd, int rs1, reg_t reqVL, reg_t newType)
   curr_req_vl = reqVL;
   curr_new_type = newType;
 
-  (*p->get_state()).XPR.set_event_dependent(curr_rd, (*p->get_mmu()).num_pending_data_misses() + 1, 1);
+  (*p->get_state()).XPR.set_event_dependent(curr_rd, 1, std::numeric_limits<uint64_t>::max());
 }
 
 bool processor_t::is_in_set_vl()
@@ -395,7 +395,9 @@ void vectorUnit_t::check_raw(reg_t vReg)
          source reg which are not available due to load miss,
          we use vector to track them.
        */
-       p->push_src_reg_load_raw(vReg, spike_model::Request::RegType::VECTOR);
+       if((p->is_vl_available())){
+         p->push_src_reg_load_raw(vReg, spike_model::Request::RegType::VECTOR);
+       }
      }
      p->get_state()->pending_vector_regs->insert(vReg);
   }

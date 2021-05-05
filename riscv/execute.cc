@@ -336,7 +336,7 @@ bool processor_t::step(size_t n)
           of the above type will corrupt the register state.
           That is why rollback is required for arithmetic instruction
           */
-          std::cout << "Arithmetic RAW for vsetvl at " << current_cycle << std::endl;
+          //std::cout << "Arithmetic RAW for vsetvl at " << current_cycle << std::endl;
           state.pc = oldpc;
           state.XPR.write(old_reg, old_val);
           get_mmu()->clear_misses();

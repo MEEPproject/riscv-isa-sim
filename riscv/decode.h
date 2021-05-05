@@ -250,7 +250,8 @@ private:
                  source reg which are not available due to load miss, \
                  we use vector to track them. \
                */ \
-               P_.push_src_reg_load_raw(reg, spike_model::Request::RegType::INTEGER); \
+               if(P_.is_vl_available()) \
+                 P_.push_src_reg_load_raw(reg, spike_model::Request::RegType::INTEGER); \
             } \
             STATE.pending_int_regs->insert(reg); \
           } \
@@ -296,7 +297,8 @@ private:
                  source reg which are not available due to load miss, \
                  we use vector to track them. \
                */ \
-               P_.push_src_reg_load_raw(reg, spike_model::Request::RegType::FLOAT); \
+               if(P_.is_vl_available()) \
+                 P_.push_src_reg_load_raw(reg, spike_model::Request::RegType::FLOAT); \
              } \
              STATE.pending_float_regs->insert(reg); \
           } \
@@ -327,8 +329,10 @@ private:
               Set the destination register also, because once the acknowledge is done, \
               we have to set the availability of this register. \
             */ \
-            P_.set_dest_reg_in_event_list_raw(reg, spike_model::Request::RegType::INTEGER); \
-            P_.set_src_load_reg_raw(reg, spike_model::Request::RegType::INTEGER); \
+            if((P_.is_vl_available())){ \
+              P_.set_dest_reg_in_event_list_raw(reg, spike_model::Request::RegType::INTEGER); \
+              P_.set_src_load_reg_raw(reg, spike_model::Request::RegType::INTEGER); \
+            } \
           } \
           else \
           { \
@@ -357,8 +361,10 @@ private:
           Set the destination register also, because once the acknowledge is done, \
           we have to set the availability of this register. \
         */ \
-        P_.set_dest_reg_in_event_list_raw(reg, spike_model::Request::RegType::INTEGER); \
-        P_.set_src_load_reg_raw(reg, spike_model::Request::RegType::INTEGER); \
+        if((P_.is_vl_available())){ \
+          P_.set_dest_reg_in_event_list_raw(reg, spike_model::Request::RegType::INTEGER); \
+          P_.set_src_load_reg_raw(reg, spike_model::Request::RegType::INTEGER); \
+        } \
       } \
       else \
       { \
@@ -409,8 +415,10 @@ private:
               Set the destination register also, because once the acknowledge is done, \
               we have to set the availability of this register. \
             */ \
-            P_.set_dest_reg_in_event_list_raw(reg, spike_model::Request::RegType::FLOAT); \
-            P_.set_src_load_reg_raw(reg, spike_model::Request::RegType::FLOAT); \
+            if((P_.is_vl_available())){ \
+              P_.set_dest_reg_in_event_list_raw(reg, spike_model::Request::RegType::FLOAT); \
+              P_.set_src_load_reg_raw(reg, spike_model::Request::RegType::FLOAT); \
+            } \
           } \
           else \
           { \
