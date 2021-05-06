@@ -298,7 +298,9 @@ private:
                  we use vector to track them. \
                */ \
                if(P_.is_vl_available()) \
+               { \
                  P_.push_src_reg_load_raw(reg, spike_model::Request::RegType::FLOAT); \
+               } \
              } \
              STATE.pending_float_regs->insert(reg); \
           } \
@@ -323,26 +325,15 @@ private:
         if(P_.write_reg_encountered.find(reg) == P_.write_reg_encountered.end()) \
         { \
           P_.write_reg_encountered[reg] = 1; \
-          if(STATE.raw) \
-          { \
             /*
               Set the destination register also, because once the acknowledge is done, \
               we have to set the availability of this register. \
             */ \
-            if((P_.is_vl_available())){ \
-              P_.set_dest_reg_in_event_list_raw(reg, spike_model::Request::RegType::INTEGER); \
-              P_.set_src_load_reg_raw(reg, spike_model::Request::RegType::INTEGER); \
+            if((P_.is_vl_available())) \
+            { \
+              P_.curr_write_reg = reg; \
+              P_.curr_write_reg_type = spike_model::Request::RegType::INTEGER; \
             } \
-          } \
-          else \
-          { \
-            STATE.XPR.set_event_dependent(reg, 0, P_.get_current_cycle() + P_.get_curr_insn_latency()); \
-          } \
-          if(MMU.num_pending_data_misses()>0) \
-          { \
-            STATE.XPR.set_event_dependent(reg, MMU.num_pending_data_misses(), std::numeric_limits<uint64_t>::max()); \
-            MMU.set_misses_dest_reg(reg, spike_model::CacheRequest::RegType::INTEGER); \
-          } \
         } \
     })
 
@@ -355,25 +346,14 @@ private:
     if(P_.write_reg_encountered.find(reg) == P_.write_reg_encountered.end()) \
     { \
       P_.write_reg_encountered[reg] = 1; \
-      if(STATE.raw) \
+      /*
+        Set the destination register also, because once the acknowledge is done, \
+        we have to set the availability of this register. \
+      */ \
+      if((P_.is_vl_available())) \
       { \
-        /*
-          Set the destination register also, because once the acknowledge is done, \
-          we have to set the availability of this register. \
-        */ \
-        if((P_.is_vl_available())){ \
-          P_.set_dest_reg_in_event_list_raw(reg, spike_model::Request::RegType::INTEGER); \
-          P_.set_src_load_reg_raw(reg, spike_model::Request::RegType::INTEGER); \
-        } \
-      } \
-      else \
-      { \
-        STATE.XPR.set_event_dependent(reg, 0, P_.get_current_cycle() + P_.get_curr_insn_latency()); \
-      } \
-      if(MMU.num_pending_data_misses()>0) \
-      { \
-        STATE.XPR.set_event_dependent(reg, MMU.num_pending_data_misses(), std::numeric_limits<uint64_t>::max()); \
-        MMU.set_misses_dest_reg(reg, spike_model::Request::RegType::INTEGER); \
+        P_.curr_write_reg = reg; \
+        P_.curr_write_reg_type = spike_model::Request::RegType::INTEGER; \
       } \
     } \
   })
@@ -409,25 +389,14 @@ private:
         if(P_.write_freg_encountered.find(reg) == P_.write_freg_encountered.end()) \
         { \
           P_.write_freg_encountered[reg] = 1; \
-          if(STATE.raw) \
+          /*
+            Set the destination register also, because once the acknowledge is done, \
+            we have to set the availability of this register. \
+          */ \
+          if((P_.is_vl_available())) \
           { \
-            /*
-              Set the destination register also, because once the acknowledge is done, \
-              we have to set the availability of this register. \
-            */ \
-            if((P_.is_vl_available())){ \
-              P_.set_dest_reg_in_event_list_raw(reg, spike_model::Request::RegType::FLOAT); \
-              P_.set_src_load_reg_raw(reg, spike_model::Request::RegType::FLOAT); \
-            } \
-          } \
-          else \
-          { \
-            STATE.FPR.set_event_dependent(reg, 0, P_.get_current_cycle() + P_.get_curr_insn_latency()); \
-          } \
-          if(MMU.num_pending_data_misses()>0) \
-          { \
-            STATE.FPR.set_event_dependent(reg, MMU.num_pending_data_misses(), std::numeric_limits<uint64_t>::max()); \
-            MMU.set_misses_dest_reg(reg, spike_model::Request::RegType::FLOAT); \
+            P_.curr_write_reg = reg;\
+            P_.curr_write_reg_type = spike_model::Request::RegType::FLOAT;\
           } \
         } \
     })
@@ -1764,16 +1733,16 @@ for (reg_t i = 0; i < vlmax; ++i) { \
       ld_width##_t val = MMU.load_##ld_width(baseAddr + (stride) + (offset) * elt_byte); \
       switch(P_.VU.vsew){ \
         case e8: \
-          P_.VU.elt<uint8_t>(vd + fn * vlmul, vreg_inx, VLOAD) = val; \
+          P_.VU.elt<uint8_t>(vd + fn * vlmul, vreg_inx, VWRITE) = val; \
           break; \
         case e16: \
-          P_.VU.elt<uint16_t>(vd + fn * vlmul, vreg_inx, VLOAD) = val; \
+          P_.VU.elt<uint16_t>(vd + fn * vlmul, vreg_inx, VWRITE) = val; \
           break; \
         case e32: \
-          P_.VU.elt<uint32_t>(vd + fn * vlmul, vreg_inx, VLOAD) = val; \
+          P_.VU.elt<uint32_t>(vd + fn * vlmul, vreg_inx, VWRITE) = val; \
           break; \
         default: \
-          P_.VU.elt<uint64_t>(vd + fn * vlmul, vreg_inx, VLOAD) = val; \
+          P_.VU.elt<uint64_t>(vd + fn * vlmul, vreg_inx, VWRITE) = val; \
       } \
       if(P_.enable_smart_mcpu && stride!=0){ \
         P_.log_stride_for_mcpu_instruction(stride); \
@@ -1781,27 +1750,16 @@ for (reg_t i = 0; i < vlmax; ++i) { \
     } \
   } \
   if(P_.enable_smart_mcpu){ \
-    P_.log_mcpu_instruction(baseAddr); \
     MMU.disable_l1_bypass(); \
   } \
-  if(STATE.raw) \
+  /*
+   Set the destination register also, because once the acknowledge is done, \
+   we have to set the availability of this register. \
+  */ \
+  if((P_.is_vl_available())) \
   { \
-      /*
-        Set the destination register also, because once the acknowledge is done, \
-        we have to set the availability of this register. \
-      */ \
-      P_.set_dest_reg_in_event_list_raw(vd, spike_model::Request::RegType::VECTOR); \
-      P_.set_src_load_reg_raw(vd, spike_model::Request::RegType::VECTOR); \
-  } \
-  else \
-  { \
-      P_.VU.set_event_dependent(vd, 0, P_.get_current_cycle() + P_.get_curr_insn_latency()); \
-  } \
-  if(MMU.num_pending_data_misses()>0) \
-  { \
-    P_.VU.set_event_dependent(vd, MMU.num_pending_data_misses(), \
-                                      std::numeric_limits<uint64_t>::max()); \
-    MMU.set_misses_dest_reg(vd, spike_model::Request::RegType::VECTOR); \
+     P_.curr_write_reg = vd;\
+     P_.curr_write_reg_type = spike_model::Request::RegType::VECTOR;\
   } \
   P_.VU.vstart = 0;
 
@@ -1857,51 +1815,39 @@ for (reg_t i = 0; i < vlmax; ++i) { \
       \
       switch (sew) { \
       case e8: \
-        p->VU.elt<uint8_t>(rd_num + fn * vlmul, vreg_inx, VLOAD) = val; \
+        p->VU.elt<uint8_t>(rd_num + fn * vlmul, vreg_inx, VWRITE) = val; \
         break; \
       case e16: \
-        p->VU.elt<uint16_t>(rd_num + fn * vlmul, vreg_inx, VLOAD) = val; \
+        p->VU.elt<uint16_t>(rd_num + fn * vlmul, vreg_inx, VWRITE) = val; \
         break; \
       case e32: \
-        p->VU.elt<uint32_t>(rd_num + fn * vlmul, vreg_inx, VLOAD) = val; \
+        p->VU.elt<uint32_t>(rd_num + fn * vlmul, vreg_inx, VWRITE) = val; \
         break; \
       case e64: \
-        p->VU.elt<uint64_t>(rd_num + fn * vlmul, vreg_inx, VLOAD) = val; \
+        p->VU.elt<uint64_t>(rd_num + fn * vlmul, vreg_inx, VWRITE) = val; \
         break; \
       } \
     } \
     \
     if (early_stop) { \
       if(P_.enable_smart_mcpu){ \
-        P_.log_mcpu_instruction(baseAddr); \
         MMU.disable_l1_bypass(); \
       } \
       break; \
     } \
     if(P_.enable_smart_mcpu){ \
-      P_.log_mcpu_instruction(baseAddr); \
       MMU.disable_l1_bypass(); \
     } \
   } \
-  if(STATE.raw) \
+  /*
+    Set the destination register also, because once the acknowledge is done, \
+    we have to set the availability of this register. \
+  */ \
+  if((P_.is_vl_available())) \
   { \
-      /*
-        Set the destination register also, because once the acknowledge is done, \
-        we have to set the availability of this register. \
-      */ \
-      P_.set_dest_reg_in_event_list_raw(rd_num, spike_model::Request::RegType::VECTOR); \
-      P_.set_src_load_reg_raw(rd_num, spike_model::Request::RegType::VECTOR); \
+      P_.curr_write_reg = rd_num;\
+      P_.curr_write_reg_type = spike_model::Request::RegType::VECTOR;\
   } \
-  else \
-  { \
-      P_.VU.set_event_dependent(rd_num, 0, P_.get_current_cycle() + P_.get_curr_insn_latency()); \
-  } \
-  if(MMU.num_pending_data_misses()>0) \
-  { \
-    P_.VU.set_event_dependent(rd_num, MMU.num_pending_data_misses(), \
-                                      std::numeric_limits<uint64_t>::max()); \
-    MMU.set_misses_dest_reg(rd_num, spike_model::Request::RegType::VECTOR); \
-  }
 
 //
 // vector: vfp helper

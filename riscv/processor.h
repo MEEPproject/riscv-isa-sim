@@ -223,21 +223,14 @@ class vectorUnit_t {
             if(write_reg_encountered.find(vReg) == write_reg_encountered.end())
             {
               write_reg_encountered[vReg] = 1;
-              if(p->get_state()->raw)
-              {
                 /*
                   Set the destination register also, because once the acknowledge is done,
                   we have to set the availability of this register.
                 */
                 if((p->is_vl_available())){
-                  p->set_dest_reg_in_event_list_raw(vReg, spike_model::Request::RegType::VECTOR);
-                  p->set_src_load_reg_raw(vReg, spike_model::Request::RegType::VECTOR);
+                  p->curr_write_reg = vReg; \
+                  p->curr_write_reg_type = spike_model::Request::RegType::VECTOR; \
                 }
-              }
-              else
-              {
-                set_event_dependent(vReg, 0, p->get_current_cycle() + p->get_curr_insn_latency());
-              }
             }
           }
         }
@@ -631,6 +624,7 @@ public:
       elem = load_insn_raw_map[static_cast<int>(regType)][regId];
       load_insn_raw_map[static_cast<int>(regType)].erase(regId);
     }
+
     return elem;
   }
 
@@ -650,6 +644,8 @@ public:
   bool enable_smart_mcpu;
   int curr_insn_latency;
   bool is_insn_executed;
+  reg_t curr_write_reg;
+  spike_model::Request::RegType curr_write_reg_type;
 private:
   
   mmu_t* mmu; // main memory is always accessed via the mmu

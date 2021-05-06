@@ -112,6 +112,7 @@ bool sim_t::simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::s
 {
     //struct timeval st, et;
     //gettimeofday(&st,NULL);
+
     bool res=false;
     if(!done())
     {
@@ -216,52 +217,40 @@ bool sim_t::ack_register(const std::shared_ptr<spike_model::Request> & req, uint
 
     //If this reg was read by some later instructions which had RAW dependency on this,
     //set that instruction's dest reg to appropriate latency.
-    std::shared_ptr<load_insn_raw_dep> elem =
-                    procs[req->getCoreId()]->get_raw_dependent_info(
-                                                req->getDestinationRegId(),
-                                                req->getDestinationRegType());
 
-    if(elem)
+    if(ready)
     {
-      if(elem->regId != std::numeric_limits<uint64_t>::max())
-      {
-          switch(elem->regType)
-          {
-             case spike_model::Request::RegType::INTEGER:
-                 procs[req->getCoreId()]->get_state()->pending_int_regs->erase(elem->regId);
-                 break;
-            case spike_model::Request::RegType::FLOAT:
-                 procs[req->getCoreId()]->get_state()->pending_float_regs->erase(elem->regId);
-                 break;
-            case spike_model::Request::RegType::VECTOR:
-                 procs[req->getCoreId()]->get_state()->pending_vector_regs->erase(elem->regId);
-                 break;
-            default:
-                std::cout << "Unknown register kind!" << __LINE__ << "\n";
-                break;
-          }
-          //TODO: Check why the function call doesnt work
-          //set_latency(req->getCoreId(), elem->regId, elem->regType, elem->latency, timestamp);
+        std::shared_ptr<load_insn_raw_dep> elem =
+                    procs[req->getCoreId()]->get_raw_dependent_info(
+                    req->getDestinationRegId(),
+                    req->getDestinationRegType());
+        if(elem)
+        {
+            if(elem->regId != std::numeric_limits<uint64_t>::max())
+            {
+                //TODO: Check why the function call doesnt work
+                //set_latency(req->getCoreId(), elem->regId, elem->regType, elem->latency, timestamp);
 
-          switch(elem->regType)
-          {
-             case spike_model::Request::RegType::INTEGER:
-                 if((procs[req->getCoreId()]->get_state()->XPR.get_avail_cycle(elem->regId)) < (timestamp+ elem->latency))
-                     procs[req->getCoreId()]->get_state()->XPR.set_avail(elem->regId, timestamp+ elem->latency);
-                 break;
-             case spike_model::Request::RegType::FLOAT:
-                 if(procs[req->getCoreId()]->get_state()->FPR.get_avail_cycle(elem->regId) < (timestamp+ elem->latency))
-                     procs[req->getCoreId()]->get_state()->FPR.set_avail(elem->regId, timestamp+ elem->latency);
-                 break;
-             case spike_model::Request::RegType::VECTOR:
-                 if(procs[req->getCoreId()]->VU.get_avail_cycle(elem->regId) < (timestamp+ elem->latency))
-                     procs[req->getCoreId()]->VU.set_avail(elem->regId, timestamp+ elem->latency);
-                 break;
-             default:
-                 std::cout << "Unknown register kind!\n";
-                 break;
-          }
-       }
+                switch(elem->regType)
+                {
+                    case spike_model::Request::RegType::INTEGER:
+                        if((procs[req->getCoreId()]->get_state()->XPR.get_avail_cycle(elem->regId)) < (timestamp+ elem->latency))
+                        procs[req->getCoreId()]->get_state()->XPR.set_avail(elem->regId, timestamp+ elem->latency);
+                    break;
+                    case spike_model::Request::RegType::FLOAT:
+                        if(procs[req->getCoreId()]->get_state()->FPR.get_avail_cycle(elem->regId) < (timestamp+ elem->latency))
+                        procs[req->getCoreId()]->get_state()->FPR.set_avail(elem->regId, timestamp+ elem->latency);
+                    break;
+                    case spike_model::Request::RegType::VECTOR:
+                        if(procs[req->getCoreId()]->VU.get_avail_cycle(elem->regId) < (timestamp+ elem->latency))
+                        procs[req->getCoreId()]->VU.set_avail(elem->regId, timestamp+ elem->latency);
+                    break;
+                    default:
+                        std::cout << "Unknown register kind!\n";
+                    break;
+                }
+            }
+        }
     }
     //Simulation can resumen if there are no pending registers.
     return procs[req->getCoreId()]->get_state()->pending_int_regs->size()==0 && procs[req->getCoreId()]->get_state()->pending_float_regs->size()==0 && procs[req->getCoreId()]->get_state()->pending_vector_regs->size()==0;
