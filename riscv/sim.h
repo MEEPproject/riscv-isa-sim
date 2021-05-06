@@ -20,7 +20,7 @@
 #include "Finish.hpp"
 #include "Fence.hpp"
 #include "Event.hpp"
-#include "MCPURequest.hpp"
+#include "MemoryTile/MCPURequest.hpp"
 #include "InsnLatencyEvent.hpp"
 #include <stdint.h>
 

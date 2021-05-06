@@ -17,7 +17,7 @@
 #include "trap.h"
 
 #include "CacheRequest.hpp"
-#include "MCPUInstruction.hpp"
+#include "MemoryTile/MCPUInstruction.hpp"
 #include "InsnLatencyEvent.hpp"
 #include <list>
 #include <set>
