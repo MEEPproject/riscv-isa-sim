@@ -2166,7 +2166,7 @@ for (reg_t i = 0; i < vlmax; ++i) { \
 #define C_RVC_SP XPR_CHECK_RAW(X_SP)
 
 #define SKIP_CHECK_RAW() \
-   bool b6 = P_.VU.check_raw<uint64_t>(0, 0, VREAD);
+   bool b6 = P_.VU.check_raw<uint64_t>(0, 0)
   
 #define VECTOR_VECTOR_UNSIGNED_CHECK_RAW() \
   reg_t sew = P_.VU.vsew; \

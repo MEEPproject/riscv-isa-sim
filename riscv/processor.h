@@ -661,6 +661,7 @@ public:
   }
 
   simif_t* sim;
+  insn_func_raw_t is_raw;
   bool enable_smart_mcpu;
   int curr_insn_latency;
   reg_t curr_write_reg;

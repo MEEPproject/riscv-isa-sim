@@ -1,5 +1,5 @@
 reg_t sew = P_.VU.vsew;
-bool b6 = P_.VU.check_raw<uint64_t>(0, 0, VREAD);
+bool b6 = P_.VU.check_raw<uint64_t>(0, 0);
 bool b7 = false;
 if (sew == e8){
     b7 = P_.VU.check_raw<type_sew_t<e8>::type>(insn.rs1(), 0);
