@@ -284,77 +284,11 @@ reg_t vectorUnit_t::set_vl(int rd, int rs1, reg_t reqVL, reg_t newType){
   return vl;
 }
 
-void vectorUnit_t::get_vl_from_mcpu(int rd, int rs1, reg_t reqVL, reg_t newType)
-{
-  /*p->last_inst_vsetvl = true;
-  p->set_vl_progress(true);
-  p->set_vl_available(false);*/
-  curr_rd = rd;
-  curr_RS1 = rs1;
-  curr_req_vl = reqVL;
-  curr_new_type = newType;
-
-  (*p->get_state()).XPR.set_event_dependent(curr_rd, 1, std::numeric_limits<uint64_t>::max());
->>>>>>> Remove vsetvl bookkeeping code
-}
-
 bool processor_t::is_in_set_vl()
 {
   bool res = in_set_vl;
   in_set_vl = false;
   return res;
-}
-
-uint64_t vectorUnit_t::get_requested_vl()
-{
-  return curr_req_vl;
-}
-
-uint64_t processor_t::get_requested_vl()
-{
-  return VU.get_requested_vl();
-}
-
-/*template<class T>
-bool vectorUnit_t::check_raw(reg_t vReg, reg_t n)
-{
-  reg_t elts_per_reg = (VLEN >> 3) / (sizeof(T));
-  vReg += n / elts_per_reg;
-
-  if(get_avail_cycle(vReg)>p->get_current_cycle())
-  {
-    p->get_state()->pending_vector_regs->insert(vReg);
-    return true;
-  }
-  return false;
-}*/
-
-/*void vectorUnit_t::check_raw(reg_t vReg)
->>>>>>> Remove vsetvl bookkeeping code
-{
-  if(get_avail_cycle(vReg)>p->get_current_cycle())
-  {
-    p->get_state()->raw=true;
-    /* 
-      Push the data into the vector if the depending
-      instruction is a compute instruction.
-      If the depending instruction is a load, a separate
-      cacheRequest event would be generated
-    */
-    if(get_avail_cycle(vReg) != std::numeric_limits<uint64_t>::max())
-    {
-        std::shared_ptr<spike_model::InsnLatencyEvent> insn_latency_ptr =
-                       std::make_shared<spike_model::InsnLatencyEvent>(
-                       p->get_id(),
-                       vReg,
-                       spike_model::Request::RegType::VECTOR,
-                       std::numeric_limits<uint64_t>::max(),
-                       p->get_curr_insn_latency(),
-                       get_avail_cycle(vReg));
-        p->push_insn_latency_event(insn_latency_ptr);
-     }
-     p->get_state()->pending_vector_regs->insert(vReg);
-  }
 }
 
 void processor_t::set_debug(bool value)

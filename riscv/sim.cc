@@ -112,6 +112,12 @@ bool sim_t::simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::s
 {
     //struct timeval st, et;
     //gettimeofday(&st,NULL);
+    /*std::cout << std::endl << "Before simulate at " << current_cycle << " INT:" << std::endl;
+    for(auto itr = procs[core]->get_state()->pending_int_regs->begin();
+             itr!= procs[core]->get_state()->pending_int_regs->end(); itr++)
+    {
+        std::cout << *itr << std::endl;
+    }*/
 
     bool res=false;
     if(!done())
@@ -215,43 +221,6 @@ bool sim_t::ack_register(const std::shared_ptr<spike_model::Request> & req, uint
             break;
     }
 
-    //If this reg was read by some later instructions which had RAW dependency on this,
-    //set that instruction's dest reg to appropriate latency.
-
-    if(ready)
-    {
-        std::shared_ptr<load_insn_raw_dep> elem =
-                    procs[req->getCoreId()]->get_raw_dependent_info(
-                    req->getDestinationRegId(),
-                    req->getDestinationRegType());
-        if(elem)
-        {
-            if(elem->regId != std::numeric_limits<uint64_t>::max())
-            {
-                //TODO: Check why the function call doesnt work
-                //set_latency(req->getCoreId(), elem->regId, elem->regType, elem->latency, timestamp);
-
-                switch(elem->regType)
-                {
-                    case spike_model::Request::RegType::INTEGER:
-                        if((procs[req->getCoreId()]->get_state()->XPR.get_avail_cycle(elem->regId)) < (timestamp+ elem->latency))
-                        procs[req->getCoreId()]->get_state()->XPR.set_avail(elem->regId, timestamp+ elem->latency);
-                    break;
-                    case spike_model::Request::RegType::FLOAT:
-                        if(procs[req->getCoreId()]->get_state()->FPR.get_avail_cycle(elem->regId) < (timestamp+ elem->latency))
-                        procs[req->getCoreId()]->get_state()->FPR.set_avail(elem->regId, timestamp+ elem->latency);
-                    break;
-                    case spike_model::Request::RegType::VECTOR:
-                        if(procs[req->getCoreId()]->VU.get_avail_cycle(elem->regId) < (timestamp+ elem->latency))
-                        procs[req->getCoreId()]->VU.set_avail(elem->regId, timestamp+ elem->latency);
-                    break;
-                    default:
-                        std::cout << "Unknown register kind!\n";
-                    break;
-                }
-            }
-        }
-    }
     //Simulation can resumen if there are no pending registers.
     return procs[req->getCoreId()]->get_state()->pending_int_regs->size()==0 && procs[req->getCoreId()]->get_state()->pending_float_regs->size()==0 && procs[req->getCoreId()]->get_state()->pending_vector_regs->size()==0;
 }
@@ -277,59 +246,10 @@ bool sim_t::can_resume(uint64_t coreId, size_t srcRegId,
             break;
     }
 
-    //Ensure that its an instruction which writes to a register
-    if(destRegId != std::numeric_limits<uint64_t>::max())
-    {
-        //TODO: Check why the function call doesnt work
-        //set_latency(coreId, destRegId, destRegType, latency, timestamp);
-        switch(destRegType)
-        {
-            case spike_model::Request::RegType::INTEGER:
-                if((procs[coreId]->get_state()->XPR.get_avail_cycle(destRegId)) < (timestamp+latency))
-                    procs[coreId]->get_state()->XPR.set_avail(destRegId, timestamp+latency);
-                break;
-            case spike_model::Request::RegType::FLOAT:
-                if(procs[coreId]->get_state()->FPR.get_avail_cycle(destRegId) < (timestamp+latency))
-                    procs[coreId]->get_state()->FPR.set_avail(destRegId, timestamp+latency);
-                break;
-            case spike_model::Request::RegType::VECTOR:
-                if(procs[coreId]->VU.get_avail_cycle(destRegId) < (timestamp+latency))
-                    procs[coreId]->VU.set_avail(destRegId, timestamp+latency);
-                break;
-            default:
-                std::cout << "Unknown register kind!\n";
-                break;
-        }
-    }
-
     //Simulation can resume if there are no pending registers.
     return procs[coreId]->get_state()->pending_int_regs->size()==0 &&
            procs[coreId]->get_state()->pending_float_regs->size()==0 &&
            procs[coreId]->get_state()->pending_vector_regs->size()==0;
-}
-
-bool sim_t::set_latency(uint64_t coreId, size_t destRegId,
-                        spike_model::Request::RegType destRegType,
-                        uint64_t latency, uint64_t timestamp)
-{
-    switch(destRegType)
-    {
-        case spike_model::Request::RegType::INTEGER:
-             if((procs[coreId]->get_state()->XPR.get_avail_cycle(destRegId)) < (timestamp+latency))
-                 procs[coreId]->get_state()->XPR.set_avail(destRegId, timestamp+latency);
-             break;
-        case spike_model::Request::RegType::FLOAT:
-             if(procs[coreId]->get_state()->FPR.get_avail_cycle(destRegId) < (timestamp+latency))
-                 procs[coreId]->get_state()->FPR.set_avail(destRegId, timestamp+latency);
-             break;
-        case spike_model::Request::RegType::VECTOR:
-             if(procs[coreId]->VU.get_avail_cycle(destRegId) < (timestamp+latency))
-                 procs[coreId]->VU.set_avail(destRegId, timestamp+latency);
-             break;
-        default:
-            std::cout << "Unknown register kind!\n";
-            break;
-    }
 }
 
 void htif_run_launcher(void* arg)

@@ -216,104 +216,8 @@ private:
         STATE.XPR[reg]; \
     })
 
-#define XPR_CHECK_RAW(reg) ({ \
-        if(P_.read_reg_encountered.find(reg) == P_.read_reg_encountered.end()) \
-        { \
-          P_.read_reg_encountered[reg] = 1; \
-          if(STATE.XPR.get_avail_cycle(reg)>P_.get_current_cycle()) \
-          { \
-            STATE.raw=true; \
-            /* \
-               Push the data into the vector if the depending \
-               instruction is a compute instruction. \
-               If the depending instruction is a load, a separate \
-               cacheRequest event would be generated \
-            */ \
-             if(STATE.XPR.get_avail_cycle(reg) != std::numeric_limits<uint64_t>::max()) \
-             { \
-                /*Nothing to acknowledge as such. The motive is to check \
-                  if there are more pending registers, upon event reception. \
-                  Also, to set the availability of the dest reg once RAW is served. \
-                */ \
-                 std::shared_ptr<spike_model::InsnLatencyEvent> insn_latency_ptr = \
-                           std::make_shared<spike_model::InsnLatencyEvent>( \
-                           P_.get_id(), \
-                           reg, \
-                           spike_model::Request::RegType::INTEGER, \
-                           std::numeric_limits<uint64_t>::max(), \
-                           P_.get_curr_insn_latency(), \
-                           STATE.XPR.get_avail_cycle(reg)); \
-                 P_.push_insn_latency_event(insn_latency_ptr); \
-             } \
-             else \
-             { \
-               /*load inst while acknowledging, should set the availability \
-                 any insns depending on it. Since load miss cacheRequest \
-                 is already generated, we have to rely on some other method to \
-                 communicate the dependency. Since there could be multiple \
-                 source reg which are not available due to load miss, \
-                 we use vector to track them. \
-               */ \
-               P_.push_src_reg_load_raw(reg, spike_model::Request::RegType::INTEGER); \
-            } \
-            STATE.pending_int_regs->insert(reg); \
-            true; \
-        } \
-        false; \
-     } \
-     false; \
-    })
-
 #define READ_FREG(reg) ({ \
         STATE.FPR[reg]; \
-    })
-
-#define FPR_CHECK_RAW(reg) ({ \
-        if(P_.read_freg_encountered.find(reg) == P_.read_freg_encountered.end()) \
-        { \
-          P_.read_freg_encountered[reg] = 1; \
-          if(STATE.FPR.get_avail_cycle(reg)>P_.get_current_cycle()) \
-          { \
-            STATE.raw=true; \
-            /* \
-               Push the data into the vector if the depending \
-               instruction is a compute instruction. \
-               If the depending instruction is a load, a separate \
-               cacheRequest event would be generated \
-            */ \
-             if(STATE.FPR.get_avail_cycle(reg) != std::numeric_limits<uint64_t>::max()) \
-             { \
-                /*Nothing to acknowledge as such. The motive is to check \
-                  if there are more pending registers, upon event reception. \
-                  Also, to set the availability of the dest reg once RAW is served. \
-                */ \
-                 std::shared_ptr<spike_model::InsnLatencyEvent> insn_latency_ptr = \
-                           std::make_shared<spike_model::InsnLatencyEvent>( \
-                           P_.get_id(), \
-                           reg, \
-                           spike_model::Request::RegType::FLOAT, \
-                           std::numeric_limits<uint64_t>::max(), \
-                           P_.get_curr_insn_latency(), \
-                           STATE.FPR.get_avail_cycle(reg)); \
-                 P_.push_insn_latency_event(insn_latency_ptr); \
-             } \
-             else \
-             { \
-               /*load inst while acknowledging, should set the availability \
-                 any insns depending on it. Since load miss cacheRequest \
-                 is already generated, we have to rely on some other method to \
-                 communicate the dependency. Since there could be multiple \
-                 source reg which are not available due to load miss, \
-                 we use vector to track them. \
-               */ \
-               P_.push_src_reg_load_raw(reg, spike_model::Request::RegType::FLOAT); \
-             } \
-             STATE.pending_float_regs->insert(reg); \
-             true; \
-          } \
-          false; \
-        } \
-        false; \
     })
 
 #define RD READ_REG(insn.rd())
@@ -329,12 +233,12 @@ private:
         if(P_.write_reg_encountered.find(reg) == P_.write_reg_encountered.end()) \
         { \
           P_.write_reg_encountered[reg] = 1; \
-            /*
-              Set the destination register also, because once the acknowledge is done, \
-              we have to set the availability of this register. \
-            */ \
-            P_.curr_write_reg = reg; \
-            P_.curr_write_reg_type = spike_model::Request::RegType::INTEGER; \
+          /*
+            Set the destination register also, because once the acknowledge is done, \
+            we have to set the availability of this register. \
+          */ \
+          P_.curr_write_reg = reg; \
+          P_.curr_write_reg_type = spike_model::Request::RegType::INTEGER; \
         } \
     })
 
@@ -2149,21 +2053,21 @@ for (reg_t i = 0; i < vlmax; ++i) { \
 #define FRS2 READ_FREG(insn.rs2())
 #define FRS3 READ_FREG(insn.rs3())
 
-#define C_RD XPR_CHECK_RAW(insn.rd())
-#define C_RS1 XPR_CHECK_RAW(insn.rs1())
-#define C_RS2 XPR_CHECK_RAW(insn.rs2())
-#define C_RS3 XPR_CHECK_RAW(insn.rs3())
-#define C_RVC_RS1 XPR_CHECK_RAW(insn.rvc_rs1())
-#define C_RVC_RS2 XPR_CHECK_RAW(insn.rvc_rs2())
-#define C_RVC_RS1S XPR_CHECK_RAW(insn.rvc_rs1s())
-#define C_RVC_RS2S XPR_CHECK_RAW(insn.rvc_rs2s())
-#define C_RVC_FRS2 FPR_CHECK_RAW(insn.rvc_rs2())
-#define C_RVC_FRS2S FPR_CHECK_RAW(insn.rvc_rs2s())
-#define C_RVC_SP XPR_CHECK_RAW(X_SP)
-#define C_FRS1 FPR_CHECK_RAW(insn.rs1())
-#define C_FRS2 FPR_CHECK_RAW(insn.rs2())
-#define C_FRS3 FPR_CHECK_RAW(insn.rs3())
-#define C_RVC_SP XPR_CHECK_RAW(X_SP)
+#define C_RD P_.XPR_CHECK_RAW(insn.rd())
+#define C_RS1 P_.XPR_CHECK_RAW(insn.rs1())
+#define C_RS2 P_.XPR_CHECK_RAW(insn.rs2())
+#define C_RS3 P_.XPR_CHECK_RAW(insn.rs3())
+#define C_RVC_RS1 P_.XPR_CHECK_RAW(insn.rvc_rs1())
+#define C_RVC_RS2 P_.XPR_CHECK_RAW(insn.rvc_rs2())
+#define C_RVC_RS1S P_.XPR_CHECK_RAW(insn.rvc_rs1s())
+#define C_RVC_RS2S P_.XPR_CHECK_RAW(insn.rvc_rs2s())
+#define C_RVC_FRS2 P_.FPR_CHECK_RAW(insn.rvc_rs2())
+#define C_RVC_FRS2S P_.FPR_CHECK_RAW(insn.rvc_rs2s())
+#define C_RVC_SP P_.XPR_CHECK_RAW(X_SP)
+#define C_FRS1 P_.FPR_CHECK_RAW(insn.rs1())
+#define C_FRS2 P_.FPR_CHECK_RAW(insn.rs2())
+#define C_FRS3 P_.FPR_CHECK_RAW(insn.rs3())
+#define C_RVC_SP P_.XPR_CHECK_RAW(X_SP)
 
 #define SKIP_CHECK_RAW() \
    bool b6 = P_.VU.check_raw<uint64_t>(0, 0)
