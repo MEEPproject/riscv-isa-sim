@@ -1662,6 +1662,11 @@ for (reg_t i = 0; i < vlmax; ++i) { \
   if(P_.enable_smart_mcpu){ \
     MMU.enable_l1_bypass(); \
   } \
+  bool is_indexed=false; \
+  bool is_strided=false; \
+  uint64_t prev_stride=0; \
+  uint64_t stride_diff=0; \
+  std::vector<uint64_t> indices; \
   for (reg_t i = 0; i < vl; ++i) { \
     VI_STRIP(i) \
     VI_ELEMENT_SKIP(i); \
@@ -1683,11 +1688,42 @@ for (reg_t i = 0; i < vlmax; ++i) { \
         break; \
       } \
       MMU.store_##st_width(baseAddr + (stride) + (offset) * elt_byte, val); \
+      if(P_.enable_smart_mcpu){ \
+        if(i>1) \
+        { \
+            if(stride-prev_stride!=stride_diff) \
+            { \
+                is_indexed=true; \
+            } \
+            else if(stride!=0)\
+            { \
+                is_strided=true; \
+            } \
+        } \
+        else \
+        { \
+            if(i==0 && stride!=0) \
+            { \
+                is_indexed=true; \
+            } \
+        } \
+        stride_diff=stride-prev_stride; \
+        prev_stride=stride; \
+        indices.push_back(stride); \
+      } \
     } \
   } \
   if(P_.enable_smart_mcpu){ \
     MMU.disable_l1_bypass(); \
     P_.log_mcpu_instruction(baseAddr, sizeof(st_width##_t), true); \
+    if(is_indexed) \
+    { \
+        P_.set_mcpu_instruction_indexed(indices); \
+    } \
+    else if(is_strided) \
+    { \
+        P_.set_mcpu_instruction_strided(indices); \
+    } \
   } \
   P_.VU.vstart = 0; 
 
@@ -1702,6 +1738,11 @@ for (reg_t i = 0; i < vlmax; ++i) { \
   if(P_.enable_smart_mcpu){ \
     MMU.enable_l1_bypass(); \
   } \
+  bool is_indexed=false; \
+  bool is_strided=false; \
+  int prev_stride=0; \
+  int stride_diff=0; \
+  std::vector<uint64_t> indices; \
   for (reg_t i = 0; i < vl; ++i) { \
     VI_ELEMENT_SKIP(i); \
     VI_STRIP(i); \
@@ -1721,11 +1762,42 @@ for (reg_t i = 0; i < vlmax; ++i) { \
         default: \
           P_.VU.elt<uint64_t>(vd + fn * vlmul, vreg_inx, VWRITE) = val; \
       } \
+      if(P_.enable_smart_mcpu){ \
+        if(i>1) \
+        { \
+            if(stride-prev_stride!=stride_diff) \
+            { \
+                is_indexed=true; \
+            } \
+            else if(stride!=0)\
+            { \
+                is_strided=true; \
+            } \
+        } \
+        else \
+        { \
+            if(i==0 && stride!=0) \
+            { \
+                is_indexed=true; \
+            } \
+        } \
+        stride_diff=stride-prev_stride; \
+        prev_stride=stride; \
+        indices.push_back(stride); \
+      } \
     } \
   } \
   if(P_.enable_smart_mcpu){ \
     MMU.disable_l1_bypass(); \
     P_.log_mcpu_instruction(baseAddr, sizeof(ld_width##_t), false); \
+    if(is_indexed) \
+    { \
+        P_.set_mcpu_instruction_indexed(indices); \
+    } \
+    else if(is_strided) \
+    { \
+        P_.set_mcpu_instruction_strided(indices); \
+    } \
   } \
   /*
    Set the destination register also, because once the acknowledge is done, \

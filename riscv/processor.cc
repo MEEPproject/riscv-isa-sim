@@ -461,13 +461,13 @@ void processor_t::enter_debug_mode(uint8_t cause)
 
 void processor_t::take_trap(trap_t& t, reg_t epc)
 {
-  if (debug) {
+//  if (debug) {
     fprintf(stderr, "core %3d: exception %s, epc 0x%016" PRIx64 "\n",
             id, t.name(), epc);
     if (t.has_tval())
       fprintf(stderr, "core %3d:           tval 0x%016" PRIx64 "\n", id,
           t.get_tval());
-  }
+//  }
 
   if (state.debug_mode) {
     if (t.cause() == CAUSE_BREAKPOINT) {
@@ -1172,6 +1172,7 @@ void processor_t::log_mcpu_instruction(uint64_t base_address, size_t width, bool
   spike_model::MCPUInstruction::Operation o=spike_model::MCPUInstruction::Operation::LOAD;
   if(store)
   {
+    printf("\t\t\t\t\tSTOREEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE\n");
     o=spike_model::MCPUInstruction::Operation::STORE;
   }
     
