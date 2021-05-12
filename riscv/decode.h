@@ -1688,29 +1688,29 @@ for (reg_t i = 0; i < vlmax; ++i) { \
         break; \
       } \
       MMU.store_##st_width(baseAddr + (stride) + (offset) * elt_byte, val); \
-      if(P_.enable_smart_mcpu){ \
-        if(i>1) \
+    } \
+    if(P_.enable_smart_mcpu){ \
+      if(i>1) \
+      { \
+        if(stride-prev_stride!=stride_diff) \
         { \
-            if(stride-prev_stride!=stride_diff) \
-            { \
-                is_indexed=true; \
-            } \
-            else if(stride!=0)\
-            { \
-                is_strided=true; \
-            } \
+          is_indexed=true; \
         } \
-        else \
+        else if(stride!=0)\
         { \
-            if(i==0 && stride!=0) \
-            { \
-                is_indexed=true; \
-            } \
+          is_strided=true; \
         } \
-        stride_diff=stride-prev_stride; \
-        prev_stride=stride; \
-        indices.push_back(stride); \
       } \
+      else \
+      { \
+        if(i==0 && stride!=0) \
+        { \
+          is_indexed=true; \
+        } \
+      } \
+      stride_diff=stride-prev_stride; \
+      prev_stride=stride; \
+      indices.push_back(stride); \
     } \
   } \
   if(P_.enable_smart_mcpu){ \
@@ -1762,29 +1762,29 @@ for (reg_t i = 0; i < vlmax; ++i) { \
         default: \
           P_.VU.elt<uint64_t>(vd + fn * vlmul, vreg_inx, VWRITE) = val; \
       } \
-      if(P_.enable_smart_mcpu){ \
-        if(i>1) \
+    } \
+    if(P_.enable_smart_mcpu){ \
+      if(i>1) \
+      { \
+        if(stride-prev_stride!=stride_diff) \
         { \
-            if(stride-prev_stride!=stride_diff) \
-            { \
-                is_indexed=true; \
-            } \
-            else if(stride!=0)\
-            { \
-                is_strided=true; \
-            } \
+          is_indexed=true; \
         } \
-        else \
+        else if(stride!=0)\
         { \
-            if(i==0 && stride!=0) \
-            { \
-                is_indexed=true; \
-            } \
+          is_strided=true; \
         } \
-        stride_diff=stride-prev_stride; \
-        prev_stride=stride; \
-        indices.push_back(stride); \
       } \
+      else \
+      { \
+        if(i==0 && stride!=0) \
+        { \
+          is_indexed=true; \
+        } \
+      } \
+      stride_diff=stride-prev_stride; \
+      prev_stride=stride; \
+      indices.push_back(stride); \
     } \
   } \
   if(P_.enable_smart_mcpu){ \
