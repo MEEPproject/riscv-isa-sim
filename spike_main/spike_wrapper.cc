@@ -112,16 +112,6 @@ namespace spike_model
     {
         return simulation->ack_register(req, timestamp);
     }
-    
-    bool SpikeWrapper::ackRegisterAndSetvl(uint64_t coreId, uint64_t vl, uint64_t timestamp)
-    {
-        return simulation->ack_register_and_setvl(coreId, vl, timestamp);
-    }
-
-    bool SpikeWrapper::isVecAvailable(uint64_t coreId)
-    {
-        return simulation->is_vec_available(coreId);
-    }
 
     bool SpikeWrapper::canResume(uint64_t coreId, size_t srcRegId,
                                  spike_model::Request::RegType srcRegType,

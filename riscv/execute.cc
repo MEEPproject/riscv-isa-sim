@@ -117,9 +117,7 @@ bool processor_t::slow_path()
 //Modified to return whether a RAW was detected or not
 bool processor_t::step(size_t n)
 {
-  last_inst_vsetvl = false;
   mcpu_instruction=nullptr;
-  is_insn_executed = true;
   if (!state.debug_mode) {
     if (halt_request) {
       enter_debug_mode(DCSR_CAUSE_DEBUGINT);
@@ -290,62 +288,6 @@ bool processor_t::step(size_t n)
   }
 
   bool res=!get_state()->raw;
-
-  /*****************************************************************************
-     Check if the processor is executing the instruction which needs vector CSRs.
-     As of now, the easiest way to check this is the following -
-     We should not allow this instruction to execute until the vector length
-     value is returned from MCPU
-  *****************************************************************************/
-  if(enable_smart_mcpu)
-  {
-      if(oldpc == state.pc)
-      {
-        /*
-          Either it is a vector instruction or load/store with RAW.
-          We should not execute any of these until vsetvl is finished.
-          We should clear any kind of misses and stall the
-          processor until vsetvl is finished.
-          We will execute this instruction again once the vsetvl is finished.
-        */
-        get_mmu()->clear_misses();
-        res = false;
-        is_insn_executed = false;
-      }
-      else if(!is_vl_available() && get_state()->raw)
-      {
-        /*
-          vsetvl going on.
-          This instruction needs to be executed again
-        */
-        if(last_inst_vsetvl)
-        {
-          //raw on vsetvl, rollback the instruction
-          set_vl_progress(false);
-          set_vl_available(true);
-          state.XPR.ack_for_reg(VU.curr_rd, current_cycle);
-          state.pc = oldpc;
-          get_mmu()->clear_misses();
-          std::cout << "last inst vset vl " << std::endl;
-        }
-        else
-        {
-          /*TODO : Add checks for floating point operations as well
-          r1 = r1 + r8
-          If we do not rollback the instruction, then the instruction
-          of the above type will corrupt the register state.
-          That is why rollback is required for arithmetic instruction
-          */
-          //std::cout << "Arithmetic RAW for vsetvl at " << current_cycle << std::endl;
-          state.pc = oldpc;
-          state.XPR.write(old_reg, old_val);
-          get_mmu()->clear_misses();
-        }
-        is_insn_executed = false;
-      }
-   }
-
-   get_state()->raw=false;
-
-   return res;
+  get_state()->raw=false;
+  return res;
 }

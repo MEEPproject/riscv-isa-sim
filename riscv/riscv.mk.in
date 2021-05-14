@@ -32,7 +32,7 @@ riscv_hdrs = \
 	debug_rom_defines.h \
 	remote_bitbang.h \
 	jtag_dtm.h \
-	insn_latency.h \
+        insn_latency.h \
 
 riscv_install_hdrs = mmio_plugin.h
 
@@ -61,9 +61,8 @@ riscv_srcs = \
 	debug_module.cc \
 	remote_bitbang.cc \
 	jtag_dtm.cc \
-	insn_latency.cc \
+        insn_latency.cc \
 	$(riscv_gen_srcs) \
-	$(riscv_new_gen_srcs) \
 
 riscv_test_srcs =
 
@@ -666,11 +665,6 @@ riscv_insn_ext_v = \
 	$(riscv_insn_ext_v_ctrl) \
 	$(riscv_insn_ext_v_ldst) \
 
-riscv_insn_ext_v_no_ctrl = \
-	$(riscv_insn_ext_v_alu_fp) \
-	$(riscv_insn_ext_v_alu_int) \
-	$(riscv_insn_ext_v_ldst) \
-
 riscv_insn_priv = \
 	csrrc \
 	csrrci \
@@ -698,6 +692,9 @@ riscv_insn_list = \
 	$(if $(HAVE_INT128),$(riscv_insn_ext_v),) \
 	$(riscv_insn_priv) \
 
+riscv_gen_srcs = \
+	$(addsuffix .cc,$(riscv_insn_list))
+
 icache_entries := `grep "ICACHE_ENTRIES =" $(src_dir)/riscv/mmu.h | sed 's/.* = \(.*\);/\1/'`
 
 icache.h: mmu.h
@@ -711,35 +708,11 @@ insn_list.h: $(src_dir)/riscv/riscv.mk.in
 	done > $@.tmp
 	mv $@.tmp $@
 
-riscv_insn_new_list = \
-	$(riscv_insn_ext_a) \
-	$(riscv_insn_ext_c) \
-	$(riscv_insn_ext_i) \
-	$(riscv_insn_ext_m) \
-	$(riscv_insn_ext_f) \
-	$(riscv_insn_ext_d) \
-	$(riscv_insn_ext_q) \
-	$(if $(HAVE_INT128),$(riscv_insn_ext_v_ctrl),) \
-	$(riscv_insn_priv) \
-
-riscv_gen_srcs = \
-	$(addsuffix .cc,$(riscv_insn_new_list))
-
-riscv_new_gen_srcs = \
-	$(addsuffix .cc,$(riscv_insn_ext_v_no_ctrl))
-
-.PHONY: all
-all : $(riscv_new_gen_srcs) $(riscv_gen_srcs)
-
 $(riscv_gen_srcs): %.cc: insns/%.h insn_template.cc
 	sed 's/NAME/$(subst .cc,,$@)/' $(src_dir)/riscv/insn_template.cc | sed 's/OPCODE/$(call get_opcode,$(src_dir)/riscv/encoding.h,$(subst .cc,,$@))/' > $@
-
-$(riscv_new_gen_srcs): %.cc: insns/%.h insn_template.cc
-	sed '/NAME(/{N;s/$$/\n  if(!(p->is_vl_available())) return pc;/}' $(src_dir)/riscv/insn_template.cc | sed 's/NAME/$(subst .cc,,$@)/' | sed 's/OPCODE/$(call get_opcode,$(src_dir)/riscv/encoding.h,$(subst .cc,,$@))/' > $@
-
 
 $(gen_sparta_connection): %.cc
 
 riscv_junk = \
 	$(riscv_gen_srcs) \
-        $(riscv_new_gen_srcs) \
+

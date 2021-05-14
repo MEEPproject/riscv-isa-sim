@@ -6,19 +6,7 @@ reg_t rv32_NAME(processor_t* p, insn_t insn, reg_t pc)
 {
   int xlen = 32;
   reg_t npc = sext_xlen(pc + insn_length(OPCODE));
-  p->curr_insn_latency = insn_to_latency["rv32_NAME"];
-  p->curr_write_reg = std::numeric_limits<uint64_t>::max();
   #include "insns/NAME.h"
-  if(p->curr_write_reg != std::numeric_limits<uint64_t>::max())
-  {
-    p->set_dest_reg_in_event_list_raw(p->curr_write_reg, p->curr_write_reg_type);
-    p->set_src_load_reg_raw(p->curr_write_reg, p->curr_write_reg_type);
-  }
-  if(p->vl_dependent)
-  {
-    p->vl_dependent = false;
-    return pc;
-  }
   trace_opcode(p, OPCODE, insn);
   return npc;
 }
@@ -61,11 +49,6 @@ reg_t rv64_NAME(processor_t* p, insn_t insn, reg_t pc)
            p->get_mmu()->set_misses_dest_reg(p->curr_write_reg, spike_model::CacheRequest::RegType::VECTOR);
          }
        }
-  }
-  if(p->vl_dependent)
-  {
-    p->vl_dependent = false;
-    return pc;
   }
   trace_opcode(p, OPCODE, insn);
   return npc;

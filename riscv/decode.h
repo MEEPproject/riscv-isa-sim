@@ -20,7 +20,7 @@
 
 #include <iostream>
 
-enum vreg_access_type {VREAD, VWRITE, VREADWRITE, VLOAD};
+enum vreg_access_type {VREAD, VWRITE, VREADWRITE};
 typedef int64_t sreg_t;
 typedef uint64_t reg_t;
 
@@ -250,8 +250,7 @@ private:
                  source reg which are not available due to load miss, \
                  we use vector to track them. \
                */ \
-               if(P_.is_vl_available()) \
-                 P_.push_src_reg_load_raw(reg, spike_model::Request::RegType::INTEGER); \
+               P_.push_src_reg_load_raw(reg, spike_model::Request::RegType::INTEGER); \
             } \
             STATE.pending_int_regs->insert(reg); \
           } \
@@ -297,10 +296,7 @@ private:
                  source reg which are not available due to load miss, \
                  we use vector to track them. \
                */ \
-               if(P_.is_vl_available()) \
-               { \
-                 P_.push_src_reg_load_raw(reg, spike_model::Request::RegType::FLOAT); \
-               } \
+               P_.push_src_reg_load_raw(reg, spike_model::Request::RegType::FLOAT); \
              } \
              STATE.pending_float_regs->insert(reg); \
           } \
@@ -316,11 +312,6 @@ private:
 
 #ifndef RISCV_ENABLE_COMMITLOG
 # define WRITE_REG(reg, value) ({ \
-        if(!(P_.is_vl_available())) \
-        { \
-            P_.old_val = STATE.XPR.read(reg); \
-            P_.old_reg = reg; \
-        } \
         STATE.XPR.write(reg, value); \
         if(P_.write_reg_encountered.find(reg) == P_.write_reg_encountered.end()) \
         { \
@@ -329,11 +320,8 @@ private:
               Set the destination register also, because once the acknowledge is done, \
               we have to set the availability of this register. \
             */ \
-            if((P_.is_vl_available())) \
-            { \
-              P_.curr_write_reg = reg; \
-              P_.curr_write_reg_type = spike_model::Request::RegType::INTEGER; \
-            } \
+            P_.curr_write_reg = reg; \
+            P_.curr_write_reg_type = spike_model::Request::RegType::INTEGER; \
         } \
     })
 
@@ -350,11 +338,8 @@ private:
         Set the destination register also, because once the acknowledge is done, \
         we have to set the availability of this register. \
       */ \
-      if((P_.is_vl_available())) \
-      { \
-        P_.curr_write_reg = reg; \
-        P_.curr_write_reg_type = spike_model::Request::RegType::INTEGER; \
-      } \
+      P_.curr_write_reg = reg; \
+      P_.curr_write_reg_type = spike_model::Request::RegType::INTEGER; \
     } \
   })
 
@@ -393,11 +378,8 @@ private:
             Set the destination register also, because once the acknowledge is done, \
             we have to set the availability of this register. \
           */ \
-          if((P_.is_vl_available())) \
-          { \
-            P_.curr_write_reg = reg;\
-            P_.curr_write_reg_type = spike_model::Request::RegType::FLOAT;\
-          } \
+          P_.curr_write_reg = reg;\
+          P_.curr_write_reg_type = spike_model::Request::RegType::FLOAT;\
         } \
     })
 
@@ -1678,7 +1660,6 @@ for (reg_t i = 0; i < vlmax; ++i) { \
   require(vs3 + nf * P_.VU.vlmul <= NVPR); \
   const reg_t vlmul = P_.VU.vlmul; \
   if(P_.enable_smart_mcpu){ \
-    P_.log_mcpu_instruction(baseAddr); \
     MMU.enable_l1_bypass(); \
   } \
   for (reg_t i = 0; i < vl; ++i) { \
@@ -1702,14 +1683,11 @@ for (reg_t i = 0; i < vlmax; ++i) { \
         break; \
       } \
       MMU.store_##st_width(baseAddr + (stride) + (offset) * elt_byte, val); \
-      if(P_.enable_smart_mcpu && stride!=0){ \
-        P_.log_stride_for_mcpu_instruction(stride); \
-      } \
     } \
   } \
   if(P_.enable_smart_mcpu){ \
-    P_.log_mcpu_instruction(baseAddr); \
     MMU.disable_l1_bypass(); \
+    P_.log_mcpu_instruction(baseAddr, sizeof(st_width##_t), true); \
   } \
   P_.VU.vstart = 0; 
 
@@ -1722,7 +1700,6 @@ for (reg_t i = 0; i < vlmax; ++i) { \
   require(vd + nf * P_.VU.vlmul <= NVPR); \
   const reg_t vlmul = P_.VU.vlmul; \
   if(P_.enable_smart_mcpu){ \
-    P_.log_mcpu_instruction(baseAddr); \
     MMU.enable_l1_bypass(); \
   } \
   for (reg_t i = 0; i < vl; ++i) { \
@@ -1744,40 +1721,65 @@ for (reg_t i = 0; i < vlmax; ++i) { \
         default: \
           P_.VU.elt<uint64_t>(vd + fn * vlmul, vreg_inx, VWRITE) = val; \
       } \
-      if(P_.enable_smart_mcpu && stride!=0){ \
-        P_.log_stride_for_mcpu_instruction(stride); \
-      } \
     } \
   } \
   if(P_.enable_smart_mcpu){ \
     MMU.disable_l1_bypass(); \
+    P_.log_mcpu_instruction(baseAddr, sizeof(ld_width##_t), false); \
   } \
   /*
    Set the destination register also, because once the acknowledge is done, \
    we have to set the availability of this register. \
   */ \
-  if((P_.is_vl_available())) \
-  { \
-     P_.curr_write_reg = vd;\
-     P_.curr_write_reg_type = spike_model::Request::RegType::VECTOR;\
-  } \
+  P_.curr_write_reg = vd;\
+  P_.curr_write_reg_type = spike_model::Request::RegType::VECTOR;\
   P_.VU.vstart = 0;
 
 #define VI_LD(stride, offset, ld_width, elt_byte) \
   VI_CHECK_SXX; \
-  VI_LD_COMMON(stride, offset, ld_width, elt_byte)
+  VI_LD_COMMON(stride, offset, ld_width, elt_byte) \
+  LOG_STRIDE(stride)
 
+#define LOG_STRIDE(stride) \
+  if(P_.enable_smart_mcpu && vl>1){ \
+    bool is_strided=false; \
+    int i=0; \
+    uint64_t s_0=(stride); \
+    i=1; \
+    uint64_t s_1=(stride); \
+    if(s_0!=s_1) \
+    { \
+        GET_INDICES(stride); \
+        P_.set_mcpu_instruction_strided(indices); \
+    } \
+  } \
+    
 #define VI_LD_INDEX(stride, offset, ld_width, elt_byte) \
   VI_CHECK_LDST_INDEX; \
-  VI_LD_COMMON(stride, offset, ld_width, elt_byte)
+  VI_LD_COMMON(stride, offset, ld_width, elt_byte) \
+  LOG_INDEX(stride) 
+
+#define LOG_INDEX(stride) \
+  if(P_.enable_smart_mcpu){\
+    GET_INDICES(stride); \
+    P_.set_mcpu_instruction_indexed(indices); \
+  }
+
+#define GET_INDICES(stride) \
+  std::vector<uint64_t> indices; \
+  for (reg_t i = 0; i < vl; ++i) { \
+    indices.push_back(stride); \
+  }
 
 #define VI_ST(stride, offset, st_width, elt_byte) \
   VI_CHECK_SXX; \
   VI_ST_COMMON(stride, offset, st_width, elt_byte) \
+  LOG_STRIDE(stride)
 
 #define VI_ST_INDEX(stride, offset, st_width, elt_byte) \
   VI_CHECK_LDST_INDEX; \
   VI_ST_COMMON(stride, offset, st_width, elt_byte) \
+  LOG_INDEX(stride) 
 
 #define VI_LDST_FF(itype, tsew) \
   require(p->VU.vsew >= e##tsew && p->VU.vsew <= e64); \
@@ -1793,7 +1795,6 @@ for (reg_t i = 0; i < vlmax; ++i) { \
   require(rd_num + nf * P_.VU.vlmul <= NVPR); \
   p->VU.vstart = 0; \
   if(P_.enable_smart_mcpu){ \
-    P_.log_mcpu_instruction(baseAddr); \
     MMU.enable_l1_bypass(); \
   } \
   for (reg_t i = 0; i < vl; ++i) { \
@@ -1832,22 +1833,21 @@ for (reg_t i = 0; i < vlmax; ++i) { \
     if (early_stop) { \
       if(P_.enable_smart_mcpu){ \
         MMU.disable_l1_bypass(); \
+        P_.log_mcpu_instruction(baseAddr, sizeof(itype##tsew##_t), false); \
       } \
       break; \
     } \
     if(P_.enable_smart_mcpu){ \
       MMU.disable_l1_bypass(); \
+      P_.log_mcpu_instruction(baseAddr, sizeof(itype##tsew##_t), false); \
     } \
   } \
   /*
     Set the destination register also, because once the acknowledge is done, \
     we have to set the availability of this register. \
   */ \
-  if((P_.is_vl_available())) \
-  { \
-      P_.curr_write_reg = rd_num;\
-      P_.curr_write_reg_type = spike_model::Request::RegType::VECTOR;\
-  } \
+  P_.curr_write_reg = rd_num;\
+  P_.curr_write_reg_type = spike_model::Request::RegType::VECTOR;
 
 //
 // vector: vfp helper

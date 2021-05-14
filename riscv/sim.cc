@@ -140,16 +140,17 @@ bool sim_t::simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::s
         {
             events.push_back(std::make_shared<spike_model::Fence>(0, current_cycle, core));
         }
-        else if(procs[core]->is_in_set_vl())
+        else if(procs[core]->is_in_set_vl() && enable_smart_mcpu)
         {
-            events.push_back(std::make_shared<spike_model::MCPURequest>(procs[core]->get_requested_vl(), 0, current_cycle, core));
+            events.push_back(std::make_shared<spike_model::MCPUSetVVL>(procs[core]->get_vl(),
+                             procs[core]->get_state()->pc, current_cycle, core));
         }
-        else if(procs[core]->is_mcpu_instruction())
+        else if(procs[core]->is_mcpu_instruction() && enable_smart_mcpu)
         {
             events.push_back(procs[core]->get_mcpu_instruction());
         }
 
-        if(!res && procs[core]->is_insn_executed)
+        if(!res)
         {
             /* There is a RAW dependency in the current instruction.
                A new event should be generated only when the depending instruction
@@ -179,7 +180,6 @@ bool sim_t::simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::s
     procs[core]->clear_bookkeeping_regs();
     return res;
 }
-
 
 bool sim_t::ack_register(const std::shared_ptr<spike_model::Request> & req, uint64_t timestamp)
 {
@@ -254,25 +254,6 @@ bool sim_t::ack_register(const std::shared_ptr<spike_model::Request> & req, uint
     }
     //Simulation can resumen if there are no pending registers.
     return procs[req->getCoreId()]->get_state()->pending_int_regs->size()==0 && procs[req->getCoreId()]->get_state()->pending_float_regs->size()==0 && procs[req->getCoreId()]->get_state()->pending_vector_regs->size()==0;
-}
-
-bool sim_t::ack_register_and_setvl(uint64_t coreId, uint64_t vl, uint64_t timestamp)
-{
-    bool ready;
-    ready=procs[coreId]->get_state()->XPR.ack_for_reg(procs[coreId]->VU.curr_rd, timestamp);
-    // If all the requests for the register (vector instructions might require many) have been serviced, it is no longer pending
-    if(ready)
-    {
-        procs[coreId]->get_state()->pending_int_regs->erase(procs[coreId]->VU.curr_rd);
-    }
-    //Simulation can resumen if there are no pending registers.
-    procs[coreId]->VU.set_vl_from_mcpu(vl);
-    return procs[coreId]->get_state()->pending_int_regs->size()==0 && procs[coreId]->get_state()->pending_float_regs->size()==0 && procs[coreId]->get_state()->pending_vector_regs->size()==0;
-}
-
-bool sim_t::is_vec_available(uint64_t coreId)
-{
-    return procs[coreId]->is_vl_available();
 }
 
 bool sim_t::can_resume(uint64_t coreId, size_t srcRegId,

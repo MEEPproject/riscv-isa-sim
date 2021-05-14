@@ -26,8 +26,7 @@ processor_t::processor_t(const char* isa, const char* priv, const char* varch,
   : debug(false), halt_request(false), sim(sim), ext(NULL), id(id), xlen(0),
   histogram_enabled(false), log_commits_enabled(false),
   halt_on_reset(halt_on_reset), last_pc(1), executions(1),
-  enable_smart_mcpu(enable_smart_mcpu), is_insn_executed(true),
-  vl_dependent(false), last_inst_vsetvl(false)
+  enable_smart_mcpu(enable_smart_mcpu)
 {
   VU.p = this;
   parse_isa_string(isa);
@@ -279,56 +278,10 @@ reg_t vectorUnit_t::set_vl(int rd, int rs1, reg_t reqVL, reg_t newType){
 
   vstart = 0;
   setvl_count++;
+
+  p->in_set_vl = true;
+
   return vl;
-}
-
-void vectorUnit_t::set_vl_from_mcpu(reg_t vl_from_mcpu)
-{
-  if (vtype != curr_new_type){
-    vtype = curr_new_type;
-    vsew = 1 << (BITS(curr_new_type, 4, 2) + 3);
-    vlmul = 1 << BITS(curr_new_type, 1, 0);
-    vediv = 1 << BITS(curr_new_type, 6, 5);
-    vlmax = VLEN/vsew * vlmul;
-    vmlen = vsew / vlmul;
-    reg_mask = (NVPR-1) & ~(vlmul-1);
-
-    vill = vsew > ELEN || vediv != 1 || (curr_new_type >> 7) != 0;
-    if (vill) {
-      vlmax = 0;
-      vtype = UINT64_MAX << (p->get_xlen() - 1);
-    }
-  }
-
-  // set vl
-  if (vlmax == 0) {
-    vl = 0;
-  } else if (curr_rd == 0 && curr_RS1 == 0) {
-    vl = vl > vlmax ? vlmax : vl;
-  } else if (curr_rd != 0 && curr_RS1 == 0) {
-    vl = vlmax;
-  } else if (curr_RS1 != 0) {
-    vl = vl_from_mcpu > vlmax ? vlmax : vl_from_mcpu;
-  }
-
-  vstart = 0;
-  setvl_count++;
-
-  (*p->get_state()).XPR.write(curr_rd, vl);
-  p->set_vl_available(true);
-}
-
-void vectorUnit_t::get_vl_from_mcpu(int rd, int rs1, reg_t reqVL, reg_t newType)
-{
-  p->last_inst_vsetvl = true;
-  p->set_vl_progress(true);
-  p->set_vl_available(false);
-  curr_rd = rd;
-  curr_RS1 = rs1;
-  curr_req_vl = reqVL;
-  curr_new_type = newType;
-
-  (*p->get_state()).XPR.set_event_dependent(curr_rd, 1, std::numeric_limits<uint64_t>::max());
 }
 
 bool processor_t::is_in_set_vl()
@@ -336,31 +289,6 @@ bool processor_t::is_in_set_vl()
   bool res = in_set_vl;
   in_set_vl = false;
   return res;
-}
-
-void processor_t::set_vl_progress(bool val)
-{
-  in_set_vl = val;
-}
-
-void processor_t::set_vl_available(bool val)
-{
-  vl_available = val;
-}
-
-bool processor_t::is_vl_available()
-{
-  return vl_available;
-}
-
-uint64_t vectorUnit_t::get_requested_vl()
-{
-  return curr_req_vl;
-}
-
-uint64_t processor_t::get_requested_vl()
-{
-  return VU.get_requested_vl();
 }
 
 void vectorUnit_t::check_raw(reg_t vReg)
@@ -395,9 +323,7 @@ void vectorUnit_t::check_raw(reg_t vReg)
          source reg which are not available due to load miss,
          we use vector to track them.
        */
-       if((p->is_vl_available())){
-         p->push_src_reg_load_raw(vReg, spike_model::Request::RegType::VECTOR);
-       }
+       p->push_src_reg_load_raw(vReg, spike_model::Request::RegType::VECTOR);
      }
      p->get_state()->pending_vector_regs->insert(vReg);
   }
@@ -565,7 +491,9 @@ void processor_t::take_trap(trap_t& t, reg_t epc)
   reg_t deleg = state.medeleg;
   bool interrupt = (bit & ((reg_t)1 << (max_xlen-1))) != 0;
   if (interrupt)
+  {
     deleg = state.mideleg, bit &= ~((reg_t)1 << (max_xlen-1));
+  }
   if (state.prv <= PRV_S && bit < max_xlen && ((deleg >> bit) & 1)) {
     // handle the trap in S-mode
     reg_t vector = (state.stvec & 1) && interrupt ? 4*bit : 0;
@@ -1239,14 +1167,46 @@ bool processor_t::is_in_fence()
   return res;
 }
 
-void processor_t::log_mcpu_instruction(uint64_t base_address)
+void processor_t::log_mcpu_instruction(uint64_t base_address, size_t width, bool store)
 {
-  mcpu_instruction=std::make_shared<spike_model::MCPUInstruction>(state.pc, current_cycle, id, base_address);
+  spike_model::MCPUInstruction::Operation o=spike_model::MCPUInstruction::Operation::LOAD;
+  if(store)
+  {
+    o=spike_model::MCPUInstruction::Operation::STORE;
+  }
+    
+  //Width is in bytes. Convert to the value for the Width enum
+  spike_model::MCPUInstruction::Width w;
+  switch(width)
+  {
+    case 8:
+        w=spike_model::MCPUInstruction::Width::BIT64;
+        break;
+    case 4:
+        w=spike_model::MCPUInstruction::Width::BIT32;
+        break;
+    case 2:
+        w=spike_model::MCPUInstruction::Width::BIT16;
+        break;
+    case 1:
+        w=spike_model::MCPUInstruction::Width::BIT8;
+        break;
+    default:
+        printf("Unsupported width!\n");
+        break;
+  }
+
+  mcpu_instruction=std::make_shared<spike_model::MCPUInstruction>(state.pc, current_cycle, id, base_address, o, w);
 }
 
-void processor_t::log_stride_for_mcpu_instruction(uint64_t index)
+void processor_t::set_mcpu_instruction_indexed(std::vector<uint64_t> indices) 
 {
-  mcpu_instruction->addIndex(index);
+  mcpu_instruction->setIndexed(indices);
+}
+
+void processor_t::set_mcpu_instruction_strided(std::vector<uint64_t> indices)
+{
+  mcpu_instruction->setStride(indices);
 }
 
 bool processor_t::is_mcpu_instruction()

@@ -188,8 +188,6 @@ class vectorUnit_t {
     reg_t vediv, vsew, vlmul;
     reg_t ELEN, VLEN, SLEN;
     bool vill;
-    reg_t curr_rd, curr_RS1;
-    reg_t curr_req_vl, curr_new_type;
     std::unordered_map<uint64_t, int> read_reg_encountered;
     std::unordered_map<uint64_t, int> write_reg_encountered;
 
@@ -208,30 +206,25 @@ class vectorUnit_t {
         reg_referenced[vReg] = 1;
         T *regStart = (T*)((char*)reg_file + vReg * (VLEN >> 3));
 
-        if(access_type != VLOAD)
+        if(access_type == VREAD || access_type == VREADWRITE)
         {
-          if(access_type == VREAD || access_type == VREADWRITE)
+          if(read_reg_encountered.find(vReg) == read_reg_encountered.end())
           {
-            if(read_reg_encountered.find(vReg) == read_reg_encountered.end())
-            {
-              read_reg_encountered[vReg] = 1;
-              check_raw(vReg);
-            }
+            read_reg_encountered[vReg] = 1;
+            check_raw(vReg);
           }
-          if(access_type == VWRITE || access_type == VREADWRITE)
+        }
+        if(access_type == VWRITE || access_type == VREADWRITE)
+        {
+          if(write_reg_encountered.find(vReg) == write_reg_encountered.end())
           {
-            if(write_reg_encountered.find(vReg) == write_reg_encountered.end())
-            {
-              write_reg_encountered[vReg] = 1;
-                /*
-                  Set the destination register also, because once the acknowledge is done,
-                  we have to set the availability of this register.
-                */
-                if((p->is_vl_available())){
-                  p->curr_write_reg = vReg; \
-                  p->curr_write_reg_type = spike_model::Request::RegType::VECTOR; \
-                }
-            }
+            write_reg_encountered[vReg] = 1;
+            /*
+             Set the destination register also, because once the acknowledge is done,
+             we have to set the availability of this register.
+            */
+            p->curr_write_reg = vReg; \
+            p->curr_write_reg_type = spike_model::Request::RegType::VECTOR; \
           }
         }
         return regStart[n];
@@ -272,9 +265,6 @@ class vectorUnit_t {
     }
 
     reg_t set_vl(int rd, int rs1, reg_t reqVL, reg_t newType);
-    void set_vl_from_mcpu(reg_t vl_from_mcpu);
-    void get_vl_from_mcpu(int rd, int rs1, reg_t reqVL, reg_t newType);
-    uint64_t get_requested_vl();
 
     reg_t get_vlen() { return VLEN; }
     reg_t get_elen() { return ELEN; }
@@ -284,6 +274,9 @@ class vectorUnit_t {
       return (VRM)vxrm;
     }
 
+    reg_t get_vl() {
+      return vl;
+    }
 
     void set_avail(reg_t i, uint64_t cycle)
     {
@@ -557,18 +550,17 @@ public:
 
   uint16_t get_id() {return id;}
 
-  void log_mcpu_instruction(uint64_t base_address);
-  void log_stride_for_mcpu_instruction(uint64_t index);
+  uint64_t get_vl() {return VU.get_vl();}
+
+  void log_mcpu_instruction(uint64_t base_address, size_t width, bool store);
+  void set_mcpu_instruction_indexed(std::vector<uint64_t> indices);    
+  void set_mcpu_instruction_strided(std::vector<uint64_t> indices);    
   bool is_mcpu_instruction();
   std::shared_ptr<spike_model::MCPUInstruction> get_mcpu_instruction();
 
   void sim_fence_log();
   bool is_in_fence();
   bool is_in_set_vl();
-  void set_vl_progress(bool);
-  void set_vl_available(bool);
-  bool is_vl_available();
-  uint64_t get_requested_vl();
 
   std::list<std::shared_ptr<spike_model::InsnLatencyEvent>>& get_insn_latency_event_list()
   {
@@ -637,13 +629,8 @@ public:
   }
 
   simif_t* sim;
-  bool vl_dependent;
-  bool last_inst_vsetvl;
-  uint64_t old_val;
-  uint64_t old_reg;
   bool enable_smart_mcpu;
   int curr_insn_latency;
-  bool is_insn_executed;
   reg_t curr_write_reg;
   spike_model::Request::RegType curr_write_reg_type;
 private:
@@ -691,8 +678,6 @@ private:
  
   bool log_misses=false;
   bool in_fence=false;
-  bool in_set_vl = false;
-  bool vl_available = true;
 
   std::list<std::shared_ptr<spike_model::CacheRequest>> pending_misses;
   uint64_t current_cycle;
@@ -720,6 +705,7 @@ public:
   std::unordered_map<uint64_t, int> write_reg_encountered;
   std::unordered_map<uint64_t, int> read_freg_encountered;
   std::unordered_map<uint64_t, int> write_freg_encountered;
+  bool in_set_vl = false;
 };
 
 
