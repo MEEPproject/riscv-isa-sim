@@ -6,6 +6,7 @@
 #include "cachesim.h"
 #include "serviceable.h"
 #include "memtracer.h"
+#include <set>
 
 #include "CacheRequest.hpp"
 
@@ -14,10 +15,14 @@ class serviceable_cache_sim_t : public cache_sim_t, serviceable
  public:
    serviceable_cache_sim_t(size_t _sets, size_t _ways, size_t _linesz, const char* _name);
    virtual std::shared_ptr<spike_model::CacheRequest> serviceCacheRequest(std::shared_ptr<spike_model::CacheRequest> req);
+   virtual size_t checkNumInFlightMisses();
    bool access(uint64_t addr, size_t bytes, bool store);
    virtual ~serviceable_cache_sim_t(){};
 
    static serviceable_cache_sim_t* construct(const char* config, const char* name);
+
+ private:     
+   std::set<uint64_t> in_flight_addresses;
 };
 
 class serviceable_cache_memtracer_t : public memtracer_t
@@ -44,6 +49,11 @@ class serviceable_cache_memtracer_t : public memtracer_t
   std::shared_ptr<spike_model::CacheRequest> serviceCacheRequest(std::shared_ptr<spike_model::CacheRequest> req)
   {
     return cache->serviceCacheRequest(req);
+  }
+             
+  uint8_t checkNumInFlightMisses()
+  {
+    return cache->checkNumInFlightMisses();
   }
 
  protected:

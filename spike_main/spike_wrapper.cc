@@ -122,6 +122,12 @@ namespace spike_model
                                       destRegType, latency, timestamp);
     }
 
+    size_t SpikeWrapper::checkNumInFlightL1Misses(uint16_t core_idx)
+    {
+        uint32_t cache_idx=core_idx/threads_per_core;
+        return dcs[cache_idx]->checkNumInFlightMisses();
+    }
+
     std::shared_ptr<CacheRequest> SpikeWrapper::serviceCacheRequest(std::shared_ptr<CacheRequest> req, uint64_t timestamp)
     {
         std::shared_ptr<CacheRequest> wb=std::shared_ptr<CacheRequest>(nullptr);

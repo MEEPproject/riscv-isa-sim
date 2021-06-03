@@ -9,7 +9,7 @@
 #include "CacheRequest.hpp"
 
 serviceable_cache_sim_t::serviceable_cache_sim_t(size_t _sets, size_t _ways, size_t _linesz, const char* _name)
-: cache_sim_t(_sets, _ways, _linesz, _name)
+: cache_sim_t(_sets, _ways, _linesz, _name), in_flight_addresses()
 {
     set_log(false);    
 }
@@ -50,6 +50,9 @@ bool serviceable_cache_sim_t::access(uint64_t addr, size_t bytes, bool store)
     return true;
   }
 
+  size_t miss_line_addr=((unsigned)addr/linesz)*linesz;
+  in_flight_addresses.insert(miss_line_addr);
+
   store ? write_misses++ : read_misses++;
   if (log)
   {
@@ -61,7 +64,6 @@ bool serviceable_cache_sim_t::access(uint64_t addr, size_t bytes, bool store)
   if (miss_handler)
     miss_handler->access(addr & ~(linesz-1), linesz, false);
 
-
   return false;
 }
 
@@ -69,7 +71,7 @@ std::shared_ptr<spike_model::CacheRequest> serviceable_cache_sim_t::serviceCache
 {
   std::shared_ptr<spike_model::CacheRequest> wb=std::shared_ptr<spike_model::CacheRequest>(nullptr);
   uint64_t victim=victimize(req->getAddress());
-
+  
   if ((victim & (VALID | DIRTY)) == (VALID | DIRTY))
   {
     uint64_t dirty_addr = (victim & ~(VALID | DIRTY)) << idx_shift;
@@ -83,6 +85,13 @@ std::shared_ptr<spike_model::CacheRequest> serviceable_cache_sim_t::serviceCache
   {
     *check_tag(req->getAddress()) |= DIRTY;
   }
+ 
+  in_flight_addresses.erase(req->getAddress());
   
   return wb;
+}
+
+size_t serviceable_cache_sim_t::checkNumInFlightMisses()
+{
+    return in_flight_addresses.size();
 }

@@ -46,6 +46,7 @@ class fast_cache_sim_t : public serviceable
   bool d_cache_write(uint64_t address);
   
   virtual std::shared_ptr<spike_model::CacheRequest> serviceCacheRequest(std::shared_ptr<spike_model::CacheRequest> req){return std::shared_ptr<spike_model::CacheRequest>(nullptr);};//TODO
+  virtual size_t checkNumInFlightMisses(){return 0;}; //TODO
 
  protected:
   void init();

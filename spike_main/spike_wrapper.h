@@ -138,6 +138,12 @@ namespace spike_model
              * \return A request for a writeback or null
              */
             std::shared_ptr<CacheRequest> serviceCacheRequest(std::shared_ptr<CacheRequest> req, uint64_t timestamp);
+
+            /*
+             * \brief Check the number of in flight misses in an L1
+             * \param core_idx The id of the core of the L1 that will be checked
+             */
+             size_t checkNumInFlightL1Misses(uint16_t core_idx);
     };
 }
 #endif
