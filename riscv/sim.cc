@@ -123,6 +123,7 @@ bool sim_t::simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::s
     if(!done())
     {
         procs[core]->set_current_cycle(current_cycle);
+
         res=my_step_one(core);
         std::list<std::shared_ptr<spike_model::CacheRequest>> new_misses=procs[core]->get_mmu()->get_misses();
 
@@ -176,6 +177,7 @@ bool sim_t::simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::s
     {
         res=true;
         events.push_back(std::make_shared<spike_model::Finish>(0, current_cycle, core));
+        procs[core]->reset_mcpu_instruction();
     }
     //gettimeofday(&et,NULL);
 

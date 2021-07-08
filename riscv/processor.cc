@@ -490,6 +490,7 @@ void processor_t::disasm(insn_t insn)
 {
   uint64_t bits = insn.bits() & ((1ULL << (8 * insn_length(insn.bits()))) - 1);
   //printf("%d || %d\n", last_pc != state.pc, last_bits != bits);
+  fprintf(stderr, "core %3d: Executed %" PRIx64 " times\n", id, executions);
   if (last_pc != state.pc || last_bits != bits) {
     if (executions != 1) {
       fprintf(stderr, "core %3d: Executed %" PRIx64 " times\n", id, executions);
@@ -1180,4 +1181,9 @@ bool processor_t::is_mcpu_instruction()
 std::shared_ptr<spike_model::MCPUInstruction> processor_t::get_mcpu_instruction()
 {
     return mcpu_instruction;
+}
+  
+void processor_t::reset_mcpu_instruction()
+{
+    mcpu_instruction=nullptr;
 }
