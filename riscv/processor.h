@@ -577,8 +577,9 @@ public:
   uint64_t get_vl() {return VU.get_vl();}
 
   void log_mcpu_instruction(uint64_t base_address, size_t width, bool store);
-  void set_mcpu_instruction_indexed(std::vector<uint64_t> indices);    
-  void set_mcpu_instruction_strided(std::vector<uint64_t> indices);    
+  void set_mcpu_instruction_indexed(std::vector<uint64_t> indices);
+  void set_mcpu_instruction_strided(std::vector<uint64_t> indices);
+  void reset_mcpu_instruction();
 
   bool XPR_CHECK_RAW(size_t reg)
   {
