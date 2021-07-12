@@ -1,3 +1,8 @@
+if(p->enable_smart_mcpu && !p->is_vl_available)
+{
+  p->get_state()->raw = true;
+  return true;
+}
 bool b1 = P_.VU.check_raw<uint64_t>(0, 0);
 reg_t sew = P_.VU.vsew;
 reg_t zimm5 = insn.v_zimm5();

@@ -65,7 +65,8 @@ public:
   bool simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::shared_ptr<spike_model::Event>>& events);
 
   void advance_clock(uint64_t);
-  bool ack_register(const std::shared_ptr<spike_model::Request> & req, uint64_t timestamp);
+  bool ack_register(uint64_t coreId, spike_model::Request::RegType destRegType, size_t destRegId, uint64_t timestamp);
+  void set_vvl(uint64_t coreId, uint64_t vvl);
   bool can_resume(uint64_t coreId, size_t srcRegId,
                   spike_model::Request::RegType srcRegType,
                   size_t destRegId, spike_model::Request::RegType destRegType,
@@ -92,7 +93,7 @@ private:
   void step(size_t n); // step through simulation
   
   bool my_step_one(size_t core);
-  static const size_t INTERLEAVE =1;
+  static const size_t INTERLEAVE =3;
   static const size_t INSNS_PER_RTC_TICK = 100; // 10 MHz clock for 1 BIPS core
   static const size_t CPU_HZ = 1000000000; // 1GHz CPU
   size_t current_step;

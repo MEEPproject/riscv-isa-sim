@@ -1,3 +1,8 @@
+if(p->enable_smart_mcpu && !p->is_vl_available)
+{
+  p->get_state()->raw = true;
+  return true;
+}
 bool b1 = false;
 bool b2 = P_.VU.check_raw<uint64_t>(0, 0);
 bool global = false;

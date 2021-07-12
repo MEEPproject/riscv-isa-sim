@@ -108,9 +108,14 @@ namespace spike_model
     /*
     Notifies the completion of a Request, so the corresponding register is set as available.
     */
-    bool SpikeWrapper::ackRegister(const std::shared_ptr<spike_model::Request> & req, uint64_t timestamp)
+    bool SpikeWrapper::ackRegister(uint64_t coreId, spike_model::Request::RegType destRegType, size_t destRegId, uint64_t timestamp)
     {
-        return simulation->ack_register(req, timestamp);
+        return simulation->ack_register(coreId, destRegType, destRegId, timestamp);
+    }
+
+    void SpikeWrapper::setVVL(uint64_t coreId, uint64_t vvl)
+    {
+        return simulation->set_vvl(coreId, vvl);
     }
 
     bool SpikeWrapper::canResume(uint64_t coreId, size_t srcRegId,
