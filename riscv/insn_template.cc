@@ -26,7 +26,18 @@ reg_t rv64_NAME(processor_t* p, insn_t insn, reg_t pc)
       //If smart mcpu is enabled, set the event dependent to 1
       if(p->enable_smart_mcpu)
       {
-        
+        if(p->is_load)
+        {
+          p->is_load = false;
+          p->VU.set_event_dependent(p->curr_write_reg,
+                                    1,
+                                    std::numeric_limits<uint64_t>::max());
+        }
+        else
+        {
+          p->VU.set_event_dependent(p->curr_write_reg, 0,
+                            p->get_current_cycle() + (p->get_curr_insn_latency() * p->VU.get_vl()/p->VU.pvl));
+        }
       }
       else
       {

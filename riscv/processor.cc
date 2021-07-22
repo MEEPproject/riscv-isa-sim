@@ -44,6 +44,7 @@ processor_t::processor_t(const char* isa, const char* priv, const char* varch,
   get_state()->pending_int_regs=new std::set<size_t>();
   get_state()->pending_float_regs=new std::set<size_t>();
   get_state()->pending_vector_regs=new std::set<size_t>();
+  is_load = false;
 }
 
 processor_t::~processor_t()

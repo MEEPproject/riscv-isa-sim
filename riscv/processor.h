@@ -186,7 +186,7 @@ class vectorUnit_t {
     char reg_referenced[NVPR];
     int setvl_count;
     reg_t reg_mask, vlmax, vmlen;
-    reg_t vstart, vxrm, vxsat, vl, vtype, vlenb;
+    reg_t vstart, vxrm, vxsat, vl, vtype, vlenb, pvl;
     reg_t vediv, vsew, vlmul;
     reg_t ELEN, VLEN, SLEN;
     reg_t curr_rd, curr_RS1;
@@ -280,6 +280,7 @@ class vectorUnit_t {
     void reset();
 
     vectorUnit_t(){
+      pvl = 8;
       reg_file = 0;
       dummy_reg=0;
     }
@@ -673,7 +674,7 @@ public:
 
   simif_t* sim;
   insn_func_raw_t is_raw;
-  bool enable_smart_mcpu;
+  bool enable_smart_mcpu, is_load;
   int curr_insn_latency;
   reg_t curr_write_reg;
   spike_model::Request::RegType curr_write_reg_type;
