@@ -118,12 +118,21 @@ namespace spike_model
             bool simulateOne(uint16_t core, uint64_t current_cycle, std::list<std::shared_ptr<spike_model::Event>>& events);
             
             /*!
-             * \brief Notify that a RAW dependency has been satisfied.
-             * \param  req The request that satisfies the RAW dependency
+             * \brief  Notify that a RAW dependency has been satisfied.
+             * \param  coreId The core id in which the RAW dependency needs to be satisfied.
+             * \param  destRegType The type of the destination register.
+             * \param  destRegId The id of the destination register.
              * \param  timestamp The cycle in which the dependency was satisfied
              * \return Whether the core associated to the dependency can now run or not.
              */
-            bool ackRegister(const std::shared_ptr<spike_model::Request> & req, uint64_t timestamp);
+            bool ackRegister(uint64_t coreId, spike_model::Request::RegType destRegType, size_t destRegId, uint64_t timestamp);
+
+            /*!
+             * \brief  Set the virtual vector length of the VPU.
+             * \param  coreId The core id in which the VVL needs to be set.
+             * \param  vvl The VVL value.
+             */
+            void setVVL(uint64_t coreId, uint64_t vvl);
 
             bool canResume(uint64_t coreId, size_t srcRegId,
                            spike_model::Request::RegType srcRegType,

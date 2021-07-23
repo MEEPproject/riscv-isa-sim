@@ -26,7 +26,7 @@ processor_t::processor_t(const char* isa, const char* priv, const char* varch,
   : debug(false), halt_request(false), sim(sim), ext(NULL), id(id), xlen(0),
   histogram_enabled(false), log_commits_enabled(false),
   halt_on_reset(halt_on_reset), last_pc(1), executions(1),
-  enable_smart_mcpu(enable_smart_mcpu)
+  enable_smart_mcpu(enable_smart_mcpu), is_vl_available(true)
 {
   VU.p = this;
   parse_isa_string(isa);
@@ -44,6 +44,7 @@ processor_t::processor_t(const char* isa, const char* priv, const char* varch,
   get_state()->pending_int_regs=new std::set<size_t>();
   get_state()->pending_float_regs=new std::set<size_t>();
   get_state()->pending_vector_regs=new std::set<size_t>();
+  is_load = false;
 }
 
 processor_t::~processor_t()
@@ -248,6 +249,22 @@ void vectorUnit_t::reset(){
   set_vl(0, 0, 0, -1); // default to illegal configuration
 }
 
+void vectorUnit_t::get_vvl(int rd, int rs1, reg_t AVL, reg_t newType){
+  p->is_vl_available = false;
+  curr_rd = rd;
+  curr_RS1 = rs1;
+  curr_AVL = AVL;
+  curr_new_type = newType;
+  (*p->get_state()).XPR.set_event_dependent(rd, 1, std::numeric_limits<uint64_t>::max());
+  p->in_set_vl = true;
+}
+
+void vectorUnit_t::set_vvl(reg_t vvl){
+  set_vl(curr_rd, curr_RS1, vvl, curr_new_type);
+  (*p->get_state()).XPR.write(curr_rd, vvl);
+  p->is_vl_available = true;
+}
+
 reg_t vectorUnit_t::set_vl(int rd, int rs1, reg_t reqVL, reg_t newType){
   if (vtype != newType){
     vtype = newType;
@@ -278,8 +295,6 @@ reg_t vectorUnit_t::set_vl(int rd, int rs1, reg_t reqVL, reg_t newType){
 
   vstart = 0;
   setvl_count++;
-
-  p->in_set_vl = true;
 
   return vl;
 }

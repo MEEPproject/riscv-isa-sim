@@ -23,17 +23,36 @@ reg_t rv64_NAME(processor_t* p, insn_t insn, reg_t pc)
   {
     if(p->curr_write_reg_type == spike_model::Request::RegType::VECTOR)
     {
-      if(p->get_mmu()->num_pending_data_misses()>0)
+      //If smart mcpu is enabled, set the event dependent to 1
+      if(p->enable_smart_mcpu)
       {
-        p->VU.set_event_dependent(p->curr_write_reg,
-                                  p->get_mmu()->num_pending_data_misses(),
-                                  std::numeric_limits<uint64_t>::max());
-        p->get_mmu()->set_misses_dest_reg(p->curr_write_reg,
-                                          spike_model::CacheRequest::RegType::VECTOR);
+        if(p->is_load)
+        {
+          p->is_load = false;
+          p->VU.set_event_dependent(p->curr_write_reg,
+                                    1,
+                                    std::numeric_limits<uint64_t>::max());
+        }
+        else
+        {
+          p->VU.set_event_dependent(p->curr_write_reg, 0,
+                            p->get_current_cycle() + (p->get_curr_insn_latency() * p->VU.get_vl()/p->VU.pvl));
+        }
       }
       else
-        p->VU.set_event_dependent(p->curr_write_reg, 0,
-                                  p->get_current_cycle() + p->get_curr_insn_latency());
+      {
+        if(p->get_mmu()->num_pending_data_misses()>0)
+        {
+          p->VU.set_event_dependent(p->curr_write_reg,
+                                    p->get_mmu()->num_pending_data_misses(),
+                                    std::numeric_limits<uint64_t>::max());
+          p->get_mmu()->set_misses_dest_reg(p->curr_write_reg,
+                                          spike_model::CacheRequest::RegType::VECTOR);
+        }
+        else
+          p->VU.set_event_dependent(p->curr_write_reg, 0,
+                                    p->get_current_cycle() + p->get_curr_insn_latency());
+      }
     }
     else if(p->curr_write_reg_type == spike_model::Request::RegType::INTEGER)
     {

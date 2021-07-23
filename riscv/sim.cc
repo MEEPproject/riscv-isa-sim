@@ -149,8 +149,9 @@ bool sim_t::simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::s
         }
         else if(procs[core]->is_in_set_vl() && enable_smart_mcpu)
         {
-            events.push_back(std::make_shared<spike_model::MCPUSetVVL>(procs[core]->get_vl(),
-                             procs[core]->get_state()->pc, current_cycle, core));
+            events.push_back(std::make_shared<spike_model::MCPUSetVVL>(procs[core]->VU.curr_AVL,
+                             procs[core]->VU.curr_rd, procs[core]->get_state()->pc, 
+                             current_cycle, core));
         }
         else if(procs[core]->is_mcpu_instruction() && enable_smart_mcpu)
         {
@@ -189,33 +190,33 @@ bool sim_t::simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::s
     return res;
 }
 
-bool sim_t::ack_register(const std::shared_ptr<spike_model::Request> & req, uint64_t timestamp)
+bool sim_t::ack_register(uint64_t coreId, spike_model::Request::RegType destRegType, size_t destRegId, uint64_t timestamp)
 {
     bool ready;
-    switch(req->getDestinationRegType())
+    switch(destRegType)
     {
         case spike_model::Request::RegType::INTEGER:
-            ready=procs[req->getCoreId()]->get_state()->XPR.ack_for_reg(req->getDestinationRegId(), timestamp);
+            ready=procs[coreId]->get_state()->XPR.ack_for_reg(destRegId, timestamp);
             // If all the requests for the register (vector instructions might require many) have been serviced, it is no longer pending
             if(ready)
             {
-                procs[req->getCoreId()]->get_state()->pending_int_regs->erase(req->getDestinationRegId());
+                procs[coreId]->get_state()->pending_int_regs->erase(destRegId);
             }
             break;
         case spike_model::Request::RegType::FLOAT:
-            ready=procs[req->getCoreId()]->get_state()->FPR.ack_for_reg(req->getDestinationRegId(), timestamp);
+            ready=procs[coreId]->get_state()->FPR.ack_for_reg(destRegId, timestamp);
             // If all the requests for the register (vector instructions might require many) have been serviced, it is no longer pending
             if(ready)
             {
-                procs[req->getCoreId()]->get_state()->pending_float_regs->erase(req->getDestinationRegId());
+                procs[coreId]->get_state()->pending_float_regs->erase(destRegId);
             }
             break;
         case spike_model::Request::RegType::VECTOR:
-            ready=procs[req->getCoreId()]->VU.ack_for_reg(req->getDestinationRegId(), timestamp);
+            ready=procs[coreId]->VU.ack_for_reg(destRegId, timestamp);
             // If all the requests for the register (vector instructions might require many) have been serviced, it is no longer pending
             if(ready)
             {
-                procs[req->getCoreId()]->get_state()->pending_vector_regs->erase(req->getDestinationRegId());
+                procs[coreId]->get_state()->pending_vector_regs->erase(destRegId);
             }
             break;
         default:
@@ -224,7 +225,14 @@ bool sim_t::ack_register(const std::shared_ptr<spike_model::Request> & req, uint
     }
 
     //Simulation can resumen if there are no pending registers.
-    return procs[req->getCoreId()]->get_state()->pending_int_regs->size()==0 && procs[req->getCoreId()]->get_state()->pending_float_regs->size()==0 && procs[req->getCoreId()]->get_state()->pending_vector_regs->size()==0;
+    return procs[coreId]->get_state()->pending_int_regs->size()==0 && 
+           procs[coreId]->get_state()->pending_float_regs->size()==0 &&
+           procs[coreId]->get_state()->pending_vector_regs->size()==0;
+}
+
+void sim_t::set_vvl(uint64_t core, uint64_t vvl)
+{
+    procs[core]->VU.set_vvl(vvl);
 }
 
 bool sim_t::can_resume(uint64_t coreId, size_t srcRegId,

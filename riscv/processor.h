@@ -186,9 +186,12 @@ class vectorUnit_t {
     char reg_referenced[NVPR];
     int setvl_count;
     reg_t reg_mask, vlmax, vmlen;
-    reg_t vstart, vxrm, vxsat, vl, vtype, vlenb;
+    reg_t vstart, vxrm, vxsat, vl, vtype, vlenb, pvl;
     reg_t vediv, vsew, vlmul;
     reg_t ELEN, VLEN, SLEN;
+    reg_t curr_rd, curr_RS1;
+    reg_t curr_AVL, curr_new_type;
+
     bool vill;
     std::unordered_map<uint64_t, int> read_reg_encountered;
     std::unordered_map<uint64_t, int> write_reg_encountered;
@@ -277,6 +280,7 @@ class vectorUnit_t {
     void reset();
 
     vectorUnit_t(){
+      pvl = 8;
       reg_file = 0;
       dummy_reg=0;
     }
@@ -289,6 +293,8 @@ class vectorUnit_t {
     }
 
     reg_t set_vl(int rd, int rs1, reg_t reqVL, reg_t newType);
+    void get_vvl(int rd, int rs1, reg_t AVL, reg_t newType);
+    void set_vvl(reg_t vvl);
 
     reg_t get_vlen() { return VLEN; }
     reg_t get_elen() { return ELEN; }
@@ -574,8 +580,6 @@ public:
 
   uint16_t get_id() {return id;}
 
-  uint64_t get_vl() {return VU.get_vl();}
-
   void log_mcpu_instruction(uint64_t base_address, size_t width, bool store);
   void set_mcpu_instruction_indexed(std::vector<uint64_t> indices);
   void set_mcpu_instruction_strided(std::vector<uint64_t> indices);
@@ -670,7 +674,7 @@ public:
 
   simif_t* sim;
   insn_func_raw_t is_raw;
-  bool enable_smart_mcpu;
+  bool enable_smart_mcpu, is_load;
   int curr_insn_latency;
   reg_t curr_write_reg;
   spike_model::Request::RegType curr_write_reg_type;
@@ -744,6 +748,7 @@ public:
   std::unordered_map<uint64_t, int> read_freg_encountered;
   std::unordered_map<uint64_t, int> write_freg_encountered;
   bool in_set_vl = false;
+  bool is_vl_available = true;
 };
 
 

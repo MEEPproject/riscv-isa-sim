@@ -1,3 +1,8 @@
+if(p->enable_smart_mcpu && !p->is_vl_available)
+{
+  p->get_state()->raw = true;
+  return true;
+}
 reg_t sew = P_.VU.vsew;
 bool b1 = C_RS1;
 

@@ -1606,7 +1606,7 @@ for (reg_t i = 0; i < vlmax; ++i) { \
     MMU.disable_l1_bypass(); \
     P_.log_mcpu_instruction(baseAddr, sizeof(st_width##_t), true); \
   } \
-  P_.VU.vstart = 0; 
+  P_.VU.vstart = 0;
 
 #define VI_LD_COMMON(stride, offset, ld_width, elt_byte) \
   const reg_t nf = insn.v_nf() + 1; \
@@ -1654,6 +1654,7 @@ for (reg_t i = 0; i < vlmax; ++i) { \
 
 #define VI_LD(stride, offset, ld_width, elt_byte) \
   VI_CHECK_SXX; \
+  P_.is_load = true; \
   VI_LD_COMMON(stride, offset, ld_width, elt_byte) \
   LOG_STRIDE(stride)
 
@@ -1673,6 +1674,7 @@ for (reg_t i = 0; i < vlmax; ++i) { \
     
 #define VI_LD_INDEX(stride, offset, ld_width, elt_byte) \
   VI_CHECK_LDST_INDEX; \
+  P_.is_load = true; \
   VI_LD_COMMON(stride, offset, ld_width, elt_byte) \
   LOG_INDEX(stride) 
 
