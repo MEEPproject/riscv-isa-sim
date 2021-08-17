@@ -78,7 +78,7 @@ std::shared_ptr<spike_model::CacheRequest> serviceable_cache_sim_t::serviceCache
     if (miss_handler)
       miss_handler->access(dirty_addr, linesz, true);
     writebacks++;
-    wb=std::make_shared<spike_model::CacheRequest>(victim<<idx_shift, spike_model::CacheRequest::AccessType::WRITEBACK, 0);
+    wb=std::make_shared<spike_model::CacheRequest>(victim<<idx_shift, spike_model::CacheRequest::AccessType::WRITEBACK, 0, req->getCoreId());
     wb->setSize(linesz);
   }
   if (req->getType()==spike_model::CacheRequest::AccessType::STORE)
