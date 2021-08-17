@@ -32,6 +32,7 @@ reg_t rv64_NAME(processor_t* p, insn_t insn, reg_t pc)
           p->VU.set_event_dependent(p->curr_write_reg,
                                     1,
                                     std::numeric_limits<uint64_t>::max());
+          p->get_mcpu_instruction()->setDestinationReg(p->curr_write_reg, spike_model::CacheRequest::RegType::VECTOR);
         }
         else
         {
