@@ -1155,20 +1155,20 @@ void processor_t::log_mcpu_instruction(uint64_t base_address, size_t width, bool
   }
     
   //Width is in bytes. Convert to the value for the Width enum
-  spike_model::MCPUInstruction::Width w;
+  spike_model::VectorElementType w;
   switch(width)
   {
     case 8:
-        w=spike_model::MCPUInstruction::Width::BIT64;
+        w=spike_model::VectorElementType::BIT64;
         break;
     case 4:
-        w=spike_model::MCPUInstruction::Width::BIT32;
+        w=spike_model::VectorElementType::BIT32;
         break;
     case 2:
-        w=spike_model::MCPUInstruction::Width::BIT16;
+        w=spike_model::VectorElementType::BIT16;
         break;
     case 1:
-        w=spike_model::MCPUInstruction::Width::BIT8;
+        w=spike_model::VectorElementType::BIT8;
         break;
     default:
         printf("Unsupported width!\n");

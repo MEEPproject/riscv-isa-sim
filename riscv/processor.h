@@ -18,6 +18,7 @@
 
 #include "CacheRequest.hpp"
 #include "MemoryTile/MCPUInstruction.hpp"
+#include "MemoryTile/VectorElementType.hpp"
 #include "InsnLatencyEvent.hpp"
 #include <list>
 #include <set>
