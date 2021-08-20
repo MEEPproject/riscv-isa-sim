@@ -33,7 +33,7 @@ sim_t::sim_t(const char* isa, const char* priv, const char* varch,
              const std::vector<std::string>& args,
              std::vector<int> const hartids,
              const debug_module_config_t &dm_config,
-             bool enable_smart_mcpu
+             bool enable_smart_mcpu, size_t scratchpad_size
              )
   : htif_t(args), mems(mems), plugin_devices(plugin_devices),
     procs(std::max(nprocs, size_t(1))), start_pc(start_pc), current_step(0),
@@ -56,7 +56,7 @@ sim_t::sim_t(const char* isa, const char* priv, const char* varch,
 
   if (hartids.size() == 0) {
     for (size_t i = 0; i < procs.size(); i++) {
-      procs[i] = new processor_t(isa, priv, varch, this, i, halted, enable_smart_mcpu);
+      procs[i] = new processor_t(isa, priv, varch, this, i, halted, enable_smart_mcpu, scratchpad_size);
     }
   }
   else {
@@ -65,7 +65,7 @@ sim_t::sim_t(const char* isa, const char* priv, const char* varch,
       exit(1);
     }
     for (size_t i = 0; i < procs.size(); i++) {
-      procs[i] = new processor_t(isa, priv, varch, this, hartids[i], halted);
+      procs[i] = new processor_t(isa, priv, varch, this, hartids[i], halted, scratchpad_size);
     }
   }
 

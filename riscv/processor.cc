@@ -22,11 +22,13 @@
 
 
 processor_t::processor_t(const char* isa, const char* priv, const char* varch,
-                         simif_t* sim, uint32_t id, bool halt_on_reset, bool enable_smart_mcpu)
+                         simif_t* sim, uint32_t id, bool halt_on_reset, bool enable_smart_mcpu,
+                         size_t scratchpad_size)
   : debug(false), halt_request(false), sim(sim), ext(NULL), id(id), xlen(0),
   histogram_enabled(false), log_commits_enabled(false),
   halt_on_reset(halt_on_reset), last_pc(1), executions(1),
-  enable_smart_mcpu(enable_smart_mcpu), is_vl_available(true)
+  enable_smart_mcpu(enable_smart_mcpu), scratchpad_size(scratchpad_size),
+  is_vl_available(true)
 {
   VU.p = this;
   parse_isa_string(isa);
@@ -132,9 +134,16 @@ void processor_t::parse_varch_string(const char* s)
     bad_varch_string(s);
   }
 
-  VU.VLEN = vlen;
+  if(enable_smart_mcpu)
+  {
+    VU.VLEN = scratchpad_size;
+    VU.SLEN = scratchpad_size;
+  }
+  else{
+    VU.VLEN = vlen;
+    VU.SLEN = slen;
+  }
   VU.ELEN = elen;
-  VU.SLEN = slen;
   VU.vlenb = vlen / 8;
 }
 

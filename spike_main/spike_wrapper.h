@@ -46,7 +46,7 @@ namespace spike_model
              * \param  node The node that represent the SpikeWrapper and
              * \param  p The SpikeWrapper parameter set
              */
-            SpikeWrapper(std::string p, std::string t, std::string ic, std::string dc, std::string isa, std::string cmd, std::string varch, bool fast_cache, bool enable_smart_mcpu);
+            SpikeWrapper(std::string p, std::string t, std::string ic, std::string dc, std::string isa, std::string cmd, std::string varch, bool fast_cache, bool enable_smart_mcpu, size_t scratchpad_size);
 
             ~SpikeWrapper() 
             {
@@ -94,6 +94,7 @@ namespace spike_model
             bool fast_cache;
             size_t threads_per_core;
             bool enable_smart_mcpu;
+            size_t scratchpad_size;
 
         public:
 

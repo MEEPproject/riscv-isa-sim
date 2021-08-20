@@ -436,7 +436,8 @@ class processor_t : public abstract_device_t
 {
 public:
   processor_t(const char* isa, const char* priv, const char* varch,
-              simif_t* sim, uint32_t id, bool halt_on_reset=false, bool enable_smart_mcpu=false);
+              simif_t* sim, uint32_t id, bool halt_on_reset=false, bool enable_smart_mcpu=false,
+              size_t scratchpad_size = 0);
   ~processor_t();
 
   void set_debug(bool value);
@@ -676,6 +677,7 @@ public:
   simif_t* sim;
   insn_func_raw_t is_raw;
   bool enable_smart_mcpu, is_load;
+  size_t scratchpad_size;
   int curr_insn_latency;
   reg_t curr_write_reg;
   spike_model::Request::RegType curr_write_reg_type;

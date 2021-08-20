@@ -37,7 +37,7 @@ public:
         reg_t start_pc, std::vector<std::pair<reg_t, mem_t*>> mems,
         std::vector<std::pair<reg_t, abstract_device_t*>> plugin_devices,
         const std::vector<std::string>& args, const std::vector<int> hartids,
-        const debug_module_config_t &dm_config, bool enable_smart_mcpu);
+        const debug_module_config_t &dm_config, bool enable_smart_mcpu, size_t scratchpad_size);
   ~sim_t();
 
   // run the simulation to completion
