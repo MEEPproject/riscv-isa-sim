@@ -136,8 +136,14 @@ void processor_t::parse_varch_string(const char* s)
 
   if(enable_smart_mcpu)
   {
+    // If the MCPU is enabled, the architecture string is ignored. Currently we simulate the SP to be an extension
+    // to the registers. Hence, instead of being able to hold n elements physically, due to the SP a register can
+    // hold up to VVL elements.
     VU.VLEN = scratchpad_size;
     VU.SLEN = scratchpad_size;
+
+    vlen = scratchpad_size;
+    slen = scratchpad_size;
   }
   else{
     VU.VLEN = vlen;
