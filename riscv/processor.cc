@@ -265,6 +265,14 @@ void vectorUnit_t::reset(){
 }
 
 void vectorUnit_t::get_vvl(int rd, int rs1, reg_t AVL, reg_t newType){
+  if(AVL == curr_AVL && newType == vtype) {    // if there is no change, don't do anything
+    return;
+  }
+  if(rd == 0 && rs1 == 0) { // do not send out a MCPUSetVVL packet, if both registers are R0 (RVV v0.8, p.26)
+    set_vl(rd, rs1, vl, newType);
+    return;
+  }
+  
   p->is_vl_available = false;
   curr_rd = rd;
   curr_RS1 = rs1;
