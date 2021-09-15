@@ -149,9 +149,35 @@ bool sim_t::simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::s
         }
         else if(procs[core]->is_in_set_vl() && enable_smart_mcpu)
         {
-            events.push_back(std::make_shared<spike_model::MCPUSetVVL>(procs[core]->VU.curr_AVL,
-                             procs[core]->VU.curr_rd, procs[core]->get_state()->pc, 
-                             current_cycle, core));
+            std::shared_ptr<spike_model::MCPUSetVVL> mcpu_set_vvl = std::make_shared<spike_model::MCPUSetVVL>(
+                            procs[core]->VU.curr_AVL,
+                            procs[core]->VU.curr_rd, procs[core]->get_state()->pc, 
+                            current_cycle, core
+            );
+            
+            reg_t curr_new_type = procs[core]->VU.curr_new_type;
+            reg_t curr_vsew     = BITS(curr_new_type, 4, 2); // flicked from processor.cc -> set_vl()
+            reg_t curr_vlmul    = BITS(curr_new_type, 1, 0);
+            
+            //-- lmul setting according to RVV 0.8, p. 10
+            switch(curr_vlmul) {
+                case 0: mcpu_set_vvl->setLMUL(spike_model::LMULSetting::ONE); break;
+                case 1: mcpu_set_vvl->setLMUL(spike_model::LMULSetting::TWO); break;
+                case 2: mcpu_set_vvl->setLMUL(spike_model::LMULSetting::FOUR); break;
+                case 3: mcpu_set_vvl->setLMUL(spike_model::LMULSetting::EIGHT); break;
+                default: printf("This LMUL Setting is reserved!\n");
+            }
+                
+            
+            //-- vsew setting according to RVV 0.8, p. 9
+            switch(curr_vsew) {
+                case 0: mcpu_set_vvl->setWidth(spike_model::VectorElementType::BIT8); break;
+                case 1: mcpu_set_vvl->setWidth(spike_model::VectorElementType::BIT16); break;
+                case 2: mcpu_set_vvl->setWidth(spike_model::VectorElementType::BIT32); break;
+                case 3: mcpu_set_vvl->setWidth(spike_model::VectorElementType::BIT64); break;
+                default: printf("Unsupported vector element width!\n");
+            }
+            events.push_back(mcpu_set_vvl);
         }
         else if(procs[core]->is_mcpu_instruction() && enable_smart_mcpu)
         {
