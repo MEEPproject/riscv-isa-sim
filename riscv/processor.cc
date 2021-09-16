@@ -268,7 +268,8 @@ void vectorUnit_t::get_vvl(int rd, int rs1, reg_t AVL, reg_t newType){
   if(AVL == curr_AVL && newType == vtype) {    // if there is no change, don't do anything
     return;
   }
-  if(rd == 0 && rs1 == 0) { // do not send out a MCPUSetVVL packet, if both registers are R0 (RVV v0.8, p.26)
+  if((rd == 0 && rs1 == 0) || AVL == 0) { // do not send out a MCPUSetVVL packet, if both registers are R0 (RVV v0.8, p.26)
+                                          // and if AVL is 0. All memory operations become no-ops in that case (only RVV 0.8, tail undisturbed in RVV > 0.8)
     set_vl(rd, rs1, vl, newType);
     return;
   }
