@@ -250,7 +250,7 @@ bool sim_t::ack_register(uint64_t coreId, spike_model::Request::RegType destRegT
             break;
     }
 
-    //Simulation can resumen if there are no pending registers.
+    //Simulation can resume if there are no pending registers.
     return procs[coreId]->get_state()->pending_int_regs->size()==0 && 
            procs[coreId]->get_state()->pending_float_regs->size()==0 &&
            procs[coreId]->get_state()->pending_vector_regs->size()==0;

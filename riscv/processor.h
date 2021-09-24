@@ -294,8 +294,8 @@ class vectorUnit_t {
     }
 
     reg_t set_vl(int rd, int rs1, reg_t reqVL, reg_t newType);
-    void get_vvl(int rd, int rs1, reg_t AVL, reg_t newType);
-    void set_vvl(reg_t vvl);
+    void get_vvl(int rd, int rs1, reg_t req_vvl, reg_t newType);
+    void set_vvl(reg_t granted_vvl);
 
     reg_t get_vlen() { return VLEN; }
     reg_t get_elen() { return ELEN; }
