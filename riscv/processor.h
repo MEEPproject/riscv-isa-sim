@@ -734,7 +734,7 @@ private:
 
   /*There is a possibility of duplicate events getting inserted in the list.
     This could result into corruption in the RAW event tracking mechanism.
-    Lets use set to avoid any duplicacy
+    Lets use set to avoid any duplicates.
   */
   std::list<std::shared_ptr<spike_model::InsnLatencyEvent>>
              insn_latency_event_list;
