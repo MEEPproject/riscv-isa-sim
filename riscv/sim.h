@@ -21,6 +21,7 @@
 #include "Fence.hpp"
 #include "Event.hpp"
 #include "MemoryTile/MCPUSetVVL.hpp"
+#include "MemoryTile/VectorElementType.hpp"
 #include "InsnLatencyEvent.hpp"
 #include <stdint.h>
 
