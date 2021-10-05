@@ -1657,6 +1657,12 @@ for (reg_t i = 0; i < vlmax; ++i) { \
   P_.is_load = true; \
   VI_LD_COMMON(stride, offset, ld_width, elt_byte) \
   LOG_STRIDE(stride)
+  
+#define CHECK_MEMTILE_ENABLE() \
+  if(p->enable_smart_mcpu && !p->is_vl_available) { \
+    p->get_state()->raw = true; \
+    return true; \
+  } \
 
 #define LOG_STRIDE(stride) \
   if(P_.enable_smart_mcpu && vl>1){ \
