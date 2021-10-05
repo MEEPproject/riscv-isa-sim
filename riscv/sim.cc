@@ -245,6 +245,9 @@ bool sim_t::ack_register(uint64_t coreId, spike_model::Request::RegType destRegT
                 procs[coreId]->get_state()->pending_vector_regs->erase(destRegId);
             }
             break;
+        case spike_model::Request::RegType::DONT_CARE:
+            // I don't care, so I do not do anything :-P
+            break;
         default:
             std::cout << "Unknown register kind!\n";
             break;
@@ -269,14 +272,17 @@ bool sim_t::can_resume(uint64_t coreId, size_t srcRegId,
     switch(srcRegType)
     {
         case spike_model::Request::RegType::INTEGER:
-             procs[coreId]->get_state()->pending_int_regs->erase(srcRegId);
-             break;
+            procs[coreId]->get_state()->pending_int_regs->erase(srcRegId);
+            break;
         case spike_model::Request::RegType::FLOAT:
-             procs[coreId]->get_state()->pending_float_regs->erase(srcRegId);
-             break;
+            procs[coreId]->get_state()->pending_float_regs->erase(srcRegId);
+            break;
         case spike_model::Request::RegType::VECTOR:
-             procs[coreId]->get_state()->pending_vector_regs->erase(srcRegId);
-             break;
+            procs[coreId]->get_state()->pending_vector_regs->erase(srcRegId);
+            break;
+        case spike_model::Request::RegType::DONT_CARE:
+            // I don't care, so I do not do anything :-P
+            break;
         default:
             std::cout << "Unknown register kind!\n";
             break;

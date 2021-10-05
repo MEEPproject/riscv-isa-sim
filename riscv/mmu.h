@@ -516,7 +516,7 @@ private:
     {
       //The request is for the line instead of the missing access
       std::shared_ptr<spike_model::CacheRequest> cr=std::make_shared<spike_model::CacheRequest>(miss_line_addr, type, proc->state.pc, proc->get_current_cycle(), proc->get_id());
-      cr->setDestinationReg(-1, spike_model::Request::RegType::INTEGER); // Alex: TODO
+      cr->setDestinationReg(-1, spike_model::Request::RegType::DONT_CARE);
       cr->setSize(line_size);
       misses_last_inst.push_back(cr);
       
