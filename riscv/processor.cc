@@ -319,7 +319,7 @@ reg_t vectorUnit_t::set_vl(int rd, int rs1, reg_t reqVL, reg_t newType){
   } else if (rd == 0 && rs1 == 0) {
     vl = vl > vlmax ? vlmax : vl;
   } else if (rd != 0 && rs1 == 0) {
-    vl = vlmax;
+    vl = (p->enable_smart_mcpu) ? reqVL : vlmax;            // overwrite this setting and listen to what the MemTile says
   } else if (rs1 != 0) {
     vl = reqVL > vlmax ? vlmax : reqVL;
   }
