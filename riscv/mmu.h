@@ -295,8 +295,7 @@ public:
     if (tracer.interested_in_range(paddr, paddr + 1, FETCH)) {
       entry->tag = -1;
       bool hit=false;
-      uint64_t victim=0; //INSTRUCTION CACHE DOES NOT WRITEBACK
-      bool traced=tracer.trace(paddr, length, FETCH, hit, victim);
+      bool traced=tracer.trace(paddr, length, FETCH, hit);
       if(log_misses && traced && !hit)
       {
         log_miss(paddr, length, spike_model::CacheRequest::AccessType::FETCH);
@@ -380,6 +379,16 @@ public:
   void enable_miss_log()
   {
     log_misses=true;
+  }
+  
+  void enable_smart_mcpu()
+  {
+    smart_mcpu=true;
+  }
+
+  void disable_smart_mcpu()
+  {
+    smart_mcpu=false;
   }
 
   void enable_l1_bypass()
@@ -527,6 +536,7 @@ private:
   bool log_instructions=false;
   bool log_misses=false;
   bool bypass_l1=false;
+  bool smart_mcpu=false;
 
   uint16_t num_writebacks=0;
 };

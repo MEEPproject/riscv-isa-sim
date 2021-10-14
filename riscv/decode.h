@@ -1577,6 +1577,9 @@ for (reg_t i = 0; i < vlmax; ++i) { \
   require(vs3 + nf * P_.VU.vlmul <= NVPR); \
   const reg_t vlmul = P_.VU.vlmul; \
   if(P_.enable_smart_mcpu){ \
+    MMU.enable_smart_mcpu(); \
+  } \
+  else if(P_.vector_bypass_l1){ \
     MMU.enable_l1_bypass(); \
   } \
   for (reg_t i = 0; i < vl; ++i) { \
@@ -1602,9 +1605,14 @@ for (reg_t i = 0; i < vlmax; ++i) { \
       MMU.store_##st_width(baseAddr + (stride) + (offset) * elt_byte, val); \
     } \
   } \
-  if(P_.enable_smart_mcpu){ \
-    MMU.disable_l1_bypass(); \
+  if(P_.enable_smart_mcpu)\
+  { \
+    MMU.disable_smart_mcpu(); \
     P_.log_mcpu_instruction(baseAddr, sizeof(st_width##_t), true); \
+  } \
+  else if(P_.vector_bypass_l1)\
+  { \
+    MMU.disable_l1_bypass(); \
   } \
   P_.VU.vstart = 0;
 
@@ -1617,6 +1625,9 @@ for (reg_t i = 0; i < vlmax; ++i) { \
   require(vd + nf * P_.VU.vlmul <= NVPR); \
   const reg_t vlmul = P_.VU.vlmul; \
   if(P_.enable_smart_mcpu){ \
+    MMU.enable_smart_mcpu(); \
+  } \
+  else if(P_.vector_bypass_l1){ \
     MMU.enable_l1_bypass(); \
   } \
   for (reg_t i = 0; i < vl; ++i) { \
@@ -1640,9 +1651,14 @@ for (reg_t i = 0; i < vlmax; ++i) { \
       } \
     } \
   } \
-  if(P_.enable_smart_mcpu){ \
-    MMU.disable_l1_bypass(); \
+  if(P_.enable_smart_mcpu)\
+  { \
+    MMU.disable_smart_mcpu(); \
     P_.log_mcpu_instruction(baseAddr, sizeof(ld_width##_t), false); \
+  } \
+  else if(P_.vector_bypass_l1)\
+  { \
+    MMU.disable_l1_bypass(); \
   } \
   /*
    Set the destination register also, because once the acknowledge is done, \
@@ -1714,6 +1730,9 @@ for (reg_t i = 0; i < vlmax; ++i) { \
   require(rd_num + nf * P_.VU.vlmul <= NVPR); \
   p->VU.vstart = 0; \
   if(P_.enable_smart_mcpu){ \
+    MMU.enable_smart_mcpu(); \
+  } \
+  else if(P_.vector_bypass_l1){ \
     MMU.enable_l1_bypass(); \
   } \
   for (reg_t i = 0; i < vl; ++i) { \
@@ -1750,15 +1769,25 @@ for (reg_t i = 0; i < vlmax; ++i) { \
     } \
     \
     if (early_stop) { \
-      if(P_.enable_smart_mcpu){ \
-        MMU.disable_l1_bypass(); \
+      if(P_.enable_smart_mcpu)\
+      { \
+        MMU.disable_smart_mcpu(); \
         P_.log_mcpu_instruction(baseAddr, sizeof(itype##tsew##_t), false); \
+      } \
+      else if(P_.vector_bypass_l1)\
+      { \
+        MMU.disable_l1_bypass(); \
       } \
       break; \
     } \
-    if(P_.enable_smart_mcpu){ \
-      MMU.disable_l1_bypass(); \
+    if(P_.enable_smart_mcpu)\
+    { \
+      MMU.disable_smart_mcpu(); \
       P_.log_mcpu_instruction(baseAddr, sizeof(itype##tsew##_t), false); \
+    } \
+    else if(P_.vector_bypass_l1)\
+    { \
+      MMU.disable_l1_bypass(); \
     } \
   } \
   /*

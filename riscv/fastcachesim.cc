@@ -117,12 +117,6 @@ void fast_cache_sim_t::print_stats()
   std::cout << "Miss Rate:             " << mr << '%' << std::endl;
 }
 
-uint64_t fast_cache_sim_t::get_victim()
-{
-    uint64_t res=last_victim;
-    last_victim=0;
-    return res;
-}
 
 uint64_t fast_cache_sim_t::addrMaskForCache() {
 	uint64_t mask = (1 << log2Lines) - 1;
@@ -278,7 +272,6 @@ bool fast_cache_sim_t::d_cache_read(uint64_t address)
 	cacheWay * cw = ways[way];
 	// if the line was already dirty, we already have a cacheline here, so eject the line
 	if (cw -> dirty[index]) {
-        last_victim=getLineAddress(maskedAddress, index);
 		writebacks++;
 	}
 
@@ -353,7 +346,6 @@ bool fast_cache_sim_t::d_cache_write(uint64_t address)
 	cacheWay * cw = ways[way];
 	// if the line was already dirty, we already have a cacheline here, so eject the line
 	if (cw -> dirty[index]) {
-        last_victim=getLineAddress(maskedAddress, index);
 		writebacks++;
 	}
 

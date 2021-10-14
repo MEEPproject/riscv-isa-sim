@@ -107,18 +107,24 @@ void mmu_t::load_slow_path(reg_t addr, reg_t len, uint8_t* bytes)
 
   if (auto host_addr = sim->addr_to_mem(paddr)) {
     memcpy(bytes, host_addr, len);
-    if (tracer.interested_in_range(paddr, paddr + PGSIZE, LOAD) && !bypass_l1)
+    if(!smart_mcpu)
     {
-      bool hit=false;
-      uint64_t victim=0;
-      bool traced=tracer.trace(paddr, len, LOAD, hit, victim);
-      if(log_misses && traced && !hit)
-      {
-        log_miss(paddr, len, spike_model::CacheRequest::AccessType::LOAD);
-      }
+        if (tracer.interested_in_range(paddr, paddr + PGSIZE, LOAD))
+        {
+          bool hit=false;
+          bool traced=false;
+          if(!bypass_l1)
+          {
+              traced=tracer.trace(paddr, len, LOAD, hit);
+          }
+          if((log_misses && traced && !hit) || bypass_l1)
+          {
+            log_miss(paddr, len, spike_model::CacheRequest::AccessType::LOAD);
+          }
+        }
+        else
+          refill_tlb(addr, paddr, host_addr, LOAD);
     }
-    else
-      refill_tlb(addr, paddr, host_addr, LOAD);
   } else if (!sim->mmio_load(paddr, len, bytes)) {
     throw trap_load_access_fault(addr);
   }
@@ -144,18 +150,24 @@ void mmu_t::store_slow_path(reg_t addr, reg_t len, const uint8_t* bytes)
 
   if (auto host_addr = sim->addr_to_mem(paddr)) {
     memcpy(host_addr, bytes, len);
-    if (tracer.interested_in_range(paddr, paddr + PGSIZE, STORE) && !bypass_l1)
+    if(!smart_mcpu)
     {
-      bool hit=false;
-      uint64_t victim=0;
-      bool traced=tracer.trace(paddr, len, STORE, hit, victim);
-      if(log_misses && traced && !hit)
-      {
-        log_miss(paddr, len, spike_model::CacheRequest::AccessType::STORE);
-      }
+        if (tracer.interested_in_range(paddr, paddr + PGSIZE, STORE))
+        {
+          bool hit=false;
+          bool traced=false;
+          if(!bypass_l1)
+          {
+              traced=tracer.trace(paddr, len, STORE, hit);
+          }
+          if((log_misses && traced && !hit) || bypass_l1)
+          {
+              log_miss(paddr, len, spike_model::CacheRequest::AccessType::STORE);
+          }
+        }
+        else
+          refill_tlb(addr, paddr, host_addr, STORE);
     }
-    else
-      refill_tlb(addr, paddr, host_addr, STORE);
   } else if (!sim->mmio_store(paddr, len, bytes)) {
     throw trap_store_access_fault(addr);
   }

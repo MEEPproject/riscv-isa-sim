@@ -121,13 +121,6 @@ uint64_t cache_sim_t::victimize(uint64_t addr)
   return victim;
 }
 
-uint64_t cache_sim_t::get_victim()
-{
-    uint64_t res=last_victim;
-    last_victim=0;
-    return res;
-}
-
 bool cache_sim_t::access(uint64_t addr, size_t bytes, bool store)
 {
   store ? write_accesses++ : read_accesses++;
@@ -157,7 +150,6 @@ bool cache_sim_t::access(uint64_t addr, size_t bytes, bool store)
     if (miss_handler)
       miss_handler->access(dirty_addr, linesz, true);
     writebacks++;
-    last_victim=victim;
   }
 
   if (miss_handler)

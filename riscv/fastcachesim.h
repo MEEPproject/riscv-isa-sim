@@ -39,7 +39,6 @@ class fast_cache_sim_t : public serviceable
 
   static fast_cache_sim_t* construct(const char* config, const char* name);
 
-  uint64_t get_victim();
 
   bool i_cache_access(uint64_t address);
   bool d_cache_read(uint64_t address);
@@ -65,10 +64,6 @@ class fast_cache_sim_t : public serviceable
   uint64_t write_misses;
   uint64_t bytes_written;
   uint64_t writebacks;
-
-  uint64_t last_victim=0;
-
-	
 
   uint32_t isACache;
 
@@ -131,10 +126,9 @@ class fast_icache_sim_t : public fast_cache_memtracer_t
   {
     return type == FETCH;
   }
-  bool trace(uint64_t addr, size_t bytes, access_type type, bool& hit, uint64_t& victim)
+  bool trace(uint64_t addr, size_t bytes, access_type type, bool& hit)
   {
     bool res=false;
-    victim=0;
     if (type == FETCH)
     {
         res=true;
@@ -153,10 +147,9 @@ class fast_dcache_sim_t : public fast_cache_memtracer_t
     return type == LOAD || type == STORE;
   }
   
-  bool trace(uint64_t addr, size_t bytes, access_type type, bool& hit, uint64_t& victim)
+  bool trace(uint64_t addr, size_t bytes, access_type type, bool& hit)
   {
     bool res=false;
-    victim=0;
     if (type == LOAD || type == STORE)
     {
         res=true;
@@ -169,7 +162,6 @@ class fast_dcache_sim_t : public fast_cache_memtracer_t
         {
             local_hit=cache->d_cache_write(addr);
         }
-        victim=cache->get_victim();
         hit=local_hit;
     }
     return res;

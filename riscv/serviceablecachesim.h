@@ -69,10 +69,9 @@ class serviceable_icache_sim_t : public serviceable_cache_memtracer_t
   {
     return type == FETCH;
   }
-  bool trace(uint64_t addr, size_t bytes, access_type type, bool& hit, uint64_t& victim)
+  bool trace(uint64_t addr, size_t bytes, access_type type, bool& hit)
   {
     bool res=false;
-    victim=0;
     if (type == FETCH)
     {
         res=true;
@@ -91,15 +90,13 @@ class serviceable_dcache_sim_t : public serviceable_cache_memtracer_t
     return type == LOAD || type == STORE;
   }
   
-  bool trace(uint64_t addr, size_t bytes, access_type type, bool& hit, uint64_t& victim)
+  bool trace(uint64_t addr, size_t bytes, access_type type, bool& hit)
   {
     bool res=false;
-    victim=0;
     if (type == LOAD || type == STORE)
     {
         res=true;
         hit=cache->access(addr, bytes, type == STORE);
-        victim=cache->get_victim();
     }
     return res;
   }
