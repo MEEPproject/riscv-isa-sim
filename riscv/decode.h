@@ -1568,6 +1568,22 @@ for (reg_t i = 0; i < vlmax; ++i) { \
   } \
 }
 
+#define CHECK_ENABLE_BYPASS \
+  if(P_.vector_bypass_l1){ \
+    MMU.enable_l1_bypass(); \
+  } \
+  if(P_.vector_bypass_l2){ \
+    MMU.enable_l2_bypass(); \
+  } \ 
+
+#define CHECK_DISABLE_BYPASS \
+  if(P_.vector_bypass_l1){ \
+    MMU.disable_l1_bypass(); \
+  } \
+  if(P_.vector_bypass_l2){ \
+    MMU.disable_l2_bypass(); \
+  } \ 
+
 #define VI_ST_COMMON(stride, offset, st_width, elt_byte) \
   const reg_t nf = insn.v_nf() + 1; \
   require((nf * P_.VU.vlmul) <= (NVPR / 4)); \
@@ -1579,8 +1595,8 @@ for (reg_t i = 0; i < vlmax; ++i) { \
   if(P_.enable_smart_mcpu){ \
     MMU.enable_smart_mcpu(); \
   } \
-  else if(P_.vector_bypass_l1){ \
-    MMU.enable_l1_bypass(); \
+  else{ \
+    CHECK_ENABLE_BYPASS \
   } \
   for (reg_t i = 0; i < vl; ++i) { \
     VI_STRIP(i) \
@@ -1610,9 +1626,9 @@ for (reg_t i = 0; i < vlmax; ++i) { \
     MMU.disable_smart_mcpu(); \
     P_.log_mcpu_instruction(baseAddr, sizeof(st_width##_t), true); \
   } \
-  else if(P_.vector_bypass_l1)\
+  else\
   { \
-    MMU.disable_l1_bypass(); \
+    CHECK_DISABLE_BYPASS \
   } \
   P_.VU.vstart = 0;
 
@@ -1627,8 +1643,8 @@ for (reg_t i = 0; i < vlmax; ++i) { \
   if(P_.enable_smart_mcpu){ \
     MMU.enable_smart_mcpu(); \
   } \
-  else if(P_.vector_bypass_l1){ \
-    MMU.enable_l1_bypass(); \
+  else{ \
+    CHECK_ENABLE_BYPASS \
   } \
   for (reg_t i = 0; i < vl; ++i) { \
     VI_ELEMENT_SKIP(i); \
@@ -1656,9 +1672,9 @@ for (reg_t i = 0; i < vlmax; ++i) { \
     MMU.disable_smart_mcpu(); \
     P_.log_mcpu_instruction(baseAddr, sizeof(ld_width##_t), false); \
   } \
-  else if(P_.vector_bypass_l1)\
+  else\
   { \
-    MMU.disable_l1_bypass(); \
+    CHECK_DISABLE_BYPASS \
   } \
   /*
    Set the destination register also, because once the acknowledge is done, \
@@ -1732,8 +1748,8 @@ for (reg_t i = 0; i < vlmax; ++i) { \
   if(P_.enable_smart_mcpu){ \
     MMU.enable_smart_mcpu(); \
   } \
-  else if(P_.vector_bypass_l1){ \
-    MMU.enable_l1_bypass(); \
+  else{ \
+    CHECK_ENABLE_BYPASS \
   } \
   for (reg_t i = 0; i < vl; ++i) { \
     VI_STRIP(i); \
@@ -1774,9 +1790,9 @@ for (reg_t i = 0; i < vlmax; ++i) { \
         MMU.disable_smart_mcpu(); \
         P_.log_mcpu_instruction(baseAddr, sizeof(itype##tsew##_t), false); \
       } \
-      else if(P_.vector_bypass_l1)\
+      else\
       { \
-        MMU.disable_l1_bypass(); \
+        CHECK_DISABLE_BYPASS \
       } \
       break; \
     } \
@@ -1785,9 +1801,9 @@ for (reg_t i = 0; i < vlmax; ++i) { \
       MMU.disable_smart_mcpu(); \
       P_.log_mcpu_instruction(baseAddr, sizeof(itype##tsew##_t), false); \
     } \
-    else if(P_.vector_bypass_l1)\
+    else\
     { \
-      MMU.disable_l1_bypass(); \
+      CHECK_DISABLE_BYPASS \
     } \
   } \
   /*

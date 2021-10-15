@@ -34,7 +34,8 @@ sim_t::sim_t(const char* isa, const char* priv, const char* varch,
              std::vector<int> const hartids,
              const debug_module_config_t &dm_config,
              bool enable_smart_mcpu,
-             bool vector_bypass_l1
+             bool vector_bypass_l1,
+             bool vector_bypass_l2
              )
   : htif_t(args), mems(mems), plugin_devices(plugin_devices),
     procs(std::max(nprocs, size_t(1))), start_pc(start_pc), current_step(0),
@@ -58,7 +59,7 @@ sim_t::sim_t(const char* isa, const char* priv, const char* varch,
 
   if (hartids.size() == 0) {
     for (size_t i = 0; i < procs.size(); i++) {
-      procs[i] = new processor_t(isa, priv, varch, this, i, halted, enable_smart_mcpu, vector_bypass_l1);
+      procs[i] = new processor_t(isa, priv, varch, this, i, halted, enable_smart_mcpu, vector_bypass_l1, vector_bypass_l2);
     }
   }
   else {

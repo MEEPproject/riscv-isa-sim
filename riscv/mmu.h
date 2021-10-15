@@ -400,6 +400,16 @@ public:
   {
     bypass_l1=false;
   }
+  
+  void enable_l2_bypass()
+  {
+    bypass_l2=true;
+  }
+
+  void disable_l2_bypass()
+  {
+    bypass_l2=false;
+  }
 
   /*
      Although Spike uses 32 INT, FPR and vector registers each,
@@ -523,7 +533,7 @@ private:
     if(!contains_line)
     {
         //The request is for the line instead of the missing access
-        misses_last_inst.push_back(std::make_shared<spike_model::CacheRequest> (miss_line_addr, type, proc->state.pc, proc->get_current_cycle(), proc->get_id()));
+        misses_last_inst.push_back(std::make_shared<spike_model::CacheRequest> (miss_line_addr, type, proc->state.pc, proc->get_current_cycle(), proc->get_id(), bypass_l2));
         misses_last_inst.back()->setSize(line_size);
         if(type==spike_model::CacheRequest::AccessType::FETCH)
         {
@@ -536,6 +546,7 @@ private:
   bool log_instructions=false;
   bool log_misses=false;
   bool bypass_l1=false;
+  bool bypass_l2=false;
   bool smart_mcpu=false;
 
   uint16_t num_writebacks=0;

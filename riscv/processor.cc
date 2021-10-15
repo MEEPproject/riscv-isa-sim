@@ -22,11 +22,11 @@
 
 
 processor_t::processor_t(const char* isa, const char* priv, const char* varch,
-                         simif_t* sim, uint32_t id, bool halt_on_reset, bool enable_smart_mcpu, bool vector_bypass_l1)
+                         simif_t* sim, uint32_t id, bool halt_on_reset, bool enable_smart_mcpu, bool vector_bypass_l1, bool vector_bypass_l2)
   : debug(false), halt_request(false), sim(sim), ext(NULL), id(id), xlen(0),
   histogram_enabled(false), log_commits_enabled(false),
   halt_on_reset(halt_on_reset), last_pc(1), executions(1),
-  enable_smart_mcpu(enable_smart_mcpu), vector_bypass_l1(vector_bypass_l1), is_vl_available(true)
+  enable_smart_mcpu(enable_smart_mcpu), vector_bypass_l1(vector_bypass_l1), vector_bypass_l2(vector_bypass_l2), is_vl_available(true)
 {
   VU.p = this;
   parse_isa_string(isa);
