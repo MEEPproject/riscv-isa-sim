@@ -35,14 +35,14 @@ sim_t::sim_t(const char* isa, const char* priv, const char* varch,
              const debug_module_config_t &dm_config,
              bool enable_smart_mcpu,
              bool vector_bypass_l1,
-             bool vector_bypass_l2
+             bool vector_bypass_l2,
+             uint16_t lanes_per_vpu
              )
   : htif_t(args), mems(mems), plugin_devices(plugin_devices),
     procs(std::max(nprocs, size_t(1))), start_pc(start_pc), current_step(0),
     current_proc(0), debug(false), histogram_enabled(false),
     log_commits_enabled(false), dtb_enabled(true),
-    remote_bitbang(NULL), debug_module(this, dm_config), enable_smart_mcpu(enable_smart_mcpu),
-    vector_bypass_l1(vector_bypass_l1)
+    remote_bitbang(NULL), debug_module(this, dm_config), enable_smart_mcpu(enable_smart_mcpu)
 {
   signal(SIGINT, &handle_signal);
 
@@ -59,7 +59,7 @@ sim_t::sim_t(const char* isa, const char* priv, const char* varch,
 
   if (hartids.size() == 0) {
     for (size_t i = 0; i < procs.size(); i++) {
-      procs[i] = new processor_t(isa, priv, varch, this, i, halted, enable_smart_mcpu, vector_bypass_l1, vector_bypass_l2);
+      procs[i] = new processor_t(isa, priv, varch, this, i, halted, enable_smart_mcpu, vector_bypass_l1, vector_bypass_l2, lanes_per_vpu);
     }
   }
   else {
