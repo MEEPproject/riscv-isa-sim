@@ -340,7 +340,6 @@ class vectorUnit_t {
     {
       pending_events[i]=num_events;
       avail_cycle[i] = cycle;
-      printf("Reg %d will be available in cycle %lu\n", i, cycle);
     }
 };
 
