@@ -23,7 +23,7 @@ namespace spike_model
     Creates a fully functional wrapped instance of spike that waits for single instruction 
     simulation requests on individual cores.
     */
-    SpikeWrapper::SpikeWrapper(std::string p, std::string t,  std::string ic, std::string dc, std::string isa, std::string cmd, std::string varch, bool fast_cache, bool enable_smart_mcpu, bool vector_bypass_l1, bool vector_bypass_l2, uint16_t lanes_per_vpu) :
+    SpikeWrapper::SpikeWrapper(std::string p, std::string t,  std::string ic, std::string dc, std::string isa, std::string cmd, std::string varch, bool fast_cache, bool enable_smart_mcpu, bool vector_bypass_l1, bool vector_bypass_l2, uint16_t lanes_per_vpu, size_t scratchpad_size) :
             p_(p),
             t_(t),
             ic_(ic),
@@ -36,7 +36,8 @@ namespace spike_model
             enable_smart_mcpu(enable_smart_mcpu),
             vector_bypass_l1(vector_bypass_l1),
             vector_bypass_l2(vector_bypass_l2),
-            lanes_per_vpu(lanes_per_vpu)
+            lanes_per_vpu(lanes_per_vpu),
+            scratchpad_size(scratchpad_size)
     {
         //TODO: REFACTOR
         sparta_assert(cmd_!="", "An application to simulate must be provided.");
@@ -402,7 +403,7 @@ namespace spike_model
 
 	std::cout << "Calling sim with smart mcpu " << enable_smart_mcpu << std::endl;
         std::shared_ptr<sim_t> s=std::make_shared<sim_t> (isa, priv, varch, nprocs, halted, start_pc, mems, plugin_devices, htif_args,
-                std::move(hartids), dm_config, enable_smart_mcpu, vector_bypass_l1, vector_bypass_l2, lanes_per_vpu); //BORJA
+                std::move(hartids), dm_config, enable_smart_mcpu, vector_bypass_l1, vector_bypass_l2, lanes_per_vpu, scratchpad_size);
         std::unique_ptr<remote_bitbang_t> remote_bitbang((remote_bitbang_t *) NULL);
         std::unique_ptr<jtag_dtm_t> jtag_dtm(
                 new jtag_dtm_t(&s->debug_module, dmi_rti));

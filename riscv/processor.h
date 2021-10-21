@@ -18,6 +18,7 @@
 
 #include "CacheRequest.hpp"
 #include "MemoryTile/MCPUInstruction.hpp"
+#include "MemoryTile/VectorElementType.hpp"
 #include "InsnLatencyEvent.hpp"
 #include <list>
 #include <set>
@@ -436,7 +437,9 @@ class processor_t : public abstract_device_t
 {
 public:
   processor_t(const char* isa, const char* priv, const char* varch,
-              simif_t* sim, uint32_t id, bool halt_on_reset=false, bool enable_smart_mcpu=false, bool vector_bypass_l1=true, bool vector_bypass_l2=false, uint16_t lanes_per_vpu=8);
+              simif_t* sim, uint32_t id, bool halt_on_reset=false, bool enable_smart_mcpu=false, 
+              bool vector_bypass_l1=true, bool vector_bypass_l2=false, uint16_t lanes_per_vpu=8,
+              size_t scratchpad_size = 0);
   ~processor_t();
 
   void set_debug(bool value);
@@ -677,6 +680,7 @@ public:
   insn_func_raw_t is_raw;
   bool enable_smart_mcpu, is_load, vector_bypass_l1, vector_bypass_l2;
   uint16_t lanes_per_vpu;
+  size_t scratchpad_size;
   int curr_insn_latency;
   reg_t curr_write_reg;
   spike_model::Request::RegType curr_write_reg_type;

@@ -254,7 +254,7 @@ int main(int argc, char** argv)//BORJA
 
 
   sim_t s(isa, priv, varch, nprocs, halted, start_pc, mems, plugin_devices, htif_args,
-      std::move(hartids), dm_config, false, false, false,16);
+      std::move(hartids), dm_config, false, false, false,16,0);
   std::unique_ptr<remote_bitbang_t> remote_bitbang((remote_bitbang_t *) NULL);
   std::unique_ptr<jtag_dtm_t> jtag_dtm(
       new jtag_dtm_t(&s.debug_module, dmi_rti));
