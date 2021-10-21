@@ -247,6 +247,7 @@ class vectorUnit_t {
 
         if(get_avail_cycle(vReg)>p->get_current_cycle())
         {
+          printf("This is cycle %lu and reg %d will not be available until cycle %lu\n", p->get_current_cycle(), vReg, get_avail_cycle(vReg));
           p->get_state()->raw=true;
 
           /*Push the data into the vector if the depending
