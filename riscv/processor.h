@@ -18,6 +18,7 @@
 
 #include "CacheRequest.hpp"
 #include "MemoryTile/MCPUInstruction.hpp"
+#include "MemoryTile/VectorElementType.hpp"
 #include "InsnLatencyEvent.hpp"
 #include <list>
 #include <set>
@@ -186,7 +187,7 @@ class vectorUnit_t {
     char reg_referenced[NVPR];
     int setvl_count;
     reg_t reg_mask, vlmax, vmlen;
-    reg_t vstart, vxrm, vxsat, vl, vtype, vlenb, pvl;
+    reg_t vstart, vxrm, vxsat, vl, vtype, vlenb;
     reg_t vediv, vsew, vlmul;
     reg_t ELEN, VLEN, SLEN;
     reg_t curr_rd, curr_RS1;
@@ -280,7 +281,6 @@ class vectorUnit_t {
     void reset();
 
     vectorUnit_t(){
-      pvl = 8;
       reg_file = 0;
       dummy_reg=0;
     }
@@ -339,6 +339,7 @@ class vectorUnit_t {
     {
       pending_events[i]=num_events;
       avail_cycle[i] = cycle;
+      printf("Reg %d will be available in cycle %lu\n", i, cycle);
     }
 };
 
@@ -435,7 +436,9 @@ class processor_t : public abstract_device_t
 {
 public:
   processor_t(const char* isa, const char* priv, const char* varch,
-              simif_t* sim, uint32_t id, bool halt_on_reset=false, bool enable_smart_mcpu=false, bool vector_bypass_l1=true, bool vector_bypass_l2=false);
+              simif_t* sim, uint32_t id, bool halt_on_reset=false, bool enable_smart_mcpu=false, 
+              bool vector_bypass_l1=true, bool vector_bypass_l2=false, uint16_t lanes_per_vpu=8,
+              size_t scratchpad_size = 0);
   ~processor_t();
 
   void set_debug(bool value);
@@ -675,6 +678,8 @@ public:
   simif_t* sim;
   insn_func_raw_t is_raw;
   bool enable_smart_mcpu, is_load, vector_bypass_l1, vector_bypass_l2;
+  uint16_t lanes_per_vpu;
+  size_t scratchpad_size;
   int curr_insn_latency;
   reg_t curr_write_reg;
   spike_model::Request::RegType curr_write_reg_type;

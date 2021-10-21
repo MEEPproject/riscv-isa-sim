@@ -22,11 +22,16 @@
 
 
 processor_t::processor_t(const char* isa, const char* priv, const char* varch,
-                         simif_t* sim, uint32_t id, bool halt_on_reset, bool enable_smart_mcpu, bool vector_bypass_l1, bool vector_bypass_l2)
+                         simif_t* sim, uint32_t id, bool halt_on_reset, bool enable_smart_mcpu,
+                         bool vector_bypass_l1, bool vector_bypass_l2, uint16_t lanes_per_vpu,
+                         size_t scratchpad_size)
   : debug(false), halt_request(false), sim(sim), ext(NULL), id(id), xlen(0),
   histogram_enabled(false), log_commits_enabled(false),
   halt_on_reset(halt_on_reset), last_pc(1), executions(1),
-  enable_smart_mcpu(enable_smart_mcpu), vector_bypass_l1(vector_bypass_l1), vector_bypass_l2(vector_bypass_l2), is_vl_available(true)
+  enable_smart_mcpu(enable_smart_mcpu),  
+  vector_bypass_l1(vector_bypass_l1), vector_bypass_l2(vector_bypass_l2), 
+  lanes_per_vpu(lanes_per_vpu), scratchpad_size(scratchpad_size),
+  is_vl_available(true)
 {
   VU.p = this;
   parse_isa_string(isa);
@@ -132,9 +137,22 @@ void processor_t::parse_varch_string(const char* s)
     bad_varch_string(s);
   }
 
-  VU.VLEN = vlen;
+  if(enable_smart_mcpu)
+  {
+    // If the MCPU is enabled, the architecture string is ignored. Currently we simulate the SP to be an extension
+    // to the registers. Hence, instead of being able to hold n elements physically, due to the SP a register can
+    // hold up to VVL elements.
+    VU.VLEN = scratchpad_size;
+    VU.SLEN = scratchpad_size;
+
+    vlen = scratchpad_size;
+    slen = scratchpad_size;
+  }
+  else{
+    VU.VLEN = vlen;
+    VU.SLEN = slen;
+  }
   VU.ELEN = elen;
-  VU.SLEN = slen;
   VU.vlenb = vlen / 8;
 }
 
@@ -1129,9 +1147,25 @@ uint64_t processor_t::get_current_cycle()
   return current_cycle;
 }
 
+
+/*
+ * This function assumes that all vector instructions are fully pipelineable. It could be extended by adding information
+ * such as the instruction initiation overhead.
+ */
+uint64_t get_vec_latency_considering_lanes(uint16_t lat, uint16_t VLEN, uint16_t ELEN, uint16_t lanes)
+{
+    uint16_t chunks_to_run=ceil((float)(VLEN/ELEN)/lanes);
+    return lat+chunks_to_run-1;
+}
+
 uint64_t processor_t::get_curr_insn_latency()
 {
-  return curr_insn_latency;
+  uint64_t lat=curr_insn_latency;
+  if(curr_write_reg_type == spike_model::Request::RegType::VECTOR)
+  {
+    lat=get_vec_latency_considering_lanes(curr_insn_latency, VU.VLEN, VU.ELEN, lanes_per_vpu);
+  }
+  return lat;
 }
 
 void processor_t::sim_fence_log()
@@ -1155,20 +1189,20 @@ void processor_t::log_mcpu_instruction(uint64_t base_address, size_t width, bool
   }
     
   //Width is in bytes. Convert to the value for the Width enum
-  spike_model::MCPUInstruction::Width w;
+  spike_model::VectorElementType w;
   switch(width)
   {
     case 8:
-        w=spike_model::MCPUInstruction::Width::BIT64;
+        w=spike_model::VectorElementType::BIT64;
         break;
     case 4:
-        w=spike_model::MCPUInstruction::Width::BIT32;
+        w=spike_model::VectorElementType::BIT32;
         break;
     case 2:
-        w=spike_model::MCPUInstruction::Width::BIT16;
+        w=spike_model::VectorElementType::BIT16;
         break;
     case 1:
-        w=spike_model::MCPUInstruction::Width::BIT8;
+        w=spike_model::VectorElementType::BIT8;
         break;
     default:
         printf("Unsupported width!\n");

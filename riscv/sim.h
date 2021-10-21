@@ -38,7 +38,8 @@ public:
         std::vector<std::pair<reg_t, abstract_device_t*>> plugin_devices,
         const std::vector<std::string>& args, const std::vector<int> hartids,
         const debug_module_config_t &dm_config, bool enable_smart_mcpu,
-        bool vector_bypass_l1, bool vector_bypass_l2);
+        bool vector_bypass_l1, bool vector_bypass_l2, uint16_t lanes_per_vpu,
+        size_t scratchpad_size);
   ~sim_t();
 
   // run the simulation to completion

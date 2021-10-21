@@ -37,7 +37,7 @@ reg_t rv64_NAME(processor_t* p, insn_t insn, reg_t pc)
         else
         {
           p->VU.set_event_dependent(p->curr_write_reg, 0,
-                            p->get_current_cycle() + (p->get_curr_insn_latency() * p->VU.get_vl()/p->VU.pvl));
+                            p->get_current_cycle() + p->get_curr_insn_latency() * p->VU.get_vl()/(p->VU.VLEN/p->VU.ELEN));
         }
       }
       else
@@ -52,7 +52,7 @@ reg_t rv64_NAME(processor_t* p, insn_t insn, reg_t pc)
         }
         else
           p->VU.set_event_dependent(p->curr_write_reg, 0,
-                                    p->get_current_cycle() + p->get_curr_insn_latency());
+                                    p->get_current_cycle() + (p->get_curr_insn_latency(), p->VU.VLEN, p->VU.ELEN, p->lanes_per_vpu));
       }
     }
     else if(p->curr_write_reg_type == spike_model::Request::RegType::INTEGER)
