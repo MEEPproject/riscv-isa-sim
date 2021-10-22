@@ -1,8 +1,5 @@
-if(p->enable_smart_mcpu && !p->is_vl_available)
-{
-  p->get_state()->raw = true;
-  return true;
-}
+CHECK_MEMTILE_ENABLE();
+
 bool b1 = P_.VU.check_raw<uint64_t>(0, 0);
 bool b2 = false;
 bool global = false;

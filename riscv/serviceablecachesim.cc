@@ -80,6 +80,7 @@ std::shared_ptr<spike_model::CacheRequest> serviceable_cache_sim_t::serviceCache
     writebacks++;
     wb=std::make_shared<spike_model::CacheRequest>(victim<<idx_shift, spike_model::CacheRequest::AccessType::WRITEBACK);
     wb->setSize(linesz);
+    wb->setDestinationReg(req->getDestinationRegId(), req->getDestinationRegType());
   }
   if (req->getType()==spike_model::CacheRequest::AccessType::STORE)
   {

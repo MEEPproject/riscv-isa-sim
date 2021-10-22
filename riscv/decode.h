@@ -785,7 +785,7 @@ static inline bool is_overlapped(const int astart, const int asize,
 // vector: integer and masking operation loop
 //
 
-// comparision result to masking register
+// comparison result to masking register
 #define VI_VV_LOOP_CMP(BODY) \
   VI_CHECK_MSS(true); \
   VI_LOOP_CMP_BASE \
@@ -944,7 +944,7 @@ static inline bool is_overlapped(const int astart, const int asize,
     REDUCTION_LOOP(e64, BODY) \
   }
 
-// reduction loop - unsgied
+// reduction loop - unsigned
 #define VI_ULOOP_REDUCTION_BASE(x) \
   require(x == e8 || x == e16 || x == e32 || x == e64); \
   reg_t vl = P_.VU.vl; \
@@ -975,7 +975,7 @@ static inline bool is_overlapped(const int astart, const int asize,
     REDUCTION_ULOOP(e64, BODY) \
   }
 
-// genearl VXI signed/unsgied loop
+// general VXI signed/unsigned loop
 #define VI_VV_ULOOP(BODY) \
   VI_CHECK_SSS(true) \
   VI_LOOP_BASE \
@@ -1689,6 +1689,12 @@ for (reg_t i = 0; i < vlmax; ++i) { \
   P_.is_load = true; \
   VI_LD_COMMON(stride, offset, ld_width, elt_byte) \
   LOG_STRIDE(stride)
+  
+#define CHECK_MEMTILE_ENABLE() \
+  if(p->enable_smart_mcpu && !p->is_vl_available) { \
+    p->get_state()->raw = true; \
+    return true; \
+  } \
 
 #define LOG_STRIDE(stride) \
   if(P_.enable_smart_mcpu && vl>1){ \

@@ -267,19 +267,35 @@ void vectorUnit_t::reset(){
   set_vl(0, 0, 0, -1); // default to illegal configuration
 }
 
-void vectorUnit_t::get_vvl(int rd, int rs1, reg_t AVL, reg_t newType){
+void vectorUnit_t::get_vvl(int rd, int rs1, reg_t req_vvl, reg_t newType){
+  
+  if(rd == 0 && rs1 == 0) {                    // do not send out a MCPUSetVVL packet, if both registers are R0 (RVV v0.8, p.26). No change in VL
+    set_vl(rd, rs1, req_vvl, newType);
+    return;
+  }
+  if(rd != 0 && rs1 == 0) {                    // maximize AVL
+    req_vvl = (reg_t)(-1);
+  }
+  
+  if(curr_AVL == req_vvl || req_vvl == vl) {   // there was no change in the VL
+    reg_t new_vl = set_vl(rd, rs1, vl, newType);              // call set_vl because maybe the vtype register changed
+    (*p->get_state()).XPR.write(rd, new_vl);                  // copy the old vl to the new destination register
+    return;
+  }
+  
+    
   p->is_vl_available = false;
   curr_rd = rd;
   curr_RS1 = rs1;
-  curr_AVL = AVL;
+  curr_AVL = req_vvl;
   curr_new_type = newType;
   (*p->get_state()).XPR.set_event_dependent(rd, 1, std::numeric_limits<uint64_t>::max());
   p->in_set_vl = true;
 }
 
-void vectorUnit_t::set_vvl(reg_t vvl){
-  set_vl(curr_rd, curr_RS1, vvl, curr_new_type);
-  (*p->get_state()).XPR.write(curr_rd, vvl);
+void vectorUnit_t::set_vvl(reg_t granted_vvl){
+  reg_t new_vvl = set_vl(curr_rd, curr_RS1, granted_vvl, curr_new_type);
+  (*p->get_state()).XPR.write(curr_rd, new_vvl);
   p->is_vl_available = true;
 }
 
@@ -306,7 +322,7 @@ reg_t vectorUnit_t::set_vl(int rd, int rs1, reg_t reqVL, reg_t newType){
   } else if (rd == 0 && rs1 == 0) {
     vl = vl > vlmax ? vlmax : vl;
   } else if (rd != 0 && rs1 == 0) {
-    vl = vlmax;
+    vl = (p->enable_smart_mcpu) ? reqVL : vlmax;            // overwrite this setting and listen to what the MemTile says
   } else if (rs1 != 0) {
     vl = reqVL > vlmax ? vlmax : reqVL;
   }

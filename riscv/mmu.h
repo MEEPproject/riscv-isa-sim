@@ -16,6 +16,7 @@
 
 #include <queue>
 #include "CacheRequest.hpp"
+#include "Request.hpp" // Alex: TODO
 
 // virtual memory configuration
 #define PGSHIFT 12
@@ -523,22 +524,26 @@ private:
     std::list<std::shared_ptr<spike_model::CacheRequest>>::iterator it;
     for (it = misses_last_inst.begin(); it != misses_last_inst.end(); ++it)
     {
-        contains_line=(miss_line_addr==(*it)->getAddress());
-        if(contains_line)
-        {
-            break;
-        }
+      contains_line=(miss_line_addr==(*it)->getAddress());
+      if(contains_line)
+      {
+          break;
+      }
     }
 
     if(!contains_line)
     {
-        //The request is for the line instead of the missing access
-        misses_last_inst.push_back(std::make_shared<spike_model::CacheRequest> (miss_line_addr, type, proc->state.pc, proc->get_current_cycle(), proc->get_id(), bypass_l2));
-        misses_last_inst.back()->setSize(line_size);
-        if(type==spike_model::CacheRequest::AccessType::FETCH)
-        {
-            has_fetch_miss=true;
-        }
+      
+      //The request is for the line instead of the missing access
+      std::shared_ptr<spike_model::CacheRequest> cr=std::make_shared<spike_model::CacheRequest>(miss_line_addr, type, proc->state.pc, proc->get_current_cycle(), proc->get_id(), bypass_l2);
+      cr->setDestinationReg(-1, spike_model::Request::RegType::DONT_CARE);
+      cr->setSize(line_size);
+      misses_last_inst.push_back(cr);
+      
+      if(type==spike_model::CacheRequest::AccessType::FETCH)
+      {
+          has_fetch_miss=true;
+      }
     }
   }
 
