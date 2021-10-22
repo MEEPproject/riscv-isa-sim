@@ -676,7 +676,7 @@ public:
 
   simif_t* sim;
   insn_func_raw_t is_raw;
-  bool enable_smart_mcpu, is_load, vector_bypass_l1, vector_bypass_l2;
+  bool enable_smart_mcpu, is_load, is_store, vector_bypass_l1, vector_bypass_l2;
   uint16_t lanes_per_vpu;
   size_t scratchpad_size;
   int curr_insn_latency;

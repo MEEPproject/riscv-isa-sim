@@ -31,7 +31,7 @@ processor_t::processor_t(const char* isa, const char* priv, const char* varch,
   enable_smart_mcpu(enable_smart_mcpu),  
   vector_bypass_l1(vector_bypass_l1), vector_bypass_l2(vector_bypass_l2), 
   lanes_per_vpu(lanes_per_vpu), scratchpad_size(scratchpad_size),
-  is_vl_available(true)
+  is_vl_available(true), is_load(false), is_store(false)
 {
   VU.p = this;
   parse_isa_string(isa);
@@ -49,7 +49,6 @@ processor_t::processor_t(const char* isa, const char* priv, const char* varch,
   get_state()->pending_int_regs=new std::set<size_t>();
   get_state()->pending_float_regs=new std::set<size_t>();
   get_state()->pending_vector_regs=new std::set<size_t>();
-  is_load = false;
 }
 
 processor_t::~processor_t()

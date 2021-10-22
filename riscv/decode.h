@@ -1585,6 +1585,7 @@ for (reg_t i = 0; i < vlmax; ++i) { \
   } \ 
 
 #define VI_ST_COMMON(stride, offset, st_width, elt_byte) \
+  P_.is_store = true; \
   const reg_t nf = insn.v_nf() + 1; \
   require((nf * P_.VU.vlmul) <= (NVPR / 4)); \
   const reg_t vl = P_.VU.vl; \
@@ -1625,6 +1626,12 @@ for (reg_t i = 0; i < vlmax; ++i) { \
   { \
     MMU.disable_smart_mcpu(); \
     P_.log_mcpu_instruction(baseAddr, sizeof(st_width##_t), true); \
+    /*
+     Set the destination register also, because once the acknowledge is done, \
+     we have to set the availability of this register. \
+    */ \
+    P_.curr_write_reg = vs3;\
+    P_.curr_write_reg_type = spike_model::Request::RegType::VECTOR;\
   } \
   else\
   { \
@@ -1633,6 +1640,7 @@ for (reg_t i = 0; i < vlmax; ++i) { \
   P_.VU.vstart = 0;
 
 #define VI_LD_COMMON(stride, offset, ld_width, elt_byte) \
+  P_.is_load = true; \
   const reg_t nf = insn.v_nf() + 1; \
   require((nf * P_.VU.vlmul) <= (NVPR / 4)); \
   const reg_t vl = P_.VU.vl; \
@@ -1686,7 +1694,6 @@ for (reg_t i = 0; i < vlmax; ++i) { \
 
 #define VI_LD(stride, offset, ld_width, elt_byte) \
   VI_CHECK_SXX; \
-  P_.is_load = true; \
   VI_LD_COMMON(stride, offset, ld_width, elt_byte) \
   LOG_STRIDE(stride)
   
@@ -1712,7 +1719,6 @@ for (reg_t i = 0; i < vlmax; ++i) { \
     
 #define VI_LD_INDEX(stride, offset, ld_width, elt_byte) \
   VI_CHECK_LDST_INDEX; \
-  P_.is_load = true; \
   VI_LD_COMMON(stride, offset, ld_width, elt_byte) \
   LOG_INDEX(stride) 
 
@@ -1739,6 +1745,7 @@ for (reg_t i = 0; i < vlmax; ++i) { \
   LOG_INDEX(stride) 
 
 #define VI_LDST_FF(itype, tsew) \
+  P_.is_load = true; \
   require(p->VU.vsew >= e##tsew && p->VU.vsew <= e64); \
   const reg_t nf = insn.v_nf() + 1; \
   require((nf * P_.VU.vlmul) <= (NVPR / 4)); \
