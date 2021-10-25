@@ -1582,7 +1582,7 @@ for (reg_t i = 0; i < vlmax; ++i) { \
   } \
   if(P_.vector_bypass_l2){ \
     MMU.disable_l2_bypass(); \
-  } \ 
+  } 
 
 #define VI_ST_COMMON(stride, offset, st_width, elt_byte) \
   P_.is_store = true; \
@@ -2129,10 +2129,14 @@ for (reg_t i = 0; i < vlmax; ++i) { \
 #define C_FRS3 P_.FPR_CHECK_RAW(insn.rs3())
 #define C_RVC_SP P_.XPR_CHECK_RAW(X_SP)
 
+#define CHECK_VPU_AVAIL \
+  bool vpu_unavail = P_.VU.is_busy(P_.get_current_cycle()); \
+
 #define SKIP_CHECK_RAW() \
    bool b6 = P_.VU.check_raw<uint64_t>(0, 0)
   
 #define VECTOR_VECTOR_UNSIGNED_CHECK_RAW() \
+  CHECK_VPU_AVAIL \
   reg_t sew = P_.VU.vsew; \
   reg_t rs1_num = insn.rs1(); \
   reg_t rs2_num = insn.rs2(); \
@@ -2161,9 +2165,10 @@ for (reg_t i = 0; i < vlmax; ++i) { \
      break; \
     } \
   } \
-  return (b6 || b7 || b8);
+  return (vpu_unavail || b6 || b7 || b8);
 
 #define SCALAR_VECTOR_UNSIGNED_CHECK_RAW() \
+  CHECK_VPU_AVAIL \
   reg_t sew = P_.VU.vsew; \
   reg_t rs1_num = insn.rs1(); \
   reg_t rs2_num = insn.rs2(); \
@@ -2192,9 +2197,10 @@ for (reg_t i = 0; i < vlmax; ++i) { \
      break; \
     } \
   } \
-  return (b6 || b7 || b8);
+  return (vpu_unavail || b6 || b7 || b8);
 
 #define VECTOR_UNSIGNED_CHECK_RAW() \
+  CHECK_VPU_AVAIL \
   reg_t sew = P_.VU.vsew; \
   reg_t rs1_num = insn.rs1(); \
   reg_t rs2_num = insn.rs2(); \
@@ -2218,9 +2224,10 @@ for (reg_t i = 0; i < vlmax; ++i) { \
      break; \
     } \
   } \
-  return (b6 || b7);
+  return (vpu_unavail || b6 || b7);
 
 #define VECTOR_VECTOR_VECTOR_UNSIGNED_CHECK_RAW() \
+  CHECK_VPU_AVAIL \
   reg_t sew = P_.VU.vsew; \
   reg_t rd_num = insn.rd(); \
   reg_t rs1_num = insn.rs1(); \
@@ -2255,9 +2262,10 @@ for (reg_t i = 0; i < vlmax; ++i) { \
      break; \
     } \
   } \
-  return (b6 || b7 || b8 || b9);
+  return (vpu_unavail || b6 || b7 || b8 || b9);
 
 #define VECTOR_SCALAR_VECTOR_FLOAT_CHECK_RAW() \
+  CHECK_VPU_AVAIL \
   reg_t sew = P_.VU.vsew; \
   reg_t rd_num = insn.rd(); \
   reg_t rs1_num = insn.rs1(); \
@@ -2284,9 +2292,10 @@ for (reg_t i = 0; i < vlmax; ++i) { \
     default: \
       break; \
   }; \
-  return (b6 || b7 || b8 || b9);
+  return (vpu_unavail || b6 || b7 || b8 || b9);
 
 #define VECTOR_SCALAR_VECTOR_CHECK_RAW() \
+  CHECK_VPU_AVAIL \
   reg_t sew = P_.VU.vsew; \
   reg_t rd_num = insn.rd(); \
   reg_t rs1_num = insn.rs1(); \
@@ -2321,9 +2330,10 @@ for (reg_t i = 0; i < vlmax; ++i) { \
       break; \
     }\
   }; \
-  return (b6 || b7 || b8 || b9);
+  return (vpu_unavail || b6 || b7 || b8 || b9);
 
 #define VECTOR_SCALAR_VECTOR_UNSIGNED_CHECK_RAW() \
+  CHECK_VPU_AVAIL \
   reg_t sew = P_.VU.vsew; \
   reg_t rd_num = insn.rd(); \
   reg_t rs1_num = insn.rs1(); \
@@ -2358,9 +2368,10 @@ for (reg_t i = 0; i < vlmax; ++i) { \
       break; \
     }\
   }; \
-  return (b6 || b7 || b8 || b9);
+  return (vpu_unavail || b6 || b7 || b8 || b9);
 
 #define VECTOR_VECTOR_VECTOR_FLOAT_CHECK_RAW() \
+  CHECK_VPU_AVAIL \
   reg_t sew = P_.VU.vsew; \
   reg_t rd_num = insn.rd(); \
   reg_t rs1_num = insn.rs1(); \
@@ -2387,9 +2398,10 @@ for (reg_t i = 0; i < vlmax; ++i) { \
     default: \
       break; \
   }; \
-  return (b6 || b7 || b8 || b9);
+  return (vpu_unavail || b6 || b7 || b8 || b9);
 
 #define VECTOR_VECTOR_FLOAT_CHECK_RAW() \
+  CHECK_VPU_AVAIL \
   reg_t sew = P_.VU.vsew; \
   reg_t rd_num = insn.rd(); \
   reg_t rs1_num = insn.rs1(); \
@@ -2413,9 +2425,10 @@ for (reg_t i = 0; i < vlmax; ++i) { \
     default: \
       break; \
   }; \
-  return (b6 || b8 || b9);
+  return (vpu_unavail || b6 || b8 || b9);
 
 #define SCALAR_VECTOR_FLOAT_CHECK_RAW() \
+  CHECK_VPU_AVAIL \
   reg_t sew = P_.VU.vsew; \
   reg_t rd_num = insn.rd(); \
   reg_t rs1_num = insn.rs1(); \
@@ -2439,9 +2452,10 @@ for (reg_t i = 0; i < vlmax; ++i) { \
     default: \
       break; \
   }; \
-  return (b6 || b8 || b9);
+  return (vpu_unavail || b6 || b8 || b9);
 
 #define VECTOR_FLOAT_CHECK_RAW() \
+  CHECK_VPU_AVAIL \
   reg_t sew = P_.VU.vsew; \
   reg_t rd_num = insn.rd(); \
   reg_t rs2_num = insn.rs2(); \
@@ -2461,9 +2475,10 @@ for (reg_t i = 0; i < vlmax; ++i) { \
     default: \
       break; \
   }; \
-  return (b6 || b9);
+  return (vpu_unavail || b6 || b9);
 
 #define VECTOR_VECTOR_CHECK_RAW() \
+  CHECK_VPU_AVAIL \
   reg_t sew = P_.VU.vsew; \
   reg_t rs1_num = insn.rs1(); \
   reg_t rs2_num = insn.rs2(); \
@@ -2492,9 +2507,10 @@ for (reg_t i = 0; i < vlmax; ++i) { \
      break; \
     } \
   } \
-  return (b6 || b7 || b8);
+  return (vpu_unavail || b6 || b7 || b8);
 
 #define SCALAR_VECTOR_CHECK_RAW() \
+  CHECK_VPU_AVAIL \
   reg_t sew = P_.VU.vsew; \
   reg_t rs1_num = insn.rs1(); \
   reg_t rs2_num = insn.rs2(); \
@@ -2523,9 +2539,10 @@ for (reg_t i = 0; i < vlmax; ++i) { \
      break; \
     } \
   } \
-  return (b6 || b7 || b8);
+  return (vpu_unavail || b6 || b7 || b8);
 
 #define VECTOR_CHECK_RAW() \
+  CHECK_VPU_AVAIL \
   reg_t sew = P_.VU.vsew; \
   reg_t rs1_num = insn.rs1(); \
   reg_t rs2_num = insn.rs2(); \
@@ -2549,9 +2566,10 @@ for (reg_t i = 0; i < vlmax; ++i) { \
      break; \
     } \
   } \
-  return (b6 || b7);
+  return (vpu_unavail || b6 || b7);
 
 #define VECTOR_VECTOR_VECTOR_CHECK_RAW() \
+  CHECK_VPU_AVAIL \
   reg_t sew = P_.VU.vsew; \
   reg_t rd_num = insn.rd(); \
   reg_t rs1_num = insn.rs1(); \
@@ -2586,10 +2604,11 @@ for (reg_t i = 0; i < vlmax; ++i) { \
      break; \
     } \
   } \
-  return (b6 || b7 || b8 || b9);
+  return (vpu_unavail || b6 || b7 || b8 || b9);
 
 #define SCALAR_DEST_VECTOR_UNSIGNED_CHECK_RAW() \
       SKIP_CHECK_RAW(); \
+      CHECK_VPU_AVAIL \
       bool b7 = C_RS1;\
       bool b8 = false; \
       switch (P_.VU.vsew) { \
@@ -2606,10 +2625,11 @@ for (reg_t i = 0; i < vlmax; ++i) { \
         b8 = P_.VU.check_raw<uint64_t>(insn.rd(), 0); \
         break; \
       } \
-      return (b6 || b7 || b8);
+      return (vpu_unavail || b6 || b7 || b8);
 
 #define SCALAR_SCALAR_DEST_VECTOR_UNSIGNED_CHECK_RAW() \
       SKIP_CHECK_RAW(); \
+      CHECK_VPU_AVAIL \
       bool b7 = C_RS1;\
       bool b8 = C_RS2; \
       bool b9 = false; \
@@ -2627,10 +2647,11 @@ for (reg_t i = 0; i < vlmax; ++i) { \
         b9 = P_.VU.check_raw<uint64_t>(insn.rd(), 0); \
         break; \
       } \
-      return (b6 || b7 || b8 || b9);
+      return (vpu_unavail || b6 || b7 || b8 || b9);
 
 #define VECTOR_DEST_VECTOR_UNSIGNED_CHECK_RAW() \
       SKIP_CHECK_RAW(); \
+      CHECK_VPU_AVAIL \
       bool b7 = false;\
       bool b8 = false;\
       switch (P_.VU.vsew) { \
@@ -2651,6 +2672,6 @@ for (reg_t i = 0; i < vlmax; ++i) { \
         b8 = P_.VU.check_raw<uint64_t>(insn.rs2(), 0); \
         break; \
       } \
-      return (b6 || b7 || b8);
+      return (vpu_unavail || b6 || b7 || b8);
 
 #endif

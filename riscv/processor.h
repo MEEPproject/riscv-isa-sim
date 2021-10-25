@@ -271,10 +271,18 @@ class vectorUnit_t {
         }
         return false;
       }
+    
+      void set_busy_until(uint64_t t)
+      {
+          busy_until=t;
+      }
+    
+      bool is_busy(uint64_t t);
 
   private:
     uint64_t avail_cycle[NVPR]={0};
     uint8_t pending_events[NVPR]={0};
+    uint64_t busy_until=0;
 
   public:
 
@@ -321,7 +329,7 @@ class vectorUnit_t {
       if(pending_events[i]==0)
       {
         set_avail(i, cycle);
-        res=true;
+        res=true; 
       }
       return res;
     }
@@ -340,6 +348,7 @@ class vectorUnit_t {
       pending_events[i]=num_events;
       avail_cycle[i] = cycle;
     }
+
 };
 
 // architectural state of a RISC-V hart

@@ -331,6 +331,28 @@ reg_t vectorUnit_t::set_vl(int rd, int rs1, reg_t reqVL, reg_t newType){
 
   return vl;
 }
+      
+bool vectorUnit_t::is_busy(uint64_t t)
+{
+  bool res=false;
+  if(t<busy_until)
+  {
+      p->get_state()->raw=true;
+
+      std::shared_ptr<spike_model::InsnLatencyEvent> insn_latency_ptr =
+                 std::make_shared<spike_model::InsnLatencyEvent>(
+                 p->get_id(),
+                 std::numeric_limits<uint64_t>::max(),
+                 spike_model::Request::RegType::VECTOR,
+                 std::numeric_limits<uint64_t>::max(),
+                 p->get_curr_insn_latency(),
+                 busy_until);
+      p->push_insn_latency_event(insn_latency_ptr);
+      p->get_state()->pending_vector_regs->insert(std::numeric_limits<uint64_t>::max()); //The max uint64_t reg is used to signal VPU unavailability
+      res=true;
+  }
+  return res;
+}
 
 bool processor_t::is_in_set_vl()
 {
