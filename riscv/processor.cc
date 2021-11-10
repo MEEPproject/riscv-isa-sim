@@ -1186,7 +1186,6 @@ uint64_t processor_t::get_current_cycle()
 }
 
 
-<<<<<<< HEAD
 //PVL in bits
 //ELEN in bits
 //vl in elements
