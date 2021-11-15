@@ -136,6 +136,7 @@ void processor_t::parse_varch_string(const char* s)
     bad_varch_string(s);
   }
 
+  VU.PVL = vlen;
   if(enable_smart_mcpu)
   {
     // If the MCPU is enabled, the architecture string is ignored. Currently we simulate the SP to be an extension
@@ -1185,23 +1186,24 @@ uint64_t processor_t::get_current_cycle()
 }
 
 
-/*
- * This function assumes that all vector instructions are fully pipelineable. It could be extended by adding information
- * such as the instruction initiation overhead.
- */
-uint64_t get_vec_latency_considering_lanes(uint16_t lat, uint16_t VLEN, uint16_t ELEN, uint16_t lanes)
+//PVL in bits
+//ELEN in bits
+//vl in elements
+//
+//Assumes full pipelining and shadow registers to allow pipelining across PVL boundaries
+void processor_t::set_vpu_latency_considering_lanes()
 {
-    uint16_t chunks_to_run=ceil((float)(VLEN/ELEN)/lanes);
-    return lat+chunks_to_run-1;
+  uint16_t chunks=ceil((float)VU.get_vl()/lanes_per_vpu);
+
+  VU.set_event_dependent(curr_write_reg, 0,
+                    get_current_cycle()+get_curr_insn_latency()+chunks-1);
+  VU.set_busy_until(get_current_cycle()+chunks);
 }
 
+//Latency for a PVL
 uint64_t processor_t::get_curr_insn_latency()
 {
   uint64_t lat=curr_insn_latency;
-  if(curr_write_reg_type == spike_model::Request::RegType::VECTOR)
-  {
-    lat=get_vec_latency_considering_lanes(curr_insn_latency, VU.VLEN, VU.ELEN, lanes_per_vpu);
-  }
   return lat;
 }
 

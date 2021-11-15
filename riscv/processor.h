@@ -189,7 +189,7 @@ class vectorUnit_t {
     reg_t reg_mask, vlmax, vmlen;
     reg_t vstart, vxrm, vxsat, vl, vtype, vlenb;
     reg_t vediv, vsew, vlmul;
-    reg_t ELEN, VLEN, SLEN;
+    reg_t ELEN, VLEN, SLEN, PVL=0;
     reg_t curr_rd, curr_RS1;
     reg_t curr_AVL, curr_new_type;
 
@@ -588,6 +588,8 @@ public:
   uint64_t get_current_cycle();
 
   uint64_t get_curr_insn_latency();
+  
+  void set_vpu_latency_considering_lanes();
 
   uint16_t get_id() {return id;}
 
