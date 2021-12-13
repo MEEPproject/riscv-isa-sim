@@ -75,7 +75,6 @@ sim_t::sim_t(const char* isa, const char* priv, const char* varch,
 
   clint.reset(new clint_t(procs));
   bus.add_device(CLINT_BASE, clint.get());
-  printf("Created\n");
 }
 
 sim_t::~sim_t()

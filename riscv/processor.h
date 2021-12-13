@@ -258,6 +258,7 @@ class vectorUnit_t {
           {
             std::shared_ptr<spike_model::InsnLatencyEvent> insn_latency_ptr =
                        std::make_shared<spike_model::InsnLatencyEvent>(
+                       p->get_state()->pc,
                        p->get_id(),
                        vReg,
                        spike_model::Request::RegType::VECTOR,
@@ -610,6 +611,7 @@ public:
         {
           std::shared_ptr<spike_model::InsnLatencyEvent> insn_latency_ptr = 
                      std::make_shared<spike_model::InsnLatencyEvent>(
+                     state.pc,
                      get_id(),
                      reg,
                      spike_model::Request::RegType::INTEGER,
@@ -638,6 +640,7 @@ public:
         {
           std::shared_ptr<spike_model::InsnLatencyEvent> insn_latency_ptr = 
                      std::make_shared<spike_model::InsnLatencyEvent>(
+                     state.pc,
                      get_id(),
                      reg,
                      spike_model::Request::RegType::FLOAT,

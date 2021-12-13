@@ -342,6 +342,7 @@ bool vectorUnit_t::is_busy(uint64_t t)
 
       std::shared_ptr<spike_model::InsnLatencyEvent> insn_latency_ptr =
                  std::make_shared<spike_model::InsnLatencyEvent>(
+                 p->get_state()->pc,
                  p->get_id(),
                  std::numeric_limits<uint64_t>::max(),
                  spike_model::Request::RegType::VECTOR,
