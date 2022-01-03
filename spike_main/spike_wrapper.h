@@ -157,6 +157,12 @@ namespace spike_model
              * \param core_idx The id of the core of the L1 that will be checked
              */
              size_t checkNumInFlightL1Misses(uint16_t core_idx);
+
+             /*
+             * \brief Get the accumulated number of L1 hits for all the data caches
+             * \return The number of L1 hits
+             */
+             uint64_t getNumL1DataHits();
     };
 }
 #endif

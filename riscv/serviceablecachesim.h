@@ -56,6 +56,11 @@ class serviceable_cache_memtracer_t : public memtracer_t
     return cache->checkNumInFlightMisses();
   }
 
+  uint64_t getNumHits()
+  {
+    return cache->getNumHits();
+  }
+
  protected:
   serviceable_cache_sim_t* cache;
 

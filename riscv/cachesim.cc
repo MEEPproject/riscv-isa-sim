@@ -161,6 +161,11 @@ bool cache_sim_t::access(uint64_t addr, size_t bytes, bool store)
   return false;
 }
 
+uint64_t cache_sim_t::getNumHits()
+{
+    return read_accesses-read_misses+write_accesses-write_misses;
+}
+
 fa_cache_sim_t::fa_cache_sim_t(size_t ways, size_t linesz, const char* name)
   : cache_sim_t(1, ways, linesz, name)
 {

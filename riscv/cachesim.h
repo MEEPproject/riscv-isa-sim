@@ -34,6 +34,8 @@ class cache_sim_t
   void set_miss_handler(cache_sim_t* mh) { miss_handler = mh; }
   void set_log(bool _log) { log = _log; }
 
+  uint64_t getNumHits();
+
   static cache_sim_t* construct(const char* config, const char* name);
 
  protected:

@@ -90,11 +90,8 @@ namespace spike_model
         {
             argv[i]=args[i].c_str();
         }
-        printf("1\n");
         start_spike(argc, argv);
-        printf("2\n");
         simulation->prepare();
-        printf("3\n");
     }
 
 
@@ -400,8 +397,6 @@ namespace spike_model
         if (!*argv1)
             help();
 
-
-	std::cout << "Calling sim with smart mcpu " << enable_smart_mcpu << std::endl;
         std::shared_ptr<sim_t> s=std::make_shared<sim_t> (isa, priv, varch, nprocs, halted, start_pc, mems, plugin_devices, htif_args,
                 std::move(hartids), dm_config, enable_smart_mcpu, vector_bypass_l1, vector_bypass_l2, lanes_per_vpu, scratchpad_size);
         std::unique_ptr<remote_bitbang_t> remote_bitbang((remote_bitbang_t *) NULL);
@@ -515,5 +510,15 @@ namespace spike_model
         threads_per_core=nthreads;
 
         simulation=s;
+    }
+             
+    uint64_t SpikeWrapper::getNumL1DataHits()
+    {
+        uint64_t res=0;
+        for(unsigned i=0;i<dcs.size();i++)
+        {
+            res=res+dcs[i]->getNumHits();
+        }
+        return res;
     }
 }
