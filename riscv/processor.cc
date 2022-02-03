@@ -1220,7 +1220,8 @@ bool processor_t::is_in_fence()
   return res;
 }
 
-void processor_t::log_mcpu_instruction(uint64_t base_address, size_t width, bool store)
+void processor_t::log_mcpu_instruction(uint64_t base_address, size_t width, bool store,
+                                       uint64_t vs3, uint64_t rs1, uint64_t rs2, uint64_t vd, uint64_t vs2)
 {
   spike_model::MCPUInstruction::Operation o=spike_model::MCPUInstruction::Operation::LOAD;
   if(store)
@@ -1249,7 +1250,8 @@ void processor_t::log_mcpu_instruction(uint64_t base_address, size_t width, bool
         break;
   }
 
-  mcpu_instruction=std::make_shared<spike_model::MCPUInstruction>(state.pc, current_cycle, id, base_address, o, w);
+  mcpu_instruction=std::make_shared<spike_model::MCPUInstruction>(state.pc, current_cycle, id, base_address, o, w,
+                                       vs3, rs1, rs2, vd, vs2);
 }
 
 void processor_t::set_mcpu_instruction_indexed(std::vector<uint64_t> indices) 

@@ -594,7 +594,8 @@ public:
 
   uint16_t get_id() {return id;}
 
-  void log_mcpu_instruction(uint64_t base_address, size_t width, bool store);
+  void log_mcpu_instruction(uint64_t base_address, size_t width, bool store,
+                            uint64_t vs3, uint64_t rs1, uint64_t rs2, uint64_t vd, uint64_t vs2);
   void set_mcpu_instruction_indexed(std::vector<uint64_t> indices);
   void set_mcpu_instruction_strided(std::vector<uint64_t> indices);
   void reset_mcpu_instruction();
