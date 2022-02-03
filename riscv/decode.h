@@ -1625,10 +1625,7 @@ for (reg_t i = 0; i < vlmax; ++i) { \
   if(P_.enable_smart_mcpu)\
   { \
     MMU.disable_smart_mcpu(); \
-    P_.log_mcpu_instruction(baseAddr, sizeof(st_width##_t), true, vs3, RS1, \
-                            std::numeric_limits<uint64_t>::max(), \
-                            std::numeric_limits<uint64_t>::max(), \
-                            std::numeric_limits<uint64_t>::max()); \
+    P_.log_mcpu_instruction(baseAddr, sizeof(st_width##_t), true, insn.bits()); \
     /*
      Set the destination register also, because once the acknowledge is done, \
      we have to set the availability of this register. \
@@ -1681,12 +1678,7 @@ for (reg_t i = 0; i < vlmax; ++i) { \
   if(P_.enable_smart_mcpu)\
   { \
     MMU.disable_smart_mcpu(); \
-    P_.log_mcpu_instruction(baseAddr, sizeof(ld_width##_t), false, \
-                            std::numeric_limits<uint64_t>::max(), \
-                            RS1, \
-                            std::numeric_limits<uint64_t>::max(), \
-                            vd, \
-                            std::numeric_limits<uint64_t>::max()); \
+    P_.log_mcpu_instruction(baseAddr, sizeof(ld_width##_t), false, insn.bits()); \
   } \
   else\
   { \
@@ -1809,12 +1801,7 @@ for (reg_t i = 0; i < vlmax; ++i) { \
       if(P_.enable_smart_mcpu)\
       { \
         MMU.disable_smart_mcpu(); \
-        P_.log_mcpu_instruction(baseAddr, sizeof(itype##tsew##_t), false, \
-                            std::numeric_limits<uint64_t>::max(), \
-                            RS1, \
-                            std::numeric_limits<uint64_t>::max(), \
-                            rd_num, \
-                            std::numeric_limits<uint64_t>::max()); \
+        P_.log_mcpu_instruction(baseAddr, sizeof(itype##tsew##_t), false, insn.bits()); \
       } \
       else\
       { \
@@ -1825,12 +1812,7 @@ for (reg_t i = 0; i < vlmax; ++i) { \
     if(P_.enable_smart_mcpu)\
     { \
       MMU.disable_smart_mcpu(); \
-      P_.log_mcpu_instruction(baseAddr, sizeof(itype##tsew##_t), false, \
-                            std::numeric_limits<uint64_t>::max(), \
-                            RS1, \
-                            std::numeric_limits<uint64_t>::max(), \
-                            rd_num, \
-                            std::numeric_limits<uint64_t>::max()); \
+      P_.log_mcpu_instruction(baseAddr, sizeof(itype##tsew##_t), false, insn.bits()); \
     } \
     else\
     { \
