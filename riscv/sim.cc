@@ -36,6 +36,7 @@ sim_t::sim_t(const char* isa, const char* priv, const char* varch,
              bool enable_smart_mcpu,
              bool vector_bypass_l1,
              bool vector_bypass_l2,
+             bool l1_writeback,
              uint16_t lanes_per_vpu,
              size_t scratchpad_size
              )
@@ -60,7 +61,8 @@ sim_t::sim_t(const char* isa, const char* priv, const char* varch,
 
   if (hartids.size() == 0) {
     for (size_t i = 0; i < procs.size(); i++) {
-      procs[i] = new processor_t(isa, priv, varch, this, i, halted, enable_smart_mcpu, vector_bypass_l1, vector_bypass_l2, lanes_per_vpu, scratchpad_size);
+      procs[i] = new processor_t(isa, priv, varch, this, i, halted, enable_smart_mcpu, vector_bypass_l1,
+                                  vector_bypass_l2, l1_writeback, lanes_per_vpu, scratchpad_size);
     }
   }
   else {

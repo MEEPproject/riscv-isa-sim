@@ -160,7 +160,7 @@ void mmu_t::store_slow_path(reg_t addr, reg_t len, const uint8_t* bytes)
           {
               traced=tracer.trace(paddr, len, STORE, hit);
           }
-          if((log_misses && traced && !hit) || bypass_l1)
+          if((log_misses && traced && !hit) || bypass_l1 || !is_l1_writeback())
           {
               log_miss(paddr, len, spike_model::CacheRequest::AccessType::STORE);
           }

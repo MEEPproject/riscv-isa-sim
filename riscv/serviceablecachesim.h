@@ -41,6 +41,10 @@ class serviceable_cache_memtracer_t : public memtracer_t
   {
     cache->set_log(log);
   }
+  void set_writeback(bool writeback)
+  {
+    cache->set_writeback(writeback);
+  }
 
   std::shared_ptr<spike_model::CacheRequest> serviceCacheRequest(std::shared_ptr<spike_model::CacheRequest> req)
   {

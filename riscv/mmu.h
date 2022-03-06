@@ -392,6 +392,16 @@ public:
     smart_mcpu=false;
   }
 
+  void set_l1_writeback(bool l1_writeback)
+  {
+    this->l1_writeback = l1_writeback;
+  }
+
+  bool is_l1_writeback()
+  {
+    return l1_writeback;
+  }
+
   void enable_l1_bypass()
   {
     bypass_l1=true;
@@ -552,6 +562,7 @@ private:
   bool log_misses=false;
   bool bypass_l1=false;
   bool bypass_l2=false;
+  bool l1_writeback=false;
   bool smart_mcpu=false;
 
   uint16_t num_writebacks=0;

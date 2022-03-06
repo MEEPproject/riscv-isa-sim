@@ -23,7 +23,7 @@
 
 processor_t::processor_t(const char* isa, const char* priv, const char* varch,
                          simif_t* sim, uint32_t id, bool halt_on_reset, bool enable_smart_mcpu,
-                         bool vector_bypass_l1, bool vector_bypass_l2, uint16_t lanes_per_vpu,
+                         bool vector_bypass_l1, bool vector_bypass_l2, bool l1_writeback, uint16_t lanes_per_vpu,
                          size_t scratchpad_size)
   : debug(false), halt_request(false), sim(sim), ext(NULL), id(id), xlen(0),
   histogram_enabled(false), log_commits_enabled(false),
@@ -39,6 +39,7 @@ processor_t::processor_t(const char* isa, const char* priv, const char* varch,
   parse_varch_string(varch);
   register_base_instructions();
   mmu = new mmu_t(sim, this);
+  mmu->set_l1_writeback(l1_writeback);
 
   disassembler = new disassembler_t(max_xlen);
   if (ext)

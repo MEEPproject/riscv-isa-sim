@@ -33,6 +33,8 @@ class cache_sim_t
   void print_stats();
   void set_miss_handler(cache_sim_t* mh) { miss_handler = mh; }
   void set_log(bool _log) { log = _log; }
+  void set_writeback(bool _writeback) {writeback = _writeback;}
+  bool is_writeback() {return writeback;}
 
   uint64_t getNumHits();
 
@@ -65,6 +67,7 @@ class cache_sim_t
 
   std::string name;
   bool log;
+  bool writeback = false;
 
   void init();
 };

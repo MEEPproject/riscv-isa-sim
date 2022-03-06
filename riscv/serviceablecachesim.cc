@@ -45,7 +45,7 @@ bool serviceable_cache_sim_t::access(uint64_t addr, size_t bytes, bool store)
   uint64_t* hit_way = check_tag(addr);
   if (likely(hit_way != NULL))
   {
-    if (store)
+    if (store && is_writeback())
       *hit_way |= DIRTY;
     return true;
   }
