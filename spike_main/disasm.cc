@@ -502,6 +502,7 @@ disassembler_t::disassembler_t(int xlen)
   DEFINE_RTYPE(divuw);
   DEFINE_RTYPE(remw);
   DEFINE_RTYPE(remuw);
+  DEFINE_RTYPE(gettime);
 
   DEFINE_NOARG(ecall);
   DEFINE_NOARG(ebreak);
