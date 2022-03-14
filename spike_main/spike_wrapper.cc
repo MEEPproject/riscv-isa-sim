@@ -76,10 +76,6 @@ namespace spike_model
 
         args.insert(args.end(), cmd_tokens.begin(), cmd_tokens.end());
 
-
-        //spike_thread=std::make_unique<std::thread>(spike_launcher, args, std::ref(spike));
-
-        //spike.setupForInstructionLogging(args);
         setup(args); 
     }
 
@@ -516,5 +512,10 @@ namespace spike_model
             res=res+dcs[i]->getNumHits();
         }
         return res;
+    }
+
+    void SpikeWrapper::setInstructionLogFile(std::shared_ptr<std::ofstream> f)
+    {
+        simulation->set_instruction_log_file(f);
     }
 }

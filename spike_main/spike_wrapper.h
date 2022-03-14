@@ -49,8 +49,7 @@ namespace spike_model
             SpikeWrapper(std::string p, std::string t, std::string ic, std::string dc, std::string isa, std::string cmd, std::string varch, bool fast_cache, bool enable_smart_mcpu, bool vector_bypass_l1, bool vector_bypass_l2, bool l1_writeback, uint16_t lanes_per_vpu, size_t scratchpad_size);
 
             ~SpikeWrapper() 
-            {
-                
+            {                
                 for(unsigned i=0;i<ics.size();i++)
                 {
                     std::cout << "--------CORE " << i << "--------\n";
@@ -61,6 +60,8 @@ namespace spike_model
 
             //! name of this resource.
             static const char name[];
+    
+            void setInstructionLogFile(std::shared_ptr<std::ofstream> f);
 
 
         private:

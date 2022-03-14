@@ -16,7 +16,9 @@
 #include <stdexcept>
 #include <string>
 #include <algorithm>
-
+#include <sstream>
+#include <iostream>
+#include <fstream>
 #undef STATE
 #define STATE state
 
@@ -31,7 +33,7 @@ processor_t::processor_t(const char* isa, const char* priv, const char* varch,
   enable_smart_mcpu(enable_smart_mcpu),  
   vector_bypass_l1(vector_bypass_l1), vector_bypass_l2(vector_bypass_l2), 
   lanes_per_vpu(lanes_per_vpu), scratchpad_size(scratchpad_size),
-  is_vl_available(true), is_load(false), is_store(false)
+  is_vl_available(true), is_load(false), is_store(false),instruction_log(nullptr)
 {
   VU.p = this;
   parse_isa_string(isa);
@@ -1278,4 +1280,19 @@ std::shared_ptr<spike_model::MCPUInstruction> processor_t::get_mcpu_instruction(
 void processor_t::reset_mcpu_instruction()
 {
     mcpu_instruction=nullptr;
+}
+
+void processor_t::set_instruction_log_file(std::shared_ptr<std::ofstream> f)
+{
+    instruction_log=f;
+}
+
+void processor_t::log_instruction(insn_t insn)
+{
+    if(instruction_log!=nullptr)
+    {
+        uint64_t timestamp=get_current_cycle();
+        disassembler->disassemble(insn).c_str();
+        *instruction_log << std::dec << timestamp << "," << id << "," << std::hex << state.pc << ",inst,\"" << disassembler->disassemble(insn).c_str() << "\"" << ",0" << std::endl;
+    }
 }

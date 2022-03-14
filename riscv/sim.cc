@@ -38,7 +38,7 @@ sim_t::sim_t(const char* isa, const char* priv, const char* varch,
              bool vector_bypass_l2,
              bool l1_writeback,
              uint16_t lanes_per_vpu,
-             size_t scratchpad_size
+             size_t scratchpad_size        
              )
   : htif_t(args), mems(mems), plugin_devices(plugin_devices),
     procs(std::max(nprocs, size_t(1))), start_pc(start_pc), current_step(0),
@@ -511,4 +511,11 @@ void sim_t::write_chunk(addr_t taddr, size_t len, const void* src)
 void sim_t::proc_reset(unsigned id)
 {
   debug_module.proc_reset(id);
+}
+
+void sim_t::set_instruction_log_file(std::shared_ptr<std::ofstream> f)
+{
+    for (size_t i = 0; i < procs.size(); i++) {
+      procs[i]->set_instruction_log_file(f);
+    }
 }

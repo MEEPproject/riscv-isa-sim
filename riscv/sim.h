@@ -79,6 +79,8 @@ public:
                    spike_model::Request::RegType destRegType,
                    uint64_t latency, uint64_t timestamp);
 
+  void set_instruction_log_file(std::shared_ptr<std::ofstream> f);
+
 private:
   std::vector<std::pair<reg_t, mem_t*>> mems;
   std::vector<std::pair<reg_t, abstract_device_t*>> plugin_devices;

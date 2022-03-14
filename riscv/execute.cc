@@ -102,6 +102,9 @@ static reg_t execute_insn(processor_t* p, reg_t pc, insn_fetch_t fetch)
     }
     p->update_histogram(pc);
   }
+
+  p->log_instruction(fetch.insn);
+
 //  gettimeofday(&et,NULL);
 //  uint64_t elapsed = ((et.tv_sec - st.tv_sec) * 1000000) + (et.tv_usec - st.tv_usec);
 //  p->sim->timer+=elapsed;

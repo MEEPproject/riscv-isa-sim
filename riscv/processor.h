@@ -24,6 +24,7 @@
 #include <set>
 #include <algorithm>
 #include <vector>
+#include <iostream>
 
 class processor_t;
 class mmu_t;
@@ -697,6 +698,11 @@ public:
   int curr_insn_latency;
   reg_t curr_write_reg;
   spike_model::Request::RegType curr_write_reg_type;
+
+  void set_instruction_log_file(std::shared_ptr<std::ofstream> f);
+
+  void log_instruction(insn_t insn);
+
 private:
   
   mmu_t* mmu; // main memory is always accessed via the mmu
@@ -754,6 +760,8 @@ private:
   */
   std::list<std::shared_ptr<spike_model::InsnLatencyEvent>>
              insn_latency_event_list;
+  
+  std::shared_ptr<std::ofstream> instruction_log;
 
 public:
   vectorUnit_t VU;
