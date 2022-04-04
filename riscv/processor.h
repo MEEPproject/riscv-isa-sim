@@ -703,6 +703,8 @@ public:
 
   void log_instruction(insn_t insn);
 
+  void log_vl(uint64_t requested, uint64_t granted);
+
 private:
   
   mmu_t* mmu; // main memory is always accessed via the mmu

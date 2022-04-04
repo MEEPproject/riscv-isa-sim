@@ -330,6 +330,15 @@ reg_t vectorUnit_t::set_vl(int rd, int rs1, reg_t reqVL, reg_t newType){
     vl = reqVL > vlmax ? vlmax : reqVL;
   }
 
+  if(p->enable_smart_mcpu)
+  {
+      p->log_vl(curr_AVL, vl);
+  }
+  else
+  {
+      p->log_vl(reqVL, vl);
+  }
+
   vstart = 0;
   setvl_count++;
 
@@ -357,6 +366,15 @@ bool vectorUnit_t::is_busy(uint64_t t)
       res=true;
   }
   return res;
+}
+
+void processor_t::log_vl(uint64_t requested, uint64_t granted)
+{
+  if(instruction_log!=nullptr)
+  {
+    uint64_t timestamp=get_current_cycle();
+    *instruction_log << std::dec << timestamp << "," << id << "," << 0 << ",set_vl," << requested << "," << granted << std::endl;
+  }
 }
 
 bool processor_t::is_in_set_vl()
