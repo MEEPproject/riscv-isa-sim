@@ -21,6 +21,7 @@ reg_t rv64_NAME(processor_t* p, insn_t insn, reg_t pc)
   #include "insns/NAME.h"
   if(p->curr_write_reg != std::numeric_limits<uint64_t>::max())
   {
+    P_.is_vector_memory = false;
     if(p->curr_write_reg_type == spike_model::Request::RegType::VECTOR)
     {
       //If smart mcpu is enabled, set the event dependent to 1

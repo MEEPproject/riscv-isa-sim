@@ -16,6 +16,7 @@
 #include <sys/wait.h>
 #include <sys/types.h>
 #include <thread>
+#include "VectorWaitingForScalarStore.hpp"
 
 volatile bool ctrlc_pressed = false;
 static void handle_signal(int sig)
@@ -148,9 +149,13 @@ bool sim_t::simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::s
 
         //printf("Got %lu misses here\n", l1Misses.size());
 
-        if(procs[core]->is_in_fence())
+        if(procs[core]->is_vector_waiting_for_scalar_store())
         {
-            events.push_back(std::make_shared<spike_model::Fence>(0, current_cycle, core));
+            events.push_back(std::make_shared<spike_model::VectorWaitingForScalarStore>(procs[core]->get_state()->pc, current_cycle, core));
+        }
+        else if(procs[core]->is_in_fence())
+        {
+            events.push_back(std::make_shared<spike_model::Fence>(procs[core]->get_state()->pc, current_cycle, core));
         }
         else if(procs[core]->is_in_set_vl() && enable_smart_mcpu)
         {
@@ -513,9 +518,19 @@ void sim_t::proc_reset(unsigned id)
   debug_module.proc_reset(id);
 }
 
-void sim_t::set_instruction_log_file(std::shared_ptr<std::ofstream> f)
+void sim_t::set_trace_log_file(std::shared_ptr<std::ofstream> f, uint64_t start, uint64_t end)
 {
     for (size_t i = 0; i < procs.size(); i++) {
-      procs[i]->set_instruction_log_file(f);
+      procs[i]->set_trace_log_file(f, start, end);
     }
+}
+  
+void sim_t::decrement_in_flight_scalar_stores(uint64_t coreId)
+{
+    procs[coreId]->decrement_in_flight_scalar_stores();
+}
+
+bool sim_t::check_in_flight_scalar_stores(uint64_t coreId)
+{
+    return procs[coreId]->get_num_in_flight_scalar_stores()>0;
 }

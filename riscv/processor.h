@@ -597,9 +597,16 @@ public:
 
   void log_mcpu_instruction(uint64_t base_address, size_t width, bool store,
                             uint64_t insn_bits);
+
+  void log_vector_memory_wait_for_scalar();
+  bool is_vector_waiting_for_scalar_store();
+    
   void set_mcpu_instruction_indexed(std::vector<uint64_t> indices);
   void set_mcpu_instruction_strided(std::vector<uint64_t> indices);
   void reset_mcpu_instruction();
+
+  void decrement_in_flight_scalar_stores();
+  uint16_t get_num_in_flight_scalar_stores();
 
   bool XPR_CHECK_RAW(size_t reg)
   {
@@ -692,18 +699,22 @@ public:
 
   simif_t* sim;
   insn_func_raw_t is_raw;
-  bool enable_smart_mcpu, is_load, is_store, vector_bypass_l1, vector_bypass_l2;
+  bool enable_smart_mcpu, is_load, is_store, vector_bypass_l1, vector_bypass_l2, is_vector_memory;
   uint16_t lanes_per_vpu;
   size_t scratchpad_size;
   int curr_insn_latency;
   reg_t curr_write_reg;
   spike_model::Request::RegType curr_write_reg_type;
 
-  void set_instruction_log_file(std::shared_ptr<std::ofstream> f);
+  void set_trace_log_file(std::shared_ptr<std::ofstream> f, uint64_t start, uint64_t end);
 
-  void log_instruction(insn_t insn);
+  void trace_instruction(insn_t insn);
 
-  void log_vl(uint64_t requested, uint64_t granted);
+  void trace_vl(uint64_t requested, uint64_t granted);
+
+  void trace_l1_access(uint64_t address, uint64_t size, bool hit);
+  
+  void trace_l1_bypass(uint64_t address, uint64_t size);
 
 private:
   
@@ -750,6 +761,7 @@ private:
  
   bool log_misses=false;
   bool in_fence=false;
+  bool vector_waiting_for_scalar_store=false;
 
   std::list<std::shared_ptr<spike_model::CacheRequest>> pending_misses;
   uint64_t current_cycle;
@@ -764,6 +776,8 @@ private:
              insn_latency_event_list;
   
   std::shared_ptr<std::ofstream> instruction_log;
+  uint64_t lower_trace_bound;
+  uint64_t upper_trace_bound;
 
 public:
   vectorUnit_t VU;

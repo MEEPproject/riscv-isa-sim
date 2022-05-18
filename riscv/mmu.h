@@ -422,6 +422,16 @@ public:
     bypass_l2=false;
   }
 
+  uint16_t get_num_in_flight_scalar_stores()
+  {
+    return num_in_flight_scalar_stores;
+  }
+    
+  void decrement_in_flight_scalar_stores()
+  {
+    num_in_flight_scalar_stores--;
+  }
+
   /*
      Although Spike uses 32 INT, FPR and vector registers each,
      change the data type to size_t(which is uint64_t) to be compatible with
@@ -554,6 +564,10 @@ private:
       {
           has_fetch_miss=true;
       }
+      else if(type==spike_model::CacheRequest::AccessType::STORE && !proc->is_vector_memory)
+      {
+          num_in_flight_scalar_stores++;
+      }
     }
   }
 
@@ -566,6 +580,7 @@ private:
   bool smart_mcpu=false;
 
   uint16_t num_writebacks=0;
+  uint16_t num_in_flight_scalar_stores=0;
 };
 
 struct vm_info {

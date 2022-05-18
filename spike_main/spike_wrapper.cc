@@ -124,6 +124,16 @@ namespace spike_model
         return simulation->can_resume(coreId, srcRegId, srcRegType, destRegId,
                                       destRegType, latency, timestamp);
     }
+    
+    void SpikeWrapper::decrementInFlightScalarStores(uint64_t coreId)
+    {
+       return simulation->decrement_in_flight_scalar_stores(coreId);
+    }
+    
+    bool SpikeWrapper::checkInFlightScalarStores(uint64_t coreId)
+    {
+       return simulation->check_in_flight_scalar_stores(coreId);
+    }
 
     std::shared_ptr<CacheRequest> SpikeWrapper::serviceCacheRequest(std::shared_ptr<CacheRequest> req, uint64_t timestamp)
     {
@@ -514,8 +524,8 @@ namespace spike_model
         return res;
     }
 
-    void SpikeWrapper::setInstructionLogFile(std::shared_ptr<std::ofstream> f)
+    void SpikeWrapper::setInstructionLogFile(std::shared_ptr<std::ofstream> f, uint64_t start, uint64_t end)
     {
-        simulation->set_instruction_log_file(f);
+        simulation->set_trace_log_file(f, start, end);
     }
 }

@@ -61,7 +61,7 @@ namespace spike_model
             //! name of this resource.
             static const char name[];
     
-            void setInstructionLogFile(std::shared_ptr<std::ofstream> f);
+            void setInstructionLogFile(std::shared_ptr<std::ofstream> f, uint64_t start, uint64_t end);
 
 
         private:
@@ -153,6 +153,9 @@ namespace spike_model
              * \return A request for a writeback or null
              */
             std::shared_ptr<CacheRequest> serviceCacheRequest(std::shared_ptr<CacheRequest> req, uint64_t timestamp);
+    
+            void decrementInFlightScalarStores(uint64_t coreId);
+            bool checkInFlightScalarStores(uint64_t coreId);
 
             /*
              * \brief Check the number of in flight misses in an L1

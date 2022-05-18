@@ -19,6 +19,7 @@
 #include <sstream>
 #include <iostream>
 #include <fstream>
+
 #undef STATE
 #define STATE state
 
@@ -33,7 +34,7 @@ processor_t::processor_t(const char* isa, const char* priv, const char* varch,
   enable_smart_mcpu(enable_smart_mcpu),  
   vector_bypass_l1(vector_bypass_l1), vector_bypass_l2(vector_bypass_l2), 
   lanes_per_vpu(lanes_per_vpu), scratchpad_size(scratchpad_size),
-  is_vl_available(true), is_load(false), is_store(false),instruction_log(nullptr)
+  is_vl_available(true), is_load(false), is_store(false), is_vector_memory(false), instruction_log(nullptr)
 {
   VU.p = this;
   parse_isa_string(isa);
@@ -332,11 +333,11 @@ reg_t vectorUnit_t::set_vl(int rd, int rs1, reg_t reqVL, reg_t newType){
 
   if(p->enable_smart_mcpu)
   {
-      p->log_vl(curr_AVL, vl);
+      p->trace_vl(curr_AVL, vl);
   }
   else
   {
-      p->log_vl(reqVL, vl);
+      p->trace_vl(reqVL, vl);
   }
 
   vstart = 0;
@@ -368,11 +369,11 @@ bool vectorUnit_t::is_busy(uint64_t t)
   return res;
 }
 
-void processor_t::log_vl(uint64_t requested, uint64_t granted)
+void processor_t::trace_vl(uint64_t requested, uint64_t granted)
 {
-  if(instruction_log!=nullptr)
+  uint64_t timestamp=get_current_cycle();
+  if(instruction_log!=nullptr && timestamp>=lower_trace_bound && timestamp<upper_trace_bound)
   {
-    uint64_t timestamp=get_current_cycle();
     *instruction_log << std::dec << timestamp << "," << id << "," << 0 << ",set_vl," << requested << "," << granted << std::endl;
   }
 }
@@ -1300,17 +1301,61 @@ void processor_t::reset_mcpu_instruction()
     mcpu_instruction=nullptr;
 }
 
-void processor_t::set_instruction_log_file(std::shared_ptr<std::ofstream> f)
+void processor_t::set_trace_log_file(std::shared_ptr<std::ofstream> f, uint64_t start, uint64_t end)
 {
     instruction_log=f;
+    lower_trace_bound=start;
+    upper_trace_bound=end;
 }
 
-void processor_t::log_instruction(insn_t insn)
+void processor_t::trace_instruction(insn_t insn)
 {
-    if(instruction_log!=nullptr)
+    uint64_t timestamp=get_current_cycle();
+    if(instruction_log!=nullptr && timestamp>=lower_trace_bound && timestamp<upper_trace_bound)
     {
-        uint64_t timestamp=get_current_cycle();
         disassembler->disassemble(insn).c_str();
         *instruction_log << std::dec << timestamp << "," << id << "," << std::hex << state.pc << ",inst,\"" << disassembler->disassemble(insn).c_str() << "\"" << ",0" << std::endl;
     }
+}
+
+void processor_t::trace_l1_access(uint64_t address, uint64_t size, bool hit)
+{
+    std::string event=hit ? "l1_hit" : "l1_miss"; //Fetch hits are not traced
+    uint64_t timestamp=get_current_cycle();
+    if(instruction_log!=nullptr && timestamp>=lower_trace_bound && timestamp<upper_trace_bound)
+    {
+        *instruction_log << std::dec << timestamp << "," << id << "," << std::hex << state.pc << "," << event << "," << std::dec << size << std::hex << "," << address << std::dec << std::endl;
+    }
+}
+
+void processor_t::trace_l1_bypass(uint64_t address, uint64_t size)
+{
+    std::string event="l1_bypass";
+    uint64_t timestamp=get_current_cycle();
+    if(instruction_log!=nullptr && timestamp>=lower_trace_bound && timestamp<upper_trace_bound)
+    {
+        *instruction_log << std::dec << timestamp << "," << id << "," << std::hex << state.pc << "," << event << "," << std::dec << size << std::hex << "," << address << std::dec << std::endl;
+    }
+}
+
+void processor_t::log_vector_memory_wait_for_scalar()
+{
+    vector_waiting_for_scalar_store=true;
+}
+
+bool processor_t::is_vector_waiting_for_scalar_store()
+{
+  bool res=vector_waiting_for_scalar_store;
+  vector_waiting_for_scalar_store=false;
+  return res;
+}
+  
+void processor_t::decrement_in_flight_scalar_stores()
+{
+    mmu->decrement_in_flight_scalar_stores();
+}
+
+uint16_t processor_t::get_num_in_flight_scalar_stores()
+{
+    return mmu->get_num_in_flight_scalar_stores();
 }

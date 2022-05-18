@@ -1568,6 +1568,14 @@ for (reg_t i = 0; i < vlmax; ++i) { \
   } \
 }
 
+#define CHECK_NO_SCALAR_STORE_IN_FLIGHT \
+  if(MMU.get_num_in_flight_scalar_stores()>0 && P_.vector_bypass_l1) \
+  { \
+      P_.log_vector_memory_wait_for_scalar(); \
+      return STATE.pc; \
+  }
+  
+
 #define CHECK_ENABLE_BYPASS \
   if(P_.vector_bypass_l1){ \
     MMU.enable_l1_bypass(); \
@@ -1586,6 +1594,7 @@ for (reg_t i = 0; i < vlmax; ++i) { \
 
 #define VI_ST_COMMON(stride, offset, st_width, elt_byte) \
   P_.is_store = true; \
+  P_.is_vector_memory = true; \
   const reg_t nf = insn.v_nf() + 1; \
   require((nf * P_.VU.vlmul) <= (NVPR / 4)); \
   const reg_t vl = P_.VU.vl; \
@@ -1640,7 +1649,9 @@ for (reg_t i = 0; i < vlmax; ++i) { \
   P_.VU.vstart = 0;
 
 #define VI_LD_COMMON(stride, offset, ld_width, elt_byte) \
+  CHECK_NO_SCALAR_STORE_IN_FLIGHT \
   P_.is_load = true; \
+  P_.is_vector_memory = true; \
   const reg_t nf = insn.v_nf() + 1; \
   require((nf * P_.VU.vlmul) <= (NVPR / 4)); \
   const reg_t vl = P_.VU.vl; \
@@ -1746,6 +1757,7 @@ for (reg_t i = 0; i < vlmax; ++i) { \
 
 #define VI_LDST_FF(itype, tsew) \
   P_.is_load = true; \
+  P_.is_vector_memory = true; \
   require(p->VU.vsew >= e##tsew && p->VU.vsew <= e64); \
   const reg_t nf = insn.v_nf() + 1; \
   require((nf * P_.VU.vlmul) <= (NVPR / 4)); \

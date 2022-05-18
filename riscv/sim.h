@@ -79,7 +79,10 @@ public:
                    spike_model::Request::RegType destRegType,
                    uint64_t latency, uint64_t timestamp);
 
-  void set_instruction_log_file(std::shared_ptr<std::ofstream> f);
+  void set_trace_log_file(std::shared_ptr<std::ofstream> f, uint64_t start, uint64_t end);
+
+  void decrement_in_flight_scalar_stores(uint64_t coreId);
+  bool check_in_flight_scalar_stores(uint64_t coreId);
 
 private:
   std::vector<std::pair<reg_t, mem_t*>> mems;
