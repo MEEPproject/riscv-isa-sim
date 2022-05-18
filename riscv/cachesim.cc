@@ -48,7 +48,12 @@ void cache_sim_t::init()
   for (size_t x = linesz; x>1; x >>= 1)
     idx_shift++;
 
-  tags = new uint64_t[sets*ways]();
+  set_list.resize(sets);
+  for(size_t i=0;i<sets;i++)
+  {
+    set_list[i].resize(ways);
+  }
+
   read_accesses = 0;
   read_misses = 0;
   bytes_read = 0;
@@ -64,14 +69,16 @@ cache_sim_t::cache_sim_t(const cache_sim_t& rhs)
  : sets(rhs.sets), ways(rhs.ways), linesz(rhs.linesz),
    idx_shift(rhs.idx_shift), name(rhs.name), log(false)
 {
-  tags = new uint64_t[sets*ways];
-  memcpy(tags, rhs.tags, sets*ways*sizeof(uint64_t));
+  set_list.resize(sets);
+  for(size_t i=0;i<sets;i++)
+  {
+    set_list[i]=rhs.set_list[i];
+  }
 }
 
 cache_sim_t::~cache_sim_t()
 {
   print_stats();
-  delete [] tags;
 }
 
 void cache_sim_t::print_stats()
@@ -106,18 +113,35 @@ uint64_t* cache_sim_t::check_tag(uint64_t addr)
   size_t tag = (addr >> idx_shift) | VALID;
 
   for (size_t i = 0; i < ways; i++)
-    if (tag == (tags[idx*ways + i] & ~DIRTY))
-      return &tags[idx*ways + i];
-
+  {
+    std::list<uint64_t> set=set_list[idx];
+    std::list<uint64_t>::iterator it;
+    for(it = set.begin(); it != set.end(); ++it)
+    {
+        if (tag == (*it & ~DIRTY))
+        {
+          set.splice(set.begin(), set, it);
+          return &*set.begin();
+        }
+    }
+  }
   return NULL;
 }
 
 uint64_t cache_sim_t::victimize(uint64_t addr)
 {
   size_t idx = (addr >> idx_shift) & (sets-1);
-  size_t way = lfsr.next() % ways;
-  uint64_t victim = tags[idx*ways + way];
-  tags[idx*ways + way] = (addr >> idx_shift) | VALID;
+  uint64_t victim;
+  if(set_list[idx].size()<ways)
+  {
+      victim=0;
+  }
+  else
+  {
+      victim = set_list[idx].back();
+      set_list[idx].pop_back();
+  }
+  set_list[idx].push_front((addr >> idx_shift) | VALID);
   return victim;
 }
 

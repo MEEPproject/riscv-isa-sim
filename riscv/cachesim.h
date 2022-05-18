@@ -10,6 +10,7 @@
 #include <cstdint>
 
 #include <queue>
+#include <list>
 #include <memory>
 
 class lfsr_t
@@ -48,6 +49,7 @@ class cache_sim_t
   virtual uint64_t victimize(uint64_t addr);
 
   lfsr_t lfsr;
+
   cache_sim_t* miss_handler;
 
   size_t sets;
@@ -55,7 +57,7 @@ class cache_sim_t
   size_t linesz;
   size_t idx_shift;
 
-  uint64_t* tags;
+  std::vector<std::list<uint64_t>> set_list;
   
   uint64_t read_accesses;
   uint64_t read_misses;
