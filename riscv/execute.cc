@@ -130,10 +130,7 @@ bool processor_t::step(size_t n)
     }
   }
   
-  if(get_mmu()->num_pending_misses()>0)
-  {
-    get_mmu()->clear_misses();
-  }
+  get_mmu()->clear_misses();
 
   reg_t oldpc = 0;
   while (n > 0) {

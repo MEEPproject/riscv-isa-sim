@@ -348,6 +348,7 @@ public:
   void clear_misses()
   {
     has_fetch_miss=false;
+    logged_address=false;
     num_writebacks=0;
     misses_last_inst.clear();
   }
@@ -528,6 +529,7 @@ private:
   
   std::list<std::shared_ptr<spike_model::CacheRequest>> misses_last_inst;
   bool has_fetch_miss=false;
+  bool logged_address=false;
   
   void log_miss(uint64_t addr, size_t bytes, spike_model::CacheRequest::AccessType type)
   {

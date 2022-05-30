@@ -122,13 +122,17 @@ void mmu_t::load_slow_path(reg_t addr, reg_t len, uint8_t* bytes)
             log_miss(paddr, len, spike_model::CacheRequest::AccessType::LOAD);
           }
 
-          if(!bypass_l1)
+          if(!logged_address)
           {
-            proc->trace_l1_access(addr, len, hit);
-          }
-          else
-          {
-            proc->trace_l1_bypass(addr, len);
+              logged_address=true;
+              if(!bypass_l1)
+              {
+                proc->trace_l1_access(addr, len, hit);
+              }
+              else
+              {
+                proc->trace_l1_bypass(addr, len);
+              }
           }
         }
         else
@@ -174,13 +178,17 @@ void mmu_t::store_slow_path(reg_t addr, reg_t len, const uint8_t* bytes)
               log_miss(paddr, len, spike_model::CacheRequest::AccessType::STORE);
           }
           
-          if(!bypass_l1)
+          if(!logged_address)
           {
-            proc->trace_l1_access(addr, len, hit|!is_l1_writeback());
-          }
-          else
-          {
-            proc->trace_l1_bypass(addr, len);
+              logged_address=true;
+              if(!bypass_l1)
+              {
+                proc->trace_l1_access(addr, len, hit|!is_l1_writeback());
+              }
+              else
+              {
+                proc->trace_l1_bypass(addr, len);
+              }
           }
         }
         else
