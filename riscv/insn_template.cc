@@ -18,6 +18,7 @@ reg_t rv64_NAME(processor_t* p, insn_t insn, reg_t pc)
   p->curr_insn_latency = insn_to_latency["rv64_NAME"];
   p->curr_write_reg = std::numeric_limits<uint64_t>::max();
   std::shared_ptr<spike_model::InsnLatencyEvent> insn_latency_ptr;
+  uint64_t time_ready=0;
   #include "insns/NAME.h"
   if(p->curr_write_reg != std::numeric_limits<uint64_t>::max())
   {
@@ -45,7 +46,7 @@ reg_t rv64_NAME(processor_t* p, insn_t insn, reg_t pc)
         }
         else
         {
-          p->set_vpu_latency_considering_lanes();
+          time_ready=p->set_vpu_latency_considering_lanes();
         }
       }
       else
@@ -60,7 +61,7 @@ reg_t rv64_NAME(processor_t* p, insn_t insn, reg_t pc)
         }
         else
         {
-          p->set_vpu_latency_considering_lanes();
+          time_ready=p->set_vpu_latency_considering_lanes();
 
         }
       }
@@ -76,8 +77,10 @@ reg_t rv64_NAME(processor_t* p, insn_t insn, reg_t pc)
             spike_model::CacheRequest::RegType::INTEGER);
       }
       else
-        p->get_state()->XPR.set_event_dependent(p->curr_write_reg, 0,
-                            p->get_current_cycle() + p->get_curr_insn_latency());
+      {
+        p->get_state()->XPR.set_event_dependent(p->curr_write_reg, 0, p->get_current_cycle() + p->get_curr_insn_latency());
+        time_ready=p->get_current_cycle() + p->get_curr_insn_latency();
+      }
     }
     else
     {
@@ -89,11 +92,23 @@ reg_t rv64_NAME(processor_t* p, insn_t insn, reg_t pc)
               spike_model::CacheRequest::RegType::FLOAT);
       }
       else 
-        p->get_state()->FPR.set_event_dependent(p->curr_write_reg, 0,
-                        p->get_current_cycle() + p->get_curr_insn_latency());
+      {
+        p->get_state()->FPR.set_event_dependent(p->curr_write_reg, 0, p->get_current_cycle() + p->get_curr_insn_latency());
+        time_ready=p->get_current_cycle() + p->get_curr_insn_latency();
+      }
     }
   }
   trace_opcode(p, OPCODE, insn);
+  p->trace_instruction(insn, pc);
+  if(p->get_mmu()->num_pending_misses()==0)
+  {
+    p->trace_instruction_graduate(insn, pc, time_ready);
+  }
+  else
+  {
+    p->pending_instructions[pc]=std::make_pair(insn, p->get_mmu()->num_pending_misses());
+  }
+
   return npc;
 }
 

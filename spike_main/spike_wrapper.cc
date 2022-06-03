@@ -134,6 +134,11 @@ namespace spike_model
     {
        return simulation->check_in_flight_scalar_stores(coreId);
     }
+        
+    void SpikeWrapper::checkInstructionGraduation(std::shared_ptr<CacheRequest> req, uint64_t timestamp)
+    {
+        simulation->check_instruction_graduation(req, timestamp);
+    }
 
     std::shared_ptr<CacheRequest> SpikeWrapper::serviceCacheRequest(std::shared_ptr<CacheRequest> req, uint64_t timestamp)
     {

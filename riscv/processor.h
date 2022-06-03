@@ -591,7 +591,7 @@ public:
 
   uint64_t get_curr_insn_latency();
   
-  void set_vpu_latency_considering_lanes();
+  uint64_t set_vpu_latency_considering_lanes();
 
   uint16_t get_id() {return id;}
 
@@ -708,7 +708,8 @@ public:
 
   void set_trace_log_file(std::shared_ptr<std::ofstream> f, uint64_t start, uint64_t end);
 
-  void trace_instruction(insn_t insn);
+  void trace_instruction(insn_t insn, uint64_t pc);
+  void trace_instruction_graduate(insn_t insn, uint64_t pc, uint64_t timestamp);
 
   void trace_vl(uint64_t requested, uint64_t granted);
 
@@ -792,6 +793,8 @@ public:
   std::unordered_map<uint64_t, int> write_freg_encountered;
   bool in_set_vl = false;
   bool is_vl_available = true;
+  std::unordered_map<uint64_t, std::pair<insn_t, uint16_t>> pending_instructions;
+
 };
 
 

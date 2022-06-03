@@ -62,6 +62,8 @@ namespace spike_model
             static const char name[];
     
             void setInstructionLogFile(std::shared_ptr<std::ofstream> f, uint64_t start, uint64_t end);
+    
+            void checkInstructionGraduation(std::shared_ptr<CacheRequest> req, uint64_t timestamp);
 
 
         private:

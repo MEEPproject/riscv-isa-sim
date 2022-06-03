@@ -1214,13 +1214,14 @@ uint64_t processor_t::get_current_cycle()
 //vl in elements
 //
 //Assumes full pipelining and shadow registers to allow pipelining across PVL boundaries
-void processor_t::set_vpu_latency_considering_lanes()
+uint64_t processor_t::set_vpu_latency_considering_lanes()
 {
-  uint16_t chunks=ceil((float)VU.get_vl()/lanes_per_vpu);
+  uint64_t chunks=ceil((float)VU.get_vl()/lanes_per_vpu);
 
   VU.set_event_dependent(curr_write_reg, 0,
                     get_current_cycle()+get_curr_insn_latency()+chunks-1);
   VU.set_busy_until(get_current_cycle()+chunks);
+  return get_current_cycle()+get_curr_insn_latency()+chunks-1;
 }
 
 //Latency for a PVL
@@ -1308,13 +1309,12 @@ void processor_t::set_trace_log_file(std::shared_ptr<std::ofstream> f, uint64_t 
     upper_trace_bound=end;
 }
 
-void processor_t::trace_instruction(insn_t insn)
+void processor_t::trace_instruction(insn_t insn, uint64_t pc)
 {
     uint64_t timestamp=get_current_cycle();
     if(instruction_log!=nullptr && timestamp>=lower_trace_bound && timestamp<upper_trace_bound)
     {
-        disassembler->disassemble(insn).c_str();
-        *instruction_log << std::dec << timestamp << "," << id << "," << std::hex << state.pc << ",inst,\"" << disassembler->disassemble(insn).c_str() << "\"" << ",0" << std::endl;
+        *instruction_log << std::dec << timestamp << "," << id << "," << std::hex << pc << ",inst,\"" << disassembler->disassemble(insn).c_str() << "\"" << ",0" << std::endl;
     }
 }
 
@@ -1335,6 +1335,14 @@ void processor_t::trace_l1_bypass(uint64_t address, uint64_t size)
     if(instruction_log!=nullptr && timestamp>=lower_trace_bound && timestamp<upper_trace_bound)
     {
         *instruction_log << std::dec << timestamp << "," << id << "," << std::hex << state.pc << "," << event << "," << std::dec << size << std::hex << "," << address << std::dec << std::endl;
+    }
+}
+
+void processor_t::trace_instruction_graduate(insn_t insn, uint64_t pc, uint64_t timestamp)
+{
+    if(instruction_log!=nullptr && timestamp>=lower_trace_bound && timestamp<upper_trace_bound)
+    {
+        *instruction_log << std::dec << timestamp << "," << id << "," << std::hex << pc << ",inst_graduate,\"" << disassembler->disassemble(insn).c_str() << "\"" << ",0" << std::endl;
     }
 }
 

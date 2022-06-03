@@ -534,3 +534,16 @@ bool sim_t::check_in_flight_scalar_stores(uint64_t coreId)
 {
     return procs[coreId]->get_num_in_flight_scalar_stores()>0;
 }
+
+void sim_t::check_instruction_graduation(std::shared_ptr<spike_model::CacheRequest> req, uint64_t timestamp)
+{
+    if(procs[req->getCoreId()]->pending_instructions.count(req->getPC()))
+    {
+        procs[req->getCoreId()]->pending_instructions[req->getPC()].second--;
+        if(procs[req->getCoreId()]->pending_instructions[req->getPC()].second==0)
+        {
+           procs[req->getCoreId()]->trace_instruction_graduate(procs[req->getCoreId()]->pending_instructions[req->getPC()].first, req->getPC(), timestamp);
+           procs[req->getCoreId()]->pending_instructions.erase(req->getPC());
+        }
+    }
+}

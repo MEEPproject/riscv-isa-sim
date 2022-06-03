@@ -83,6 +83,7 @@ public:
 
   void decrement_in_flight_scalar_stores(uint64_t coreId);
   bool check_in_flight_scalar_stores(uint64_t coreId);
+  void check_instruction_graduation(std::shared_ptr<spike_model::CacheRequest> req, uint64_t timestamp);
 
 private:
   std::vector<std::pair<reg_t, mem_t*>> mems;
