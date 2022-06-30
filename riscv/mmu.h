@@ -570,6 +570,10 @@ private:
       {
           num_in_flight_scalar_stores++;
       }
+      else if(proc->is_vector_memory)
+      {
+          cr->setProducedByVector();
+      }
     }
   }
 
