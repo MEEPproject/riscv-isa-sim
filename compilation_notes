@@ -1,5 +1,5 @@
 
-- SPIKE_MODEL_SRC must be set to the path for the sources of the spike model
+- COYOTE_SRC must be set to the path for the sources of the spike model
 - SPARTA_PATH must be set to the path for Sparta
 - We MUST compile using the script compile_spike_sparta.sh, which must be moved to /build
 

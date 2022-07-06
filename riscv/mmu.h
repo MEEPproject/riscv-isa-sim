@@ -299,7 +299,7 @@ public:
       bool traced=tracer.trace(paddr, length, FETCH, hit);
       if(log_misses && traced && !hit)
       {
-        log_miss(paddr, length, spike_model::CacheRequest::AccessType::FETCH);
+        log_miss(paddr, length, coyote::CacheRequest::AccessType::FETCH);
       }
     }
     return entry;
@@ -353,7 +353,7 @@ public:
     misses_last_inst.clear();
   }
 
-  std::list<std::shared_ptr<spike_model::CacheRequest>>& get_misses()
+  std::list<std::shared_ptr<coyote::CacheRequest>>& get_misses()
   {
     return misses_last_inst;
   }
@@ -438,7 +438,7 @@ public:
      change the data type to size_t(which is uint64_t) to be compatible with
      Spike.
   */
-  void set_misses_dest_reg(size_t reg, spike_model::CacheRequest::RegType t);
+  void set_misses_dest_reg(size_t reg, coyote::CacheRequest::RegType t);
 
 private:
   simif_t* sim;
@@ -527,15 +527,15 @@ private:
 
   friend class processor_t;
   
-  std::list<std::shared_ptr<spike_model::CacheRequest>> misses_last_inst;
+  std::list<std::shared_ptr<coyote::CacheRequest>> misses_last_inst;
   bool has_fetch_miss=false;
   bool logged_address=false;
   
-  void log_miss(uint64_t addr, size_t bytes, spike_model::CacheRequest::AccessType type)
+  void log_miss(uint64_t addr, size_t bytes, coyote::CacheRequest::AccessType type)
   {
     bool contains_line=false;
     uint16_t line_size=dc_linesz;
-    if(type==spike_model::CacheRequest::AccessType::FETCH)
+    if(type==coyote::CacheRequest::AccessType::FETCH)
     {
         line_size=ic_linesz;
     }
@@ -543,7 +543,7 @@ private:
     //Obtain the address for the line containing the miss
     size_t miss_line_addr=((unsigned)addr/line_size)*line_size;
 
-    std::list<std::shared_ptr<spike_model::CacheRequest>>::iterator it;
+    std::list<std::shared_ptr<coyote::CacheRequest>>::iterator it;
     for (it = misses_last_inst.begin(); it != misses_last_inst.end(); ++it)
     {
       contains_line=(miss_line_addr==(*it)->getAddress());
@@ -557,16 +557,16 @@ private:
     {
       
       //The request is for the line instead of the missing access
-      std::shared_ptr<spike_model::CacheRequest> cr=std::make_shared<spike_model::CacheRequest>(miss_line_addr, type, proc->state.pc, proc->get_current_cycle(), proc->get_id(), bypass_l1, bypass_l2);
-      cr->setDestinationReg(-1, spike_model::Request::RegType::DONT_CARE);
+      std::shared_ptr<coyote::CacheRequest> cr=std::make_shared<coyote::CacheRequest>(miss_line_addr, type, proc->state.pc, proc->get_current_cycle(), proc->get_id(), bypass_l1, bypass_l2);
+      cr->setDestinationReg(-1, coyote::Request::RegType::DONT_CARE);
       cr->setSize(line_size);
       misses_last_inst.push_back(cr);
       
-      if(type==spike_model::CacheRequest::AccessType::FETCH)
+      if(type==coyote::CacheRequest::AccessType::FETCH)
       {
           has_fetch_miss=true;
       }
-      else if(type==spike_model::CacheRequest::AccessType::STORE && !proc->is_vector_memory)
+      else if(type==coyote::CacheRequest::AccessType::STORE && !proc->is_vector_memory)
       {
           num_in_flight_scalar_stores++;
       }

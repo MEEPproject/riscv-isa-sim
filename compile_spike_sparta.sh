@@ -4,7 +4,7 @@ sparta_connector_files=( "SpikeConnector" "SpikeInstructionStream" "MemoryInstru
 
 for f in "${sparta_connector_files[@]}"
 do
-    cp $SPIKE_MODEL_SRC/$f.cpp $f.cc
+    cp $COYOTE_SRC/$f.cpp $f.cc
 done
 
 ../configure --prefix=/home/bscuser/local/riscvv08/gnu/ --no-create --no-recursion

@@ -238,7 +238,7 @@ private:
             we have to set the availability of this register. \
           */ \
           P_.curr_write_reg = reg; \
-          P_.curr_write_reg_type = spike_model::Request::RegType::INTEGER; \
+          P_.curr_write_reg_type = coyote::Request::RegType::INTEGER; \
         } \
     })
 
@@ -256,7 +256,7 @@ private:
         we have to set the availability of this register. \
       */ \
       P_.curr_write_reg = reg; \
-      P_.curr_write_reg_type = spike_model::Request::RegType::INTEGER; \
+      P_.curr_write_reg_type = coyote::Request::RegType::INTEGER; \
     } \
   })
 
@@ -296,7 +296,7 @@ private:
             we have to set the availability of this register. \
           */ \
           P_.curr_write_reg = reg;\
-          P_.curr_write_reg_type = spike_model::Request::RegType::FLOAT;\
+          P_.curr_write_reg_type = coyote::Request::RegType::FLOAT;\
         } \
     })
 
@@ -1640,7 +1640,7 @@ for (reg_t i = 0; i < vlmax; ++i) { \
      we have to set the availability of this register. \
     */ \
     P_.curr_write_reg = vs3;\
-    P_.curr_write_reg_type = spike_model::Request::RegType::VECTOR;\
+    P_.curr_write_reg_type = coyote::Request::RegType::VECTOR;\
   } \
   else\
   { \
@@ -1700,7 +1700,7 @@ for (reg_t i = 0; i < vlmax; ++i) { \
    we have to set the availability of this register. \
   */ \
   P_.curr_write_reg = vd;\
-  P_.curr_write_reg_type = spike_model::Request::RegType::VECTOR;\
+  P_.curr_write_reg_type = coyote::Request::RegType::VECTOR;\
   P_.VU.vstart = 0;
 
 #define VI_LD(stride, offset, ld_width, elt_byte) \
@@ -1836,7 +1836,7 @@ for (reg_t i = 0; i < vlmax; ++i) { \
     we have to set the availability of this register. \
   */ \
   P_.curr_write_reg = rd_num;\
-  P_.curr_write_reg_type = spike_model::Request::RegType::VECTOR;
+  P_.curr_write_reg_type = coyote::Request::RegType::VECTOR;
 
 //
 // vector: vfp helper

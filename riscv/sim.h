@@ -65,25 +65,25 @@ public:
 
   void prepare();
 
-  bool simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::shared_ptr<spike_model::Event>>& events);
+  bool simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::shared_ptr<coyote::Event>>& events);
 
   void advance_clock(uint64_t);
-  bool ack_register(uint64_t coreId, spike_model::Request::RegType destRegType, size_t destRegId, uint64_t timestamp);
+  bool ack_register(uint64_t coreId, coyote::Request::RegType destRegType, size_t destRegId, uint64_t timestamp);
   void set_vvl(uint64_t coreId, uint64_t vvl);
   bool can_resume(uint64_t coreId, size_t srcRegId,
-                  spike_model::Request::RegType srcRegType,
-                  size_t destRegId, spike_model::Request::RegType destRegType,
+                  coyote::Request::RegType srcRegType,
+                  size_t destRegId, coyote::Request::RegType destRegType,
                   uint64_t latency, uint64_t timestamp);
 
   bool set_latency(uint64_t coreId, size_t destRegId,
-                   spike_model::Request::RegType destRegType,
+                   coyote::Request::RegType destRegType,
                    uint64_t latency, uint64_t timestamp);
 
   void set_trace_log_file(std::shared_ptr<std::ofstream> f, uint64_t start, uint64_t end);
 
   void decrement_in_flight_scalar_stores(uint64_t coreId);
   bool check_in_flight_scalar_stores(uint64_t coreId);
-  void check_instruction_graduation(std::shared_ptr<spike_model::CacheRequest> req, uint64_t timestamp);
+  void check_instruction_graduation(std::shared_ptr<coyote::CacheRequest> req, uint64_t timestamp);
 
 private:
   std::vector<std::pair<reg_t, mem_t*>> mems;

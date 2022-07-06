@@ -176,7 +176,7 @@ struct type_sew_t<64>
 typedef struct load_insn_raw_dep
 {
     reg_t regId;
-    spike_model::Request::RegType regType;
+    coyote::Request::RegType regType;
     uint64_t latency;
 }load_insn_raw_dep;
 
@@ -223,7 +223,7 @@ class vectorUnit_t {
              we have to set the availability of this register.
             */
             p->curr_write_reg = vReg;
-            p->curr_write_reg_type = spike_model::Request::RegType::VECTOR;
+            p->curr_write_reg_type = coyote::Request::RegType::VECTOR;
           }
         }
         return regStart[n];
@@ -257,12 +257,12 @@ class vectorUnit_t {
 
           if(get_avail_cycle(vReg) != std::numeric_limits<uint64_t>::max())
           {
-            std::shared_ptr<spike_model::InsnLatencyEvent> insn_latency_ptr =
-                       std::make_shared<spike_model::InsnLatencyEvent>(
+            std::shared_ptr<coyote::InsnLatencyEvent> insn_latency_ptr =
+                       std::make_shared<coyote::InsnLatencyEvent>(
                        p->get_state()->pc,
                        p->get_id(),
                        vReg,
-                       spike_model::Request::RegType::VECTOR,
+                       coyote::Request::RegType::VECTOR,
                        std::numeric_limits<uint64_t>::max(),
                        p->get_curr_insn_latency(),
                        get_avail_cycle(vReg));
@@ -618,12 +618,12 @@ public:
         state.raw=true; 
         if(state.XPR.get_avail_cycle(reg) != std::numeric_limits<uint64_t>::max())
         {
-          std::shared_ptr<spike_model::InsnLatencyEvent> insn_latency_ptr = 
-                     std::make_shared<spike_model::InsnLatencyEvent>(
+          std::shared_ptr<coyote::InsnLatencyEvent> insn_latency_ptr = 
+                     std::make_shared<coyote::InsnLatencyEvent>(
                      state.pc,
                      get_id(),
                      reg,
-                     spike_model::Request::RegType::INTEGER,
+                     coyote::Request::RegType::INTEGER,
                      std::numeric_limits<uint64_t>::max(),
                      get_curr_insn_latency(),
                      state.XPR.get_avail_cycle(reg));
@@ -647,12 +647,12 @@ public:
         state.raw=true; 
         if(state.FPR.get_avail_cycle(reg) != std::numeric_limits<uint64_t>::max())
         {
-          std::shared_ptr<spike_model::InsnLatencyEvent> insn_latency_ptr = 
-                     std::make_shared<spike_model::InsnLatencyEvent>(
+          std::shared_ptr<coyote::InsnLatencyEvent> insn_latency_ptr = 
+                     std::make_shared<coyote::InsnLatencyEvent>(
                      state.pc,
                      get_id(),
                      reg,
-                     spike_model::Request::RegType::FLOAT,
+                     coyote::Request::RegType::FLOAT,
                      std::numeric_limits<uint64_t>::max(),
                      get_curr_insn_latency(),
                      state.FPR.get_avail_cycle(reg));
@@ -668,13 +668,13 @@ public:
 
 
   bool is_mcpu_instruction();
-  std::shared_ptr<spike_model::MCPUInstruction> get_mcpu_instruction();
+  std::shared_ptr<coyote::MCPUInstruction> get_mcpu_instruction();
 
   void sim_fence_log();
   bool is_in_fence();
   bool is_in_set_vl();
 
-  std::list<std::shared_ptr<spike_model::InsnLatencyEvent>>& get_insn_latency_event_list()
+  std::list<std::shared_ptr<coyote::InsnLatencyEvent>>& get_insn_latency_event_list()
   {
     return insn_latency_event_list;
   }
@@ -684,7 +684,7 @@ public:
     insn_latency_event_list.clear();
   }
 
-  void push_insn_latency_event(std::shared_ptr<spike_model::InsnLatencyEvent> insn_latency_ptr)
+  void push_insn_latency_event(std::shared_ptr<coyote::InsnLatencyEvent> insn_latency_ptr)
   {
     insn_latency_event_list.push_back(insn_latency_ptr);
   }
@@ -704,7 +704,7 @@ public:
   size_t scratchpad_size;
   int curr_insn_latency;
   reg_t curr_write_reg;
-  spike_model::Request::RegType curr_write_reg_type;
+  coyote::Request::RegType curr_write_reg_type;
 
   void set_trace_log_file(std::shared_ptr<std::ofstream> f, uint64_t start, uint64_t end);
 
@@ -764,16 +764,16 @@ private:
   bool in_fence=false;
   bool vector_waiting_for_scalar_store=false;
 
-  std::list<std::shared_ptr<spike_model::CacheRequest>> pending_misses;
+  std::list<std::shared_ptr<coyote::CacheRequest>> pending_misses;
   uint64_t current_cycle;
 
-  std::shared_ptr<spike_model::MCPUInstruction> mcpu_instruction=nullptr;
+  std::shared_ptr<coyote::MCPUInstruction> mcpu_instruction=nullptr;
 
   /*There is a possibility of duplicate events getting inserted in the list.
     This could result into corruption in the RAW event tracking mechanism.
     Lets use set to avoid any duplicates.
   */
-  std::list<std::shared_ptr<spike_model::InsnLatencyEvent>>
+  std::list<std::shared_ptr<coyote::InsnLatencyEvent>>
              insn_latency_event_list;
   
   std::shared_ptr<std::ofstream> instruction_log;

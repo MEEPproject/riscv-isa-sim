@@ -36,10 +36,10 @@ project_name := @PACKAGE_TARNAME@
 src_dir      := @srcdir@
 scripts_dir  := $(src_dir)/scripts
 
-ifndef SPIKE_MODEL_SRC
-  sparta_spike_model_path := $(src_dir)/../SpikeModel/src/
+ifndef COYOTE_SRC
+  sparta_spike_model_path := $(src_dir)/../Coyote/src/
 else
-  sparta_spike_model_path  := $(SPIKE_MODEL_SRC)
+  sparta_spike_model_path  := $(COYOTE_SRC)
 endif
 
 ifndef SPARTA_PATH

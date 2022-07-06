@@ -7,7 +7,7 @@
 class serviceable
 {
     public:
-        virtual std::shared_ptr<spike_model::CacheRequest> serviceCacheRequest(std::shared_ptr<spike_model::CacheRequest> req)=0;
+        virtual std::shared_ptr<coyote::CacheRequest> serviceCacheRequest(std::shared_ptr<coyote::CacheRequest> req)=0;
         virtual ~serviceable(){};
 };
 #endif

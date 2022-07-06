@@ -353,12 +353,12 @@ bool vectorUnit_t::is_busy(uint64_t t)
   {
       p->get_state()->raw=true;
 
-      std::shared_ptr<spike_model::InsnLatencyEvent> insn_latency_ptr =
-                 std::make_shared<spike_model::InsnLatencyEvent>(
+      std::shared_ptr<coyote::InsnLatencyEvent> insn_latency_ptr =
+                 std::make_shared<coyote::InsnLatencyEvent>(
                  p->get_state()->pc,
                  p->get_id(),
                  std::numeric_limits<uint64_t>::max(),
-                 spike_model::Request::RegType::VECTOR,
+                 coyote::Request::RegType::VECTOR,
                  std::numeric_limits<uint64_t>::max(),
                  p->get_curr_insn_latency(),
                  busy_until);
@@ -1246,34 +1246,34 @@ bool processor_t::is_in_fence()
 void processor_t::log_mcpu_instruction(uint64_t base_address, size_t width, bool store,
                                        uint64_t insn_bits)
 {
-  spike_model::MCPUInstruction::Operation o=spike_model::MCPUInstruction::Operation::LOAD;
+  coyote::MCPUInstruction::Operation o=coyote::MCPUInstruction::Operation::LOAD;
   if(store)
   {
-    o=spike_model::MCPUInstruction::Operation::STORE;
+    o=coyote::MCPUInstruction::Operation::STORE;
   }
     
   //Width is in bytes. Convert to the value for the Width enum
-  spike_model::VectorElementType w;
+  coyote::VectorElementType w;
   switch(width)
   {
     case 8:
-        w=spike_model::VectorElementType::BIT64;
+        w=coyote::VectorElementType::BIT64;
         break;
     case 4:
-        w=spike_model::VectorElementType::BIT32;
+        w=coyote::VectorElementType::BIT32;
         break;
     case 2:
-        w=spike_model::VectorElementType::BIT16;
+        w=coyote::VectorElementType::BIT16;
         break;
     case 1:
-        w=spike_model::VectorElementType::BIT8;
+        w=coyote::VectorElementType::BIT8;
         break;
     default:
         printf("Unsupported width!\n");
         break;
   }
 
-  mcpu_instruction=std::make_shared<spike_model::MCPUInstruction>(state.pc, current_cycle, id, base_address, o, w,
+  mcpu_instruction=std::make_shared<coyote::MCPUInstruction>(state.pc, current_cycle, id, base_address, o, w,
                                        insn_bits);
 }
 
@@ -1292,7 +1292,7 @@ bool processor_t::is_mcpu_instruction()
     return mcpu_instruction!=nullptr;
 }
 
-std::shared_ptr<spike_model::MCPUInstruction> processor_t::get_mcpu_instruction()
+std::shared_ptr<coyote::MCPUInstruction> processor_t::get_mcpu_instruction()
 {
     return mcpu_instruction;
 }

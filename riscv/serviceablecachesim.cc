@@ -66,9 +66,9 @@ bool serviceable_cache_sim_t::access(uint64_t addr, size_t bytes, bool store)
   return false;
 }
 
-std::shared_ptr<spike_model::CacheRequest> serviceable_cache_sim_t::serviceCacheRequest(std::shared_ptr<spike_model::CacheRequest> req)
+std::shared_ptr<coyote::CacheRequest> serviceable_cache_sim_t::serviceCacheRequest(std::shared_ptr<coyote::CacheRequest> req)
 {
-  std::shared_ptr<spike_model::CacheRequest> wb=std::shared_ptr<spike_model::CacheRequest>(nullptr);
+  std::shared_ptr<coyote::CacheRequest> wb=std::shared_ptr<coyote::CacheRequest>(nullptr);
   uint64_t victim=victimize(req->getAddress());
   
   if ((victim & (VALID | DIRTY)) == (VALID | DIRTY))
@@ -77,11 +77,11 @@ std::shared_ptr<spike_model::CacheRequest> serviceable_cache_sim_t::serviceCache
     if (miss_handler)
       miss_handler->access(dirty_addr, linesz, true);
     writebacks++;
-    wb=std::make_shared<spike_model::CacheRequest>(victim<<idx_shift, spike_model::CacheRequest::AccessType::WRITEBACK);
+    wb=std::make_shared<coyote::CacheRequest>(victim<<idx_shift, coyote::CacheRequest::AccessType::WRITEBACK);
     wb->setSize(linesz);
     wb->setDestinationReg(req->getDestinationRegId(), req->getDestinationRegType());
   }
-  if (req->getType()==spike_model::CacheRequest::AccessType::STORE)
+  if (req->getType()==coyote::CacheRequest::AccessType::STORE)
   {
     *check_tag(req->getAddress()) |= DIRTY;
   }

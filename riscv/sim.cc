@@ -114,7 +114,7 @@ void sim_t::main()
 
 }
 
-bool sim_t::simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::shared_ptr<spike_model::Event>>& events)
+bool sim_t::simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::shared_ptr<coyote::Event>>& events)
 {
     //struct timeval st, et;
     //gettimeofday(&st,NULL);
@@ -131,7 +131,7 @@ bool sim_t::simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::s
         procs[core]->set_current_cycle(current_cycle);
 
         res=my_step_one(core);
-        std::list<std::shared_ptr<spike_model::CacheRequest>> new_misses=procs[core]->get_mmu()->get_misses();
+        std::list<std::shared_ptr<coyote::CacheRequest>> new_misses=procs[core]->get_mmu()->get_misses();
 
         //This is clearly inefficient, but we cannot directly return a Event list
         //The destination register has to be set from decode, which runs after misses
@@ -142,7 +142,7 @@ bool sim_t::simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::s
         //      type that already holds classified events (e.g. a list of misses and a list of
         //      the rest of events)
 
-        for(std::shared_ptr<spike_model::CacheRequest> miss: new_misses)
+        for(std::shared_ptr<coyote::CacheRequest> miss: new_misses)
         {
             events.push_back(miss);
         }
@@ -151,15 +151,15 @@ bool sim_t::simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::s
 
         if(procs[core]->is_vector_waiting_for_scalar_store())
         {
-            events.push_back(std::make_shared<spike_model::VectorWaitingForScalarStore>(procs[core]->get_state()->pc, current_cycle, core));
+            events.push_back(std::make_shared<coyote::VectorWaitingForScalarStore>(procs[core]->get_state()->pc, current_cycle, core));
         }
         else if(procs[core]->is_in_fence())
         {
-            events.push_back(std::make_shared<spike_model::Fence>(procs[core]->get_state()->pc, current_cycle, core));
+            events.push_back(std::make_shared<coyote::Fence>(procs[core]->get_state()->pc, current_cycle, core));
         }
         else if(procs[core]->is_in_set_vl() && enable_smart_mcpu)
         {
-            std::shared_ptr<spike_model::MCPUSetVVL> mcpu_set_vvl = std::make_shared<spike_model::MCPUSetVVL>(
+            std::shared_ptr<coyote::MCPUSetVVL> mcpu_set_vvl = std::make_shared<coyote::MCPUSetVVL>(
                             procs[core]->VU.curr_AVL,
                             procs[core]->VU.curr_rd, procs[core]->get_state()->pc, 
                             current_cycle, core
@@ -171,20 +171,20 @@ bool sim_t::simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::s
             
             //-- lmul setting according to RVV 0.8, p. 10
             switch(curr_vlmul) {
-                case 0: mcpu_set_vvl->setLMUL(spike_model::LMULSetting::ONE); break;
-                case 1: mcpu_set_vvl->setLMUL(spike_model::LMULSetting::TWO); break;
-                case 2: mcpu_set_vvl->setLMUL(spike_model::LMULSetting::FOUR); break;
-                case 3: mcpu_set_vvl->setLMUL(spike_model::LMULSetting::EIGHT); break;
+                case 0: mcpu_set_vvl->setLMUL(coyote::LMULSetting::ONE); break;
+                case 1: mcpu_set_vvl->setLMUL(coyote::LMULSetting::TWO); break;
+                case 2: mcpu_set_vvl->setLMUL(coyote::LMULSetting::FOUR); break;
+                case 3: mcpu_set_vvl->setLMUL(coyote::LMULSetting::EIGHT); break;
                 default: printf("This LMUL Setting is reserved!\n");
             }
                 
             
             //-- vsew setting according to RVV 0.8, p. 9
             switch(curr_vsew) {
-                case 0: mcpu_set_vvl->setWidth(spike_model::VectorElementType::BIT8); break;
-                case 1: mcpu_set_vvl->setWidth(spike_model::VectorElementType::BIT16); break;
-                case 2: mcpu_set_vvl->setWidth(spike_model::VectorElementType::BIT32); break;
-                case 3: mcpu_set_vvl->setWidth(spike_model::VectorElementType::BIT64); break;
+                case 0: mcpu_set_vvl->setWidth(coyote::VectorElementType::BIT8); break;
+                case 1: mcpu_set_vvl->setWidth(coyote::VectorElementType::BIT16); break;
+                case 2: mcpu_set_vvl->setWidth(coyote::VectorElementType::BIT32); break;
+                case 3: mcpu_set_vvl->setWidth(coyote::VectorElementType::BIT64); break;
                 default: printf("Unsupported vector element width!\n");
             }
             events.push_back(mcpu_set_vvl);
@@ -201,9 +201,9 @@ bool sim_t::simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::s
                is compute. If the depending instruction is memory instruction,
                a CacheRequest event is generated.
             */
-            std::list<std::shared_ptr<spike_model::InsnLatencyEvent>> latency_event_list =
+            std::list<std::shared_ptr<coyote::InsnLatencyEvent>> latency_event_list =
                        procs[core]->get_insn_latency_event_list();
-            for(std::shared_ptr<spike_model::InsnLatencyEvent> latency_event: latency_event_list)
+            for(std::shared_ptr<coyote::InsnLatencyEvent> latency_event: latency_event_list)
             {
                 events.push_back(latency_event);
             }
@@ -213,7 +213,7 @@ bool sim_t::simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::s
     else
     {
         res=true;
-        events.push_back(std::make_shared<spike_model::Finish>(0, current_cycle, core));
+        events.push_back(std::make_shared<coyote::Finish>(0, current_cycle, core));
         procs[core]->reset_mcpu_instruction();
     }
     //gettimeofday(&et,NULL);
@@ -226,12 +226,12 @@ bool sim_t::simulate_one(uint32_t core, uint64_t current_cycle, std::list<std::s
     return res;
 }
 
-bool sim_t::ack_register(uint64_t coreId, spike_model::Request::RegType destRegType, size_t destRegId, uint64_t timestamp)
+bool sim_t::ack_register(uint64_t coreId, coyote::Request::RegType destRegType, size_t destRegId, uint64_t timestamp)
 {
     bool ready;
     switch(destRegType)
     {
-        case spike_model::Request::RegType::INTEGER:
+        case coyote::Request::RegType::INTEGER:
             ready=procs[coreId]->get_state()->XPR.ack_for_reg(destRegId, timestamp);
             // If all the requests for the register (vector instructions might require many) have been serviced, it is no longer pending
             if(ready)
@@ -239,7 +239,7 @@ bool sim_t::ack_register(uint64_t coreId, spike_model::Request::RegType destRegT
                 procs[coreId]->get_state()->pending_int_regs->erase(destRegId);
             }
             break;
-        case spike_model::Request::RegType::FLOAT:
+        case coyote::Request::RegType::FLOAT:
             ready=procs[coreId]->get_state()->FPR.ack_for_reg(destRegId, timestamp);
             // If all the requests for the register (vector instructions might require many) have been serviced, it is no longer pending
             if(ready)
@@ -247,7 +247,7 @@ bool sim_t::ack_register(uint64_t coreId, spike_model::Request::RegType destRegT
                 procs[coreId]->get_state()->pending_float_regs->erase(destRegId);
             }
             break;
-        case spike_model::Request::RegType::VECTOR:
+        case coyote::Request::RegType::VECTOR:
             ready=procs[coreId]->VU.ack_for_reg(destRegId, timestamp);
             // If all the requests for the register (vector instructions might require many) have been serviced, it is no longer pending
             if(ready)
@@ -255,7 +255,7 @@ bool sim_t::ack_register(uint64_t coreId, spike_model::Request::RegType destRegT
                 procs[coreId]->get_state()->pending_vector_regs->erase(destRegId);
             }
             break;
-        case spike_model::Request::RegType::DONT_CARE:
+        case coyote::Request::RegType::DONT_CARE:
             // I don't care, so I do not do anything :-P
             break;
         default:
@@ -275,22 +275,22 @@ void sim_t::set_vvl(uint64_t core, uint64_t vvl)
 }
 
 bool sim_t::can_resume(uint64_t coreId, size_t srcRegId,
-                       spike_model::Request::RegType srcRegType,
-                       size_t destRegId, spike_model::Request::RegType destRegType,
+                       coyote::Request::RegType srcRegType,
+                       size_t destRegId, coyote::Request::RegType destRegType,
                        uint64_t latency, uint64_t timestamp)
 {
     switch(srcRegType)
     {
-        case spike_model::Request::RegType::INTEGER:
+        case coyote::Request::RegType::INTEGER:
             procs[coreId]->get_state()->pending_int_regs->erase(srcRegId);
             break;
-        case spike_model::Request::RegType::FLOAT:
+        case coyote::Request::RegType::FLOAT:
             procs[coreId]->get_state()->pending_float_regs->erase(srcRegId);
             break;
-        case spike_model::Request::RegType::VECTOR:
+        case coyote::Request::RegType::VECTOR:
             procs[coreId]->get_state()->pending_vector_regs->erase(srcRegId);
             break;
-        case spike_model::Request::RegType::DONT_CARE:
+        case coyote::Request::RegType::DONT_CARE:
             // I don't care, so I do not do anything :-P
             break;
         default:
@@ -535,7 +535,7 @@ bool sim_t::check_in_flight_scalar_stores(uint64_t coreId)
     return procs[coreId]->get_num_in_flight_scalar_stores()>0;
 }
 
-void sim_t::check_instruction_graduation(std::shared_ptr<spike_model::CacheRequest> req, uint64_t timestamp)
+void sim_t::check_instruction_graduation(std::shared_ptr<coyote::CacheRequest> req, uint64_t timestamp)
 {
     if(procs[req->getCoreId()]->pending_instructions.count(req->getPC()))
     {

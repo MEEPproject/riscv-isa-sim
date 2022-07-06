@@ -119,7 +119,7 @@ void mmu_t::load_slow_path(reg_t addr, reg_t len, uint8_t* bytes)
           }
           if((log_misses && traced && !hit) || bypass_l1)
           {
-            log_miss(paddr, len, spike_model::CacheRequest::AccessType::LOAD);
+            log_miss(paddr, len, coyote::CacheRequest::AccessType::LOAD);
           }
 
           if(!logged_address)
@@ -175,7 +175,7 @@ void mmu_t::store_slow_path(reg_t addr, reg_t len, const uint8_t* bytes)
           }
           if((log_misses && traced && !hit) || bypass_l1 || !is_l1_writeback())
           {
-              log_miss(paddr, len, spike_model::CacheRequest::AccessType::STORE);
+              log_miss(paddr, len, coyote::CacheRequest::AccessType::STORE);
           }
           
           if(!logged_address)
@@ -392,9 +392,9 @@ void mmu_t::register_memtracer(memtracer_t* t)
   tracer.hook(t);
 }
 
-void mmu_t::set_misses_dest_reg(size_t reg, spike_model::CacheRequest::RegType t)
+void mmu_t::set_misses_dest_reg(size_t reg, coyote::CacheRequest::RegType t)
 {
-  for(std::shared_ptr<spike_model::CacheRequest> miss: misses_last_inst)
+  for(std::shared_ptr<coyote::CacheRequest> miss: misses_last_inst)
   {
     miss->setDestinationReg(reg, t);
   }
