@@ -8,6 +8,7 @@
 #include "serviceable.h"
 #include <vector>
 #include <queue>
+#include <boost/algorithm/string.hpp>
 
 #include "sparta/ports/PortSet.hpp"
 #include "sparta/ports/SignalPort.hpp"
